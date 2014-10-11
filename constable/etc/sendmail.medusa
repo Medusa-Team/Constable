@@ -1,0 +1,42 @@
+/**
+ * @file sendmail.medusa
+ * @short Medusa configuraton file for Sendmail
+ * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * $Id: sendmail.medusa,v 1.3 2002/12/16 11:23:43 marek Exp $
+ */
+
+space mail_w	= space mail_var
+		+ "/etc/mail/aliases"		/* because newaliases is symlink to sendmail ;-( */
+		+ "/etc/mail/aliases.db"	/* because newaliases is symlink to sendmail ;-( */
+		+ recursive "/services/mail"
+		+ recursive "/services/list"
+		;
+
+space mail_r	= recursive "/etc/mail"
+		+ space etc
+		;
+
+primary space mail = "domain/mail";
+
+mail		READ	pipe,tty,temp,daemondev,varrun,mail_w,mailbox,mail,
+			bin,home_public,mail_r,
+		WRITE	pipe,tty,temp,daemondev,varrun,mail_w,mailbox,mail,
+		SEE	pipe,tty,temp,daemondev,varrun,mail_w,mailbox,mail,
+			bin,home_public,mail_r
+			;
+space can_setuid + space mail;
+space can_be_hardlinked	+ space mailbox
+			+ space mail_w
+			;
+
+* fexec:NOTIFY_ALLOW "/usr/sbin/sendmail" {
+	enter_domain("mail");
+}
+
+all_domains sexec "fs/usr/sbin/sendmail" {
+	process.egid = sexec.gid;
+	process.sgid = sexec.gid;
+	process.fsgid= sexec.gid;
+	return(SKIP);
+}
+

@@ -1,0 +1,43 @@
+/**
+ * @file bind.medusa
+ * @short Medusa configuration file for Bind name server
+ * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * $Id: bind.medusa,v 1.2 2002/12/16 11:23:43 marek Exp $
+ */
+
+space named_data
+//		= recursive "/var/named"
+		= recursive "/services/named"
+		+ "/var/log/named"
+		;
+
+/* I think we don't need separate define space for read and for write thus
+ * named may run as user in chroot jail and this is enough secure.
+ * Maybe I am too little paranoid but I don't believe in miracles ;-)
+ */
+
+primary space named = "domain/named";
+
+named		READ	pipe,daemondev,varrun,named_data,named,
+			bin,etc,
+		WRITE	pipe,daemondev,varrun,named_data,named,
+		SEE	pipe,daemondev,varrun,named_data,named,
+			bin,etc
+			;
+/*			,
+		READ	all_domains,
+		WRITE	all_domains,
+		SEE	all_domains;
+*/
+
+* fexec:NOTIFY_ALLOW "/usr/sbin/named" {
+	enter_domain("named");
+//	process.syscall|=~process.syscall;
+	log_proc("named");
+/* If you are tough boy set here *uid and capabilities */
+}
+
+named syscall {
+	log("named syscall "+sysnr+" "+arg0+" "+arg1+" "+arg2+" "+arg3+" "+arg4);
+}
+

@@ -1,0 +1,163 @@
+["demerzel:9999"]: class process {
+	readonly primary signed	pid	(4: 4)
+	readonly signed	parent_pid	(8: 4)
+	readonly signed	child_pid	(12: 4)
+	readonly signed	sibling_pid	(16: 4)
+	readonly signed	pgrp	(20: 4)
+	unsigned	uid	(24: 4)
+	unsigned	ruid	(24: 4)
+	unsigned	euid	(28: 4)
+	unsigned	suid	(32: 4)
+	unsigned	fsuid	(36: 4)
+	unsigned	rgid	(40: 4)
+	unsigned	gid	(40: 4)
+	unsigned	egid	(44: 4)
+	unsigned	sgid	(48: 4)
+	unsigned	fsgid	(52: 4)
+	bitmap	ecap	(60: 4)
+	bitmap	icap	(64: 4)
+	bitmap	pcap	(68: 4)
+	unsigned	luid	(56: 4)
+	bitmap	vsr	(72: 4)
+	bitmap	vsw	(76: 4)
+	bitmap	vss	(80: 4)
+	bitmap	med_sact	(84: 4)
+	bitmap	s_cinfo	(88: 16)
+	bitmap	vs	(104: 4)
+	bitmap	med_oact	(108: 4)
+	bitmap	o_cinfo	(112: 4)
+	unsigned	user	(120: 4)
+	bitmap	syscall	(124: 32)
+}
+["demerzel:9999"]: class file {
+	readonly primary unsigned	dev	(4: 4)
+	readonly primary unsigned	ino	(8: 4)
+	bitmap	mode	(12: 2)
+	readonly unsigned	nlink	(14: 2)
+	unsigned	uid	(16: 4)
+	unsigned	gid	(20: 4)
+	readonly unsigned	rdev	(24: 4)
+	bitmap	vs	(28: 4)
+	bitmap	med_oact	(32: 4)
+	bitmap	o_cinfo	(36: 4)
+	unsigned	user	(44: 4)
+	bitmap	ecap	(56: 4)
+	bitmap	icap	(48: 4)
+	bitmap	pcap	(52: 4)
+}
+["demerzel:9999"]: class printk {
+	primary string	message	(0: 512)
+}
+["demerzel:9999"]: class force {
+	readonly primary signed	pid	(4: 4)
+	bitmap	code	(8: 16384)
+}
+["demerzel:9999"]: class memory {
+	readonly primary unsigned	pid	(4: 4)
+	readonly primary unsigned	address	(8: 4)
+	readonly primary unsigned	size	(12: 4)
+	readonly signed	retval	(16: 4)
+	string	data	(20: 512)
+}
+["demerzel:9999"]: event process after_exec - (0) to subject subject's event {
+}
+["demerzel:9999"]: event process capable - (1) to subject subject's event {
+	readonly bitmap	cap	(4: 4)
+}
+["demerzel:9999"]: event process create file (0) to object object's event {
+	readonly string	filename	(4: 256)
+	readonly bitmap	mode	(260: 4)
+}
+["demerzel:9999"]: event process fexec file (1) to object object's event {
+	readonly string	filename	(4: 256)
+}
+["demerzel:9999"]: event process pexec file (2) to subject subject's event {
+	readonly string	filename	(4: 256)
+}
+["demerzel:9999"]: event process fork process (3) to subject subject's event {
+	readonly unsigned	clone_flags	(4: 4)
+}
+["demerzel:9999"]: event process init process (4) to subject subject's event {
+}
+["demerzel:9999"]: event process link file (2) to object object's event {
+	readonly string	filename	(4: 256)
+	readonly string	newname	(260: 256)
+}
+["demerzel:9999"]: event process lookup file (3) to object object's event {
+	readonly string	filename	(4: 256)
+}
+["demerzel:9999"]: event process mkdir file (4) to object object's event {
+	readonly string	filename	(4: 256)
+	readonly bitmap	mode	(260: 4)
+}
+["demerzel:9999"]: event process mknod file (5) to object object's event {
+	readonly string	filename	(4: 256)
+	readonly bitmap	dev	(260: 2)
+	readonly bitmap	mode	(264: 4)
+}
+["demerzel:9999"]: event process notify_change file (6) to object object's event {
+	readonly string	filename	(4: 256)
+	readonly unsigned	valid	(260: 4)
+	bitmap	mode	(264: 2)
+	signed	uid	(268: 4)
+	signed	gid	(272: 4)
+	readonly unsigned	size	(276: 8)
+	unsigned	atime	(284: 4)
+	unsigned	mtime	(288: 4)
+	unsigned	ctime	(292: 4)
+	readonly bitmap	attr_flags	(296: 4)
+}
+["demerzel:9999"]: event process permission file (7) to object object's event {
+	readonly string	filename	(4: 256)
+	readonly unsigned	mask	(260: 4)
+}
+["demerzel:9999"]: event process rename file (8) to object object's event {
+	readonly string	filename	(4: 256)
+	readonly string	newname	(260: 256)
+}
+["demerzel:9999"]: event process rmdir file (9) to object object's event {
+	readonly string	filename	(4: 256)
+}
+["demerzel:9999"]: event process kill process (5) to subject subject's event {
+	readonly signed	signal_number	(4: 4)
+}
+["demerzel:9999"]: event process setresuid - (6) to subject subject's event {
+	readonly signed	ruid	(4: 4)
+	readonly signed	euid	(8: 4)
+	readonly signed	suid	(12: 4)
+}
+["demerzel:9999"]: event process sexec file (7) to subject subject's event {
+	readonly bitmap	ecap	(260: 4)
+	readonly bitmap	icap	(264: 4)
+	readonly bitmap	pcap	(268: 4)
+	readonly signed	uid	(272: 4)
+	readonly signed	gid	(276: 4)
+}
+["demerzel:9999"]: event process symlink file (10) to object object's event {
+	readonly string	filename	(4: 256)
+	readonly string	oldname	(260: 256)
+}
+["demerzel:9999"]: event process truncate file (11) to object object's event {
+	readonly string	filename	(4: 256)
+	readonly unsigned	length	(260: 8)
+}
+["demerzel:9999"]: event process unlink file (12) to object object's event {
+	readonly string	filename	(4: 256)
+}
+["demerzel:9999"]: event process ptrace process (8) to subject subject's event {
+}
+["demerzel:9999"]: event process syscall - (9) to subject subject's event {
+	readonly unsigned	sysnr	(4: 4)
+	unsigned	arg1	(8: 4)
+	unsigned	arg2	(12: 4)
+	unsigned	arg3	(16: 4)
+	unsigned	arg4	(20: 4)
+	unsigned	arg5	(24: 4)
+	unsigned	arg6	(28: 4)
+	unsigned	arg7	(32: 4)
+}
+["demerzel:9999"]: event process getprocess - (255) to object object's event {
+}
+["demerzel:9999"]: event file getfile file (13) to subject object's event {
+	readonly string	filename	(4: 256)
+}

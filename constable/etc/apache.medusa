@@ -1,0 +1,54 @@
+/**
+ * @file apache.medusa
+ * @short Medusa configuraton file for apache web server
+ * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * $Id: apache.medusa,v 1.6 2002/12/16 11:23:43 marek Exp $
+ */
+
+space web	= recursive "/etc/apache"
+//		+ recursive "/var/www"
+//		+ recursive "/home/.*/public_html"
+		+ recursive "/services/web"
+		+ recursive "/home/.*/web-data"
+		- recursive "/home/ftp"
+		- space home_extra
+		+ "/var/log"
+		;
+
+space web_write	= recursive "/var/log/apache"
+	//	+ recursive "/var/log/setup/apache"
+		+ "/var/run/httpd.pid"
+		+ recursive "/services/web/data"
+		;
+
+primary space apache = "domain/apache";
+
+apache		READ	pipe,daemondev,varrun,web_write,apache,
+			bin,etc,home_public,web,
+		WRITE	pipe,daemondev,varrun,web_write,apache,
+		SEE	pipe,daemondev,varrun,web_write,apache,
+			bin,etc,home_public,web
+			;
+
+/*
+all_domains ptrace * {
+	transparent alias tracer process;
+	log_proc("P' tra C', P' tra C'");
+}
+
+all_domains kill * {
+	transparent alias sender process;
+	log_proc("kyll");
+}
+*/
+
+* fexec:NOTIFY_ALLOW "/usr/sbin/httpd" {
+	enter_domain("apache");
+	log_proc("apache");
+}
+
+* fexec:NOTIFY_ALLOW "/usr/bin/httpd" {
+	enter_domain("apache");
+	log_proc("apache");
+}
+

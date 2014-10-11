@@ -1,0 +1,22 @@
+
+space cely_fs	recursive "/";
+space procesy recursive "proc";
+
+function test {
+	"/medusa/force/f_showargs.mo" ( 1 );
+}
+
+procesy exec "/bin/sync" {
+//	test();
+	log ("sync", pid, ppid, vs, vsr, vsw);
+	process ppid { log("parent",pid,vsr); enter_domain("user"); log("new",vsr); };
+	syscall = 0;
+	syscall += 202;
+	log("sync-trace",syscall);
+}
+
+function init {
+	log("Constable started.");
+//	vs = space medusa;
+}
+

@@ -1,0 +1,79 @@
+/**
+ * @file asm.popis
+ * @short Little documentation for "instructions" of runtime interpreter
+ *
+ * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * $Id: asm.popis,v 1.3 2002/10/23 10:25:43 marek Exp $
+ */
+
+hw:
+	zasobnik - dvojice [typ,data]
+			    LTI		integer
+			    LTS		string
+			    LTP		integer (pointer)
+			    LTO		struct object_s *;
+			    attr*	char *data  ak NULL, tak na zasobniku.
+
+oLTI		konst(typ integer) -> z
+oLTS		konst(typ string) -> z
+oLTP		konst(typ string) -> z
+
+oLD0		[int,0] -> z
+oLD1		[int,1] -> z
+oLDI <num>	num -> z
+oLDC <druh> <nazov>	constant -> z
+
+oDUP		[t,h] -> [t,h,t,h]
+oSTO		z[t1,h1,t2,h2]   vrch-hod pod-premenna  [t1,h1]-premenna
+oSWP		z[t1,h1,t2,h2]  -> [t2,h2,t1,h1]
+oDEL		z[t1,h1] -> []
+oDEn		[t1,h1], n, n x [t2,h2] -> [t1,h1]
+oIMM		z[t1,h1] precita hodnotu -> [t2,h2]
+
+oLDV <var>  		var.hodnota -> z ; var.typ -> z
+oLDS <var> <attr>	var.hodnota -> z ; var.typ -> z
+oATR <attr>		[t,h] - get attribute -> [t,h]
+oNEW <name>		vytvori premennu   [LTP,classname*] -> [LTP,object*]
+oALI <name>		vytvori alias 'name'. [LTS,varname] -> [LTP,object*]
+oVRL			prilinkuje premennu ako lokalnu  [LTP,object*] -> [t,h]
+oVRT			prilinkuje premennu ako transparentnu  [LTP,object*] -> [t,h]
+oTOF			typeof() [t,h] -> [LTS,name]
+oCOF			commof() [t,h] -> [LTS,name]
+oS2C			string 2 class [t,h] -> [LTP,classname*]
+oFET <name>		->[t,h] 1-ok, 0-error
+oUPD <name>		->[t,h] 1-ok, 0-error
+oSCS			[t,h] -> []  nastavi comm
+oSCD			sets default comm
+
+oARG <n>	n-ty argument(1..)  - > [t1,h1]
+
+oADD		zo z [typ1,hod1,typ2,hod2] -> [typ3,hod3]
+oSUB
+oMUL
+oDIV
+oMOD
+oSHL	<<
+oSHR	>>
+oLT oGT oLE oGE	- < > <= >=
+oEQ oNE - == !=
+oOR
+oAND
+oXOR
+
+oNOT		zo z [typ,hod] -> [typ,hod]
+oNEG
+
+oJR <relative>	skoci relativne
+oJIZ <relative>	vyberie [t,h] ak ==0 tak skoci inac pokracuje
+oJNZ <relative>	vyberie [t,h] ak !=0 tak skoci inac pokracuje
+
+oJSR <adresa>	na zasobnik da adresu nasledujucej instrukcie a skoci na adresu
+oRET		vyberie [t,h] a navratovu adresu.
+		ak nie je ukonci vykonavanie programu. 
+		ak je, na zasobnik da [t,h].
+
+oBIN <(fn*)()>
+oFRC <force_code>
+#oPRO <class> <n> <rel adresa> n*[t,h]key -> [t,h]ret
+
+

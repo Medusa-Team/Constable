@@ -1,0 +1,185 @@
+/*
+ * @file slackware_spaces.medusa
+ * @short Medusa configuration file defines spaces
+ * designed for Linux based on Slackware 8.1
+ *
+ * (c)2.7.2002 by Marek Zelem <marek@terminus.sk>
+ * 03.10.2002
+ * $Id: slackware_spaces.medusa,v 1.8 2002/12/20 11:04:20 marek Exp $
+ */
+
+/*
+
+   dev tty userdev etc bin medusa var home mailbox home_public web ftp temp
+   data
+
+ */
+
+space medusa	= recursive "/medusa"
+		+ recursive "/etc/medusa"
+		+ "/etc/constable\\.conf"
+		+ "/etc/medusa\\.conf" + "/etc/rbac\\.conf"
+		+ "/sbin/constable"
+		;
+
+space dev	= recursive "/dev"
+		;
+		
+space pipe	= recursive "/socket:"
+		+ recursive "/pipe:"
+		;
+
+space tty	= "/dev/[tp]ty.*" + recursive "/dev/pts" + "/dev/ptmx"
+		+ "/dev/console" + "/dev/vcs.*"
+		+ recursive "/dev/vc" + recursive "/dev/pty"
+		+ "/dev/tty"
+		+ space pipe
+		;
+
+space userdev	= "/dev/null","/dev/zero","/dev/random","/dev/urandom"
+		+ "/dev/stdin" + "/dev/stdout" + "/dev/stderr"
+		;
+space daemondev	= space userdev
+		+ "/dev/log"
+		+ "/dev/apm_bios"
+		+ "/dev/psaux"
+		+ "/dev/rtc"
+		+ "/dev/initctl"
+		+ "/dev"	/* syslogd try to create /dev/log ;-( */
+		;
+
+space bin_etc	= "/etc"
+		+ "/etc/fstab"
+		+ "/etc/exports"
+		+ "/etc/inittab"
+		+ "/etc/inetd\\.conf"
+		+ "/etc/lilo\\.conf"
+		+ "/etc/modules\\.conf"
+		+ "/etc/ld\\.so\\.cache" + "/etc/ld\\.so\\.conf"
+		+ "/etc/ld\\.so\\.preload"
+		+ recursive "/etc/rc\\.d"
+		+ "/proc/sys/kernel/modprobe"
+		;
+
+space daemon_r	= recursive "/etc/ssl/certs"
+		;
+space etc	= recursive "/etc", recursive "/usr/etc"
+		+ recursive "/usr/local/etc"
+		+ recursive "/root"
+		- space medusa
+		- space bin_etc
+		- space daemon_r
+		;
+space proc	= recursive "/proc"
+		- space bin_etc
+		;
+
+space bin	= recursive "/bin" + recursive "/sbin"
+		+ recursive "/lib" + recursive "/shlib"
+		+ recursive "/boot"
+		+ recursive "/usr"
+		+ recursive "/opt"
+		+ recursive "/home/ftp/bin"
+		+ recursive "/home/ftp/lib"
+		+ recursive "/home/ftp/usr"
+		+ "/"
+		+ "/var"
+		+ "/var/spool"
+		+ "/dev"
+		+ recursive "/var/lib/nfs"
+		+ space bin_etc
+		- space medusa
+		- recursive "/usr/etc"
+		- recursive "/usr/local/etc"
+		- recursive "/usr/src"
+		- recursive "/usr/local/src"
+		;
+
+space logs	= recursive "/var/log"
+		+ "/dev/log"
+		;
+
+space varrun	= recursive "/var/run"
+		;
+
+space mailbox;
+space mail_var;
+
+space var	= recursive "/var"
+		- space mailbox
+		- space mail_var
+		- recursive "/var/spool/atjobs"
+		- recursive "/var/spool/atspool"
+		- recursive "/var/spool/cron"
+		- recursive "/var/lib/nfs"
+		- recursive "/var/man"
+		- space logs
+		;
+
+space home_extra;
+
+space mailbox	= recursive "/var/spool/mail"
+		+ recursive "/home/.*/mail"
+		+ recursive "/home/.*/Mail"
+		+ recursive "/home/.*/maildir"
+		+ recursive "/home/.*/Maildir"
+		+ "/home/.*/UNSORTED_MAIL"
+		- recursive "/home/ftp"
+		- space home_extra
+		;
+
+space mail_var	= recursive "/var/spool/mqueue"
+		+ recursive "/var/spool/clientmqueue"
+		+ recursive "/var/spool/news"
+		+ recursive "/var/spool/pop"
+		;
+
+space ftp	= recursive "/home/ftp"
+		+ recursive "/home/.*/incoming"
+		+ recursive "/home/.*/Incoming"
+		- recursive "/home/ftp/bin"
+		- recursive "/home/ftp/lib"
+		- recursive "/home/ftp/usr"
+		;
+
+space home	= recursive "/home"
+		- space mailbox
+		- space ftp
+		- recursive "/home/ftp"
+		- space home_extra
+		;
+
+space user_w	= recursive "/var/spool/cron"
+		+ recursive "/var/spool/atspool"
+		+ recursive "/var/spool/atjobs"
+		;
+space sys_srcs	= recursive "/usr/src"
+		+ recursive "/usr/local/src"
+		;
+space sound_dev	= "/dev/dsp" + "/dev/dsp1"
+		+ "/dev/sndstat"
+		+ "/dev/audio" + "/dev/audio1"
+		;
+
+space home_public = "/home"
+		+ "/home/.*"			/* ??? */
+		+ "/home/.*/\\.forward"
+		+ "/home/.*/\\.mailsortrc"
+		+ "/home/.*/\\.procmailrc"
+		+ "/home/.*/\\.plan"
+		+ "/home/.*/\\.project"
+		+ "/home/.*/\\.screenrc"
+		+ "/home/.*/\\.terminfo"
+		+ recursive "/home/.*/bin"
+		+ recursive "/home/.*/Bin"
+		- recursive "/home/ftp"
+		- space home_extra
+		;
+
+space temp	= recursive "/tmp"
+		+ recursive "/var/tmp"
+		+ recursive "/usr/tmp"
+		+ recursive "/var/man"
+		+ recursive "/temp"
+		;
+

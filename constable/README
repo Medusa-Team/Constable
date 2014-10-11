@@ -1,0 +1,40 @@
+
+			Medusa Authorization Server
+				Constable
+
+RCS: $Id: README,v 1.3 2002/12/06 17:59:17 anonymous Exp $
+
+What you need:
+
+	1) Installed Medusa DS9 kernel patch.
+	2) Installed libmcompiler-1.0 or later.
+		http://terminus.sk/~marek/prog/libmcompiler.shtml (slovak language)
+		http://terminus.sk/~marek/prog/libmcompiler-1.0.tgz (C language ;-)
+
+Configuration:
+
+	Edit Makefile
+
+Compilation:
+
+	make
+
+   to compile force code objects type:
+
+	make addon
+
+Installation:
+
+	make install
+
+Help:
+
+	constable -h
+
+Documentation:
+
+	Now only in Slovak language. File Dokumentacia.
+
+ ;-) Sorry. Some usefull documentation come soon.
+
+

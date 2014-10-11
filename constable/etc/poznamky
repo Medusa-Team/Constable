@@ -1,0 +1,23 @@
+
+/* treba:
+ *	  setuid spravit lepsie .. trebars ako setresuid s troma parametrami
+ *	  luid treba inicializovat na -1 a potom s nim dobre narabat
+ *	  (cisla accesstypov)
+ *	  (devfs)
+
+	* medusa/l2/kobject_process.c: process_kobj2kern() nesmie updatovat luid, ale mal by ho asi nastavit ked sa meni uid, uid.
+	* medusa/l2/acctype_setresuid.c urvat tu pasaz okolo luidu.
+	- syscally asi nebezia..??..!!..??..
+	* medusa/l2/kobject_process.c process_kobj2kern() nastavit luid iba ak je luid==-1
+	- .. v kernel/sys.c sa set_user() vola len ked sa meni uid... to je trochu blbe na luid... zatial to fixujem v konfiguraku zmenou luidu.
+
+
+	? ako chranit constabla/forwarder, ked neviem ich pid.. mal by som to nejako zistit od kernelu.
+
+	- spravit nejaku ochranu proti zacykleniu space-ov.
+
+	- v tree_s zaviest tam no_vs[]..
+
+
+ */
+

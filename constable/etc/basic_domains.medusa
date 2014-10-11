@@ -1,0 +1,87 @@
+/**
+ * @file basic_domains.medusa
+ * @short Medusa configuraton file defining the basic useful domains
+ *
+ * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * $Id: basic_domains.medusa,v 1.8 2002/12/20 11:04:20 marek Exp $
+ */
+
+/*
+ * Domain init
+ */
+
+primary space init	= "domain/init";
+init		READ	dev,tty,userdev,bin,
+			ftp,temp,data,etc,proc,var,logs,init,
+		WRITE	dev,tty,userdev,bin,
+			ftp,temp,data,etc,proc,var,logs,init,
+		SEE	dev,tty,userdev,bin,
+			ftp,temp,data,etc,proc,var,logs,init,
+		READ	all_domains,
+		WRITE	all_domains,
+		SEE	all_domains;
+
+/*
+ * Daemons (inetd,crond,atd,apmd)
+ */
+
+primary space daemon	= "domain/daemon";
+daemon		READ	tty,daemondev,temp,var,daemon,
+			bin,etc,proc,home_public,daemon_r,
+		WRITE	tty,daemondev,temp,var,daemon,
+		SEE	tty,daemondev,temp,var,daemon,
+			bin,etc,proc,home_public,daemon_r;
+
+/*
+ * Syslogd
+ */
+
+primary space syslog	= "domain/syslog";
+syslog		READ	tty,daemondev,temp,var,syslog,logs,
+			bin,etc,proc,home_public,
+		WRITE	tty,daemondev,temp,var,syslog,logs,
+		SEE	tty,daemondev,temp,var,syslog,logs,
+			bin,etc,proc,home_public;
+
+/*
+ * All login processes
+ */
+
+primary space login	= "domain/login";
+login		READ	tty,userdev,var,home,login,logs,
+			bin,etc,proc,
+		WRITE	tty,userdev,var,home,login,logs,
+		SEE	tty,userdev,var,home,login,logs,
+			bin,etc,proc;
+space can_setuid + space login;
+/*
+ * User processes
+ */
+
+primary space user	= "domain/user";
+primary space root	= "domain/root";
+user		READ	tty,userdev,home,user_w,mailbox,temp,user,
+			bin,etc,proc,var,data,sys_srcs,
+		WRITE	tty,userdev,home,user_w,mailbox,temp,user,
+		SEE	tty,userdev,home,user_w,mailbox,temp,user,
+			bin,etc,proc,var,data,sys_srcs;
+root		READ	tty,daemondev,home,user_w,mailbox,temp,user,root,
+			bin,etc,proc,var,data,mail_var,logs,sys_srcs,ftp,
+		WRITE	tty,daemondev,home,user_w,mailbox,temp,user,root,
+			etc,proc,var,data,mail_var,sys_srcs,ftp,
+		SEE	tty,daemondev,home,user_w,mailbox,temp,user,root,
+			bin,etc,proc,var,data,mail_var,logs,sys_srcs,ftp;
+
+/* ---- transit functions --- */
+
+//* fexec:NOTIFY_ALLOW "/sbin/devfsd"		{ enter_domain("daemon"); }
+* fexec:NOTIFY_ALLOW "/usr/sbin/inetd"		{ enter_domain("daemon"); }
+* fexec:NOTIFY_ALLOW "/usr/sbin/apmd"		{ enter_domain("daemon"); }
+* fexec:NOTIFY_ALLOW "/usr/sbin/syslogd"	{ enter_domain("syslog"); }
+* fexec:NOTIFY_ALLOW "/usr/sbin/klogd"		{ enter_domain("syslog"); }
+* fexec:NOTIFY_ALLOW "/sbin/rpc.portmap"	{ enter_domain("daemon"); }
+* fexec:NOTIFY_ALLOW "/usr/sbin/lpd"		{ enter_domain("daemon"); }
+
+* fexec:NOTIFY_ALLOW "/usr/sbin/crond"		{ enter_domain("user"); }
+* fexec:NOTIFY_ALLOW "/usr/sbin/atd"		{ enter_domain("user"); }
+

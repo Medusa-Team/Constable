@@ -1,0 +1,53 @@
+/**
+ * @file file_capability.medusa
+ * @short Medusa configuraton file for using file capabitity feature
+ *
+ * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * $Id: file_capability.medusa,v 1.4 2002/12/16 11:23:43 marek Exp $
+ */
+
+/*
+ * POSIX file capabilities (modified formula):
+ *	proccess.pcap = file.pcap | (file.icap & old process.icap)
+ *	proccess.icap = --||--
+ *	proccess.ecap = ((proccess.pcap & old proccess.ecap)|file.pcap)
+ *				& file.ecap
+ *
+ * WARNING!
+ *	If you enable medusa support of POSIX file capabilities then
+ *	SUID bit on a file will not raise or drop capabilities on exec.
+ *
+ * Meaning of file capabilities:
+ *	file.pcap - enforced to process (Forced caps)		[default 0]
+ *	file.icap - allow to retain (Allowed caps)		[default all]
+ *	file.ecap - which of permited was set as effective	[default all]
+ *
+ * Example:
+ *	"/bin/ping" getfile:NOTIFY_ALLOW * { pcap=pcap+CAP_NET_RAW; }
+ */
+
+"/bin/ping"		getfile:NOTIFY_ALLOW * { pcap=pcap+CAP_NET_RAW; }
+"/usr/bin/traceroute"	getfile:NOTIFY_ALLOW * { pcap=pcap+CAP_NET_RAW; }
+
+"/bin/su"		getfile:NOTIFY_ALLOW * { pcap=pcap+CAP_SETUID+CAP_SETGID; }
+"/usr/bin/suexec"	getfile:NOTIFY_ALLOW * { pcap=pcap+CAP_SETUID+CAP_SETGID; }
+"/usr/bin/sudo"		getfile:NOTIFY_ALLOW * { pcap=pcap+CAP_SETUID+CAP_SETGID; }
+"/usr/bin/newgrp"	getfile:NOTIFY_ALLOW * { pcap=pcap+CAP_SETGID; }
+
+space passwd_utils
+		= "/usr/bin/passwd"
+		+ "/usr/bin/chfn"
+		+ "/usr/bin/chsh"
+		+ "/bin/su"
+		+ "/usr/bin/sudo"
+		+ "/usr/bin/newgrp"
+		+ "/usr/bin/gpasswd"
+		+ "/usr/bin/suexec"
+		;
+
+* fexec passwd_utils {
+	process.euid=0;
+	process.fsuid=0;
+}
+
+

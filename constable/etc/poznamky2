@@ -1,0 +1,17 @@
+. cron potrebuje...  /var/spool/cron do sveta home?
+. at potrebuje	/var/spool/atjobs
+
+. root  .READ /var/log, .WRITE /var/spool/mqueue+, 
+      .WRITE /dev/initctl, /services
+
+.     /dev/apm_bios
+.     /dev/psaux
+.     /dev/rtc
+
+     sound+
+
+.     /usr/local/src????, /usr/src??? preco to nevidim?
+.     /home/ftp ?
+
+. kazdy WRITE /dev/stdin stdout stderr
+

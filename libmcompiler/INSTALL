@@ -1,0 +1,40 @@
+
+	Libmcompiler
+	by Marek Zelem <marek@terminus.sk>
+
+RCS: $Id: INSTALL,v 1.2 2002/10/23 10:25:43 marek Exp $
+
+1. Requirement
+
+	GCC - Gnu C Compiler
+
+2. Configuration
+
+	Edit Makefile. Select destination path ( DESTDIR ), and add some
+  special options if necessary.
+
+
+3. Compilation
+
+	To compile library just type
+
+		make all
+
+4. Installation
+
+	To install library just type
+
+		make install
+
+	And don't forget run ldconfig.
+
+
+5. Problems
+
+	If any problem occur, report to marek@terminus.sk .
+
+	Compilation was tested on follows systems:
+
+		Linux/i386 libc5, glibc-2.0, glibc-2.1
+		FreeBSD/i386
+

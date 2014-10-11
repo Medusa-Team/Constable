@@ -1,0 +1,143 @@
+/**
+ * @file lib.medusa
+ * @short Library functions for Medusa configuraton files
+ *
+ * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * $Id: lib.medusa,v 1.6 2004/04/24 15:36:48 marek Exp $
+ */
+
+/*
+ * Basic tree definitions
+ */
+
+tree	"fs" clone of file by getfile getfile.filename;
+primary tree "fs";
+tree	"domain" of process;
+
+space all_domains = recursive "domain";
+space all_files	= recursive "/";
+
+space can_setuid;
+space can_be_hardlinked;
+
+/*
+ * Basic init and loging functions
+ */
+
+function log;
+
+function constable_init;
+function _init
+{
+	transparent process process;
+	process.pid=constable_pid();
+	log("_init ja som: "+_comm());
+	if( _comm() == "local" ) {
+		if( fetch process ) {
+			constable_init();
+			update process;
+		}
+		else
+			log("Can't initialize constable process");
+	}
+}
+
+function log_short
+{
+	local printk buf.message=$1 + "\n";
+	update buf;
+}
+
+function log
+{
+	local printk buf;
+	local string s.string=$1;
+	do {
+		buf.message=s.string;
+		strcut(buf.message,sizeof(buf.message)-2);
+		buf.message+="\n";
+		update buf;
+	} while( strshl(s.string,sizeof(buf.message)-2) );
+}
+
+function log_proc {
+	log ("" + $1 + " pid="+process.pid+" domain="+primaryspace(process,@"domain")
+		+" uid="+process.uid+" luid="+process.luid +" euid="+process.euid+" suid="+process.suid
+		+" pcap="+process.pcap+" icap="+process.icap+" ecap="+process.ecap
+		+" med_sact="+process.med_sact+" vs=["+spaces(process.vs)+"] vsr=["+spaces(process.vsr)+"] vsw=["+spaces(process.vsw)+"] vss=["+spaces(process.vss)+"]"
+//		+" sync-trace=["+process.syscall+"]"
+	);
+}
+
+function log_file {
+	log ("" + $1 + " inode="+file.ino+" primary="+primaryspace(file,@"fs")
+		+" uid="+file.uid+" gid="+file.gid 
+		+" pcap="+file.pcap+" icap="+file.icap+" ecap="+file.ecap
+		+" med_oact="+file.med_oact+" vs=["+spaces(file.vs)+"]"
+//		+" sync-trace=["+process.syscall+"]"
+	);
+}
+
+/*
+ * functions
+ */
+
+function enter_domain
+{
+//	log("enter domain "+$1+" pid="+pid+" uid="+uid);
+	enter(process,str2path("domain/"+$1));
+//	log_proc("entered");
+}
+
+/*
+ * Standard features
+ */
+
+/* Disable suid flag on all files */
+all_domains sexec * {
+	return(SKIP);
+}
+
+/* Execution of files outside of bin space */
+
+space etc;
+all_domains fexec:NOTIFY_ALLOW etc {
+	enter_domain("root");
+}
+
+/* Hardlinks */
+
+space bin;
+
+* link all_files {
+	if( luid==-1 || (vsw & space bin) )
+		return(OK);
+	if( (file.vs & space can_be_hardlinked) )
+		return(OK);
+	log_proc("pokus o hard link");
+	log_file("hardlink suboru");
+	return(DENY);
+}
+
+/* Setresuid */
+
+all_domains setresuid {
+	if( luid!=-1 && !(vs & space can_setuid)
+	     && ((setresuid.ruid>=0 && setresuid.ruid != process.luid) ||
+		 (setresuid.euid>=0 && setresuid.euid != process.luid) ||
+		 (setresuid.suid>=0 && setresuid.suid != process.luid)) )
+	{
+		log_proc("pokus o setresuid("+setresuid.ruid+","+setresuid.euid+","+setresuid.suid+");");
+//		if( luid==0 )	ecap=pcap;
+//		else	
+			ecap=0;
+		pcap=icap=ecap;
+		return DENY;
+	}
+//	else	log("["+pid+"] setresuid("+setresuid.ruid+","+setresuid.euid+","+setresuid.suid+");");
+
+	if( luid==-1 && setresuid.ruid==uid )	/* lebo v kerneli sa nenastavi ak sa uid nezmenil */
+		luid=uid;
+}
+
+

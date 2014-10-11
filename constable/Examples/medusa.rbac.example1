@@ -1,0 +1,22 @@
+
+rbac_admin {
+	CREATE vsetky_role;
+	CREATE vsetci_pouz;
+	ERASE vsetky_role;
+	CONTROL vsetci_pouz;
+	CONTROL vsetky_role;
+	CONTROL adm_p2;
+}
+
+user {
+	"pokus";
+	READ pokus;
+	SEE pokus;
+}
+
+spravca {
+	rbac_admin , user;
+	"marek";
+	WRITE pokus;
+}
+

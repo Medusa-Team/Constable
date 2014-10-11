@@ -1,0 +1,60 @@
+/**
+ * @file login.medusa
+ * @short Medusa configuraton file which handles user login
+ *
+ * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * $Id: login.medusa,v 1.2 2002/10/23 10:25:43 marek Exp $
+ */
+
+function login_user {
+//	log_proc("pred user");
+	if( process.luid==process.uid && process.luid==process.euid &&
+	    process.luid==process.suid )
+	{	if( process.luid==0 )
+			enter_domain("root");
+		else	enter_domain("user");
+	}
+	else	enter_domain("user");
+//	log_proc("po   user");
+}
+
+* fexec:VS_ALLOW "/bin/login" {
+	if( luid!=-1 )
+	{	log_proc("/bin/login DENY");
+		return(DENY);
+	}
+}
+* fexec:NOTIFY_ALLOW "/bin/login" 	{
+	enter_domain("login");
+	process.user|=0x01;
+}
+
+* fexec:VS_ALLOW "/usr/sbin/sshd" {
+	if( luid!=-1 )
+	{	log_proc("/usr/sbin/sshd DENY");
+		return(DENY);
+	}
+}
+* fexec:NOTIFY_ALLOW "/usr/sbin/sshd" 	{
+	enter_domain("login");
+	process.user|=0x01;
+}
+
+user fexec:NOTIFY_ALLOW "/usr/bin/screen-.*" {
+	enter_domain("login");
+	process.user|=0x01;
+	process.euid=0;
+	process.fsuid=0;
+	process.icap=process.icap+CAP_CHOWN+CAP_FOWNER+CAP_SETUID;
+	process.ecap=process.ecap+CAP_CHOWN+CAP_FOWNER+CAP_SETUID;
+}
+
+login after_exec:NOTIFY_ALLOW {
+	if( process.user & 0x01 )
+	{	process.user&=~0x01;
+		return(OK);
+	}
+	login_user();
+}
+
+

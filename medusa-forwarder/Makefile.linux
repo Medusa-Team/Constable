@@ -1,0 +1,19 @@
+# Makefile
+# $Id: Makefile.linux,v 1.2 2002/10/23 10:25:44 marek Exp $
+
+CC=gcc
+CCOPTS=-g -Wall
+
+OBJS=forwarder.o
+
+all: forwarder
+
+forwarder: $(OBJS)
+	$(CC) $(CCOPTS) -o forwarder $(OBJS)
+
+%.o: %.c
+	$(CC) $(CCOPTS) -c -o $@ $<
+
+clean:
+	rm -f forwarder $(OBJS)
+

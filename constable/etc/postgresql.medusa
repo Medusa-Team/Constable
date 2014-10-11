@@ -1,0 +1,32 @@
+/**
+ * @file postgresql.medusa
+ * @short Medusa configuraton file for PostgreSQL
+ * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * $Id: postgresql.medusa,v 1.2 2002/12/16 11:23:43 marek Exp $
+ */
+
+space pgsql_r	= recursive "/services/postgresql"
+		;
+
+space pgsql_w	= space pgsql_r
+		+ recursive "/services/postgresql/data"
+		+ "/var/log/postgresql.log"
+//		+ "/tmp/.s.PGSQL.5432.lock"
+//		+ "/tmp/.s.PGSQL.5432"
+		+ space temp
+		;
+
+primary space pgsql = "domain/pgsql";
+
+pgsql		READ	pipe,daemondev,varrun,pgsql_w,pgsql,
+			bin,pgsql_r,
+		WRITE	pipe,daemondev,varrun,pgsql_w,pgsql,
+		SEE	pipe,daemondev,varrun,pgsql_w,pgsql,
+			bin,pgsql_r
+			;
+
+* fexec:NOTIFY_ALLOW "/usr/pgsql/bin/postgres" {
+	enter_domain("pgsql");
+	log_proc("pgsql");
+}
+

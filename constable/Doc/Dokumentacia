@@ -1,0 +1,45 @@
+
+Pre blizsie pochopeneie filozofie noveho Constabla si mozete precitat
+subor Filozofia.txt . Je to vynatok zo sirsieho dokumentu (diplomovej prace).
+
+Syntax konfiguracneho jazyka:
+
+   Vytvaranie funkcii (podprogramy, ktore je mozne zavolat)
+	function <meno> { <cmd> ... }
+
+   Definovanie priestorov (space) (de facto virtualne svety)
+   Vymenovanie ciest patriacich to priestoru, oddelene ciarkou, alebo plusom.
+   Je mozne stanovit aj ktore cesty do priestoru nepatria.
+	[primary] space <meno> [recursive] "cesta" , [-] [recursive] "cesta" ... ;
+
+   Definovanie rozhodovacieho pravidla (obsluznej rutiny udalosti(event-u))
+   pre operaciu <op> medzi subjektom z priestoru <space1> a objektom z 
+   priestoru <space2>.
+	<space1> <op> [<space2>] { <cmd> ... }
+
+   Stanovenie pristupovych prav subjektom z priestoru <space1> na objekty
+   z priestorov <space2> ...
+	<space1> <acces_type> <space2> , [<acces_type>] <space3> ... ;
+
+
+function init  - vykona sa pri spusteni constabla s kontextom constabla
+
+Program (<cmd> ... )
+	ako normalne C ( + do-while-else vylepsenie by Marek Zelem ;-) )
+	Vyhodnocovanie vyrazov, operatory a priority plne kompatibilne s C
+	Navyse operator ^^ - logicky xor ( podobne ako || a && )
+	data: cisla, retazce, premenne (premenne aj proc.pid )
+	      meno_funkcie(argumenty) - zavola funkciu a vrati hodnotu
+	      vstavana_funkcia(argumenty) - ---||---
+	      "subor.mo"()	- vnuti kod zo suboru, vrati ci sa podarilo.
+	      for_process <pid> <cmd>	- pre proces s danym pidom vykona cmd
+	      	( za cmd patri ; a za for_process tiez, takze nebojte sa tam
+		  dat dve za seba )
+
+vstavana_funkcia:
+	enter_domain("domena")
+	log(argumenty)
+	constable_pid
+	      
+
+

@@ -1,0 +1,9 @@
+
+# $Id: Makefile.netbsd,v 1.2 2002/10/23 10:25:44 marek Exp $
+
+PROG=	forwarder
+
+SRCS=	forwarder.c
+
+.include <bsd.prog.mk>
+

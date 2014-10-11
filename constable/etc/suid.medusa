@@ -1,0 +1,37 @@
+/**
+ * @file suid.medusa
+ * @short Medusa configuraton file which handles SUID binaries
+ *
+ * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * $Id: suid.medusa,v 1.3 2002/12/13 16:08:39 marek Exp $
+ */
+
+/*
+ * for this allow SUID
+ */
+
+space suid	"/bin/ping"
+		+ "/usr/bin/traceroute"
+		+ "/bin/su"
+		+ "/usr/bin/suexec"
+		+ "/usr/bin/sudo"
+		+ "/usr/bin/newgrp"
+		+ "/usr/sbin/sendmail"
+		;
+
+all_domains sexec suid {
+	log("sexec enabled");
+	if( process.egid != sexec.gid )
+	{	process.egid = sexec.gid;
+		process.sgid = sexec.gid;
+		process.fsgid= sexec.gid;
+	}
+	process.ecap = sexec.ecap - CAP_SETPCAP - CAP_SYS_MODULE - CAP_SYS_RAWIO;
+	process.pcap = sexec.pcap - CAP_SETPCAP - CAP_SYS_MODULE - CAP_SYS_RAWIO;
+	process.icap = sexec.icap - CAP_SETPCAP - CAP_SYS_MODULE - CAP_SYS_RAWIO;
+	process.euid = sexec.uid;
+	process.suid = sexec.uid;
+	process.fsuid= sexec.uid;
+	return(SKIP);
+}
+
