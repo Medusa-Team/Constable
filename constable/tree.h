@@ -56,14 +56,14 @@ struct tree_s *find_path( char *path );
 int tree_is_equal( struct tree_s *test, struct tree_s *p );
 int tree_is_offspring( struct tree_s *offspring, struct tree_s *ancestor );
 
-void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, void *arg), void *arg );
+void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, int arg), int arg );
 
 int tree_expand_alternatives( void );
 
 //int path_add_vs( char *path, int recursive, int which, const vs_t *vs );
 
 char *tree_get_path( struct tree_s *t );
-void tree_print_node( struct tree_s *t, int level, void(*out)(void *arg, char *), void *arg );
+void tree_print_node( struct tree_s *t, int level, void(*out)(int arg, char *), int arg );
 
 #endif
 

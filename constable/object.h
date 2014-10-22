@@ -121,9 +121,9 @@ int object_add_vs( struct object_s *o, int n, vs_t *vs );
 int object_is_invalid( struct object_s *o );
 int object_do_sethandler( struct object_s *o );
 
-void attr_print( struct medusa_attribute_s *a, void(*out)(void *arg, char *), void *arg );
-void class_print( struct class_s *c, void(*out)(void *arg, char *), void *arg );
-void object_print( struct object_s *o, void(*out)(void *arg, char *), void *arg );
+void attr_print( struct medusa_attribute_s *a, void(*out)(int arg, char *), int arg );
+void class_print( struct class_s *c, void(*out)(int arg, char *), int arg );
+void object_print( struct object_s *o, void(*out)(int arg, char *), int arg );
 
 #endif /* _OBJECT_H */
 

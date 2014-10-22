@@ -165,7 +165,7 @@ int class_comm_init( struct comm_s *comm )
 	return(0);
 }
 
-void attr_print( struct medusa_attribute_s *a, void(*out)(void *arg, char *), void *arg )
+void attr_print( struct medusa_attribute_s *a, void(*out)(int arg, char *), int arg )
 { int i;
   static char *t[]={"END","unsigned","signed","string","bitmap"};
   char buf[32];
@@ -185,7 +185,7 @@ void attr_print( struct medusa_attribute_s *a, void(*out)(void *arg, char *), vo
 	}
 }
 
-void class_print( struct class_s *c, void(*out)(void *arg, char *), void *arg )
+void class_print( struct class_s *c, void(*out)(int arg, char *), int arg )
 {
 	out(arg,"[\"");
 	out(arg,c->comm->name);

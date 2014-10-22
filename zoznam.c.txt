@@ -1,0 +1,79 @@
+./event.c:
+  1. odkomentovane komentare
+  2. struct event_handler_s *h zakomentovane: unused
+  3. event_context_print: zmenene typy argumentov
+./object.c
+  1. u_int32_t --> uintptr_t
+  2. object_print: zmenene typy argumentov //done
+./mcp/mcp.c:
+  1. g_curr_event_name vyhodene
+  2. g_curr_subject_pid vyhodene
+  3. g_fout pridane
+  4. g_writing pridane
+  5. u_int32_t --> uintptr_t
+  6. b->want = 2*sizeof(u_int32_t) --> sizeof(uintptr_t) + sizeof(unsigned int)
+  7. u_int32_t * --> unsigned int *
+  8. b->want...
+  9. odkomentovane komentare
+  10. u_int16_t --> uint16_t
+  11. pmask, bmask
+  12. int * --> uintptr_t *
+  13. MEDUSA_COMM_FETCH_ERROR
+./mcp/conf_lang.c: unsigned long --> uintptr_t
+./language/alu.c:
+  1. signed long --> int32_t
+  2. signed long long --> int64_t
+./language/alu2.c:
+  1. pridana kniznica stdio.h
+  2. zmenene konstanty:
+     a) LEN_ALIGN
+     b) LEN_MAX
+  3. odkomentovany komentar instrukcie r_sto
+./language/constant.c: u_int32_t --> uintptr_t
+./language/cmds.c:
+  1. u_int32_t --> uintptr_t
+  2. t =(struct tree_s*)(*((uint_32_t*)(r.data))) --> *(struct tree_s**)r.data
+  3. unsigned lond --> uintptr_t
+./language/conf_lang.c:
+  1. unsigned long --> uintptr_t
+  2. konstanta 4 --> sizeof(uintptr_t)
+  3. u_int32_t --> uintptr_t
+  4. u_int32_t --> void *
+./language/execute_stack.c: u_int32_t --> uintptr_t
+./language/execute.c: 
+  1. 4 --> sizeof (void*)
+  2. u_int32_t --> uintptr_t
+  3. zapnute komentare
+./language/lex.c: unsigned long --> uintptr_t
+./tree.c: void * --> int  //done
+  !. zmenil som aj (void*) - matus
+./object_endian.c: zmeny pre prekladac
+./rbac/proc.c:
+  1. u_int32_5 --> uintptr_t
+  2. ~0 --> ~(uintptr_t)0
+./rbac/save.c: pridane kniznice string.h a stdlib.h
+./init.c:
+  1. pridana kniznica string.h //done
+  2. pridana deklaracia _rbac_init
+  3. odkomentovane komentare
+  4. void * --> int // done
+  5. sched_param schedpar zakomentovane (unused) //done
+  6. vyhodene pretypovanie int na void* //done
+./comm.c
+  1. odkomentovane komentare
+  2. pridana podpora emulacie komunikacie (subor)
+./rbacadm.c: uprav podla jana
+./force/elf.c: R_386 --> R_X86_64
+./force/force.c: 
+  1. u_int32_t --> uintptr_t
+  2. unsigned long --> uintptr_t
+./hash.c: u_int32_t --> uintptr_t
+./class.c:
+  1. pridana inicializacia c->cinfo_mask = 0
+  2. void * --> int //done
+./generic.c:
+  1. pridana kniznica stdio.h //done
+  2. struct tree_s *p zakomentovane (unused) //done
+  3. u_int32_t --> uintptr_t 
+  4. odkomentovane komentare
+  5. zakomentovane p=t (unused) //done
