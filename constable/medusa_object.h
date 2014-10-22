@@ -8,7 +8,6 @@
 #define _MEDUSA_COMM_H
 
 //#include <medusa/l3/arch.h>
-#include <stdint.h>
 
 /*
  * the following constants and structures cover the standard
@@ -60,16 +59,16 @@ struct medusa_comm_attribute_s {
 #define	MED_COMM_TYPE_PRIMARY_KEY	0x40	/* this attribute is used to lookup object */
 
 struct medusa_comm_class_s {
-	uintptr_t	classid;	/* (1,2,...): unique identifier of this class */
+	u_int32_t	classid;	/* (1,2,...): unique identifier of this class */
 	u_int16_t	size;		/* size of object */
 	char		name[MEDUSA_COMM_CLASSNAME_MAX];
 };
 
 struct medusa_comm_acctype_s {
-	uintptr_t	opid;
+	u_int32_t	opid;
 	u_int16_t	size;
 	u_int16_t	actbit;	/* 0x8000 - means subject */
-	uintptr_t	op_class[2];
+	u_int32_t	op_class[2];
 	char		name[MEDUSA_COMM_OPNAME_MAX];
 	char		op_name[2][MEDUSA_COMM_ATTRNAME_MAX];
 };
@@ -91,7 +90,7 @@ struct medusa_comm_acctype_s {
 #define	MED_TYPE_PRIMARY_KEY	MED_COMM_TYPE_PRIMARY_KEY
 
 #define MED_ATTR_END			{0,0,MED_TYPE_END,""}
-#define	MED_ATTR_x(c,attr,name,type)	{ (u_int16_t)(uintptr_t)(&(((c*)(0))->attr)), sizeof(((c*)(0))->attr), type, name }
+#define	MED_ATTR_x(c,attr,name,type)	{ (u_int16_t)(&(((c*)(0))->attr)), sizeof(((c*)(0))->attr), type, name }
 #define	MED_ATTR_UNSIGNED(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_UNSIGNED)
 #define	MED_ATTR_SIGNED(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_SIGNED)
 #define	MED_ATTR_STRING(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_STRING)

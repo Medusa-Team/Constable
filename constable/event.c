@@ -100,7 +100,7 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
 { struct event_type_s *e;
   struct event_names_s *p;
   int l;
-printf("ZZZ event_from_medusa:\n");
+//printf("ZZZ event_from_medusa:\n");
 	for(l=0;a[l].type!=MED_TYPE_END;l++);
 	l++;
 	l*=sizeof(struct medusa_attribute_s);
@@ -244,7 +244,7 @@ int register_event_handler( struct event_handler_s *h, struct event_names_s *evn
 	else if( object_vs )
 		vs_add(object_vs,l->object_vs);
 //	else	vs_clear(l->object_vs);
-printf("Zaregistrovane %p [%s]\n",l,l->evname->name);
+//printf("Zaregistrovane %p [%s]\n",l,l->type->m.name);
 	return(0);
 }
 
@@ -280,7 +280,7 @@ static int do_event_handler( struct comm_buffer_s *cb )
 	h=cb->hh->handler;
 	if( cb->do_phase==0 )
 	{
-printf("testujem handler %p [%s]\n",cb->hh,cb->hh->handler->op_name);
+//printf("testujem handler %p [%s]\n",cb->hh,cb->hh->handler->op_name);
 //		if( (cb->context.subject.class==NULL) != (vs_isclear(cb->hh->subject_vs)!=0) )
 //			return(-1);
 //		if( (cb->context.object.class==NULL) != (vs_isclear(cb->hh->object_vs)!=0) )
@@ -294,14 +294,14 @@ printf("testujem handler %p [%s]\n",cb->hh,cb->hh->handler->op_name);
 				return(-1);
 		}
 	}
-printf("HANDLER result=%d\n",cb->context.result);
+//printf("HANDLER result=%d\n",cb->context.result);
 	result=cb->context.result;
 	if( (i=h->handler(cb,h,&(cb->context)))==0 )
 	{	cb->context.result=evaluate_result(result,cb->context.result);
 		cb->context.first=0;
 	}
 	else	cb->context.result=result;
-printf("handler result=%d\n",cb->context.result);
+//printf("handler result=%d\n",cb->context.result);
 	return(i);
 }
 
@@ -322,7 +322,7 @@ static int do_handler( struct comm_buffer_s *cb )
 }
 
 static int do_event_list( struct comm_buffer_s *cb )
-{// struct event_handler_s *h; unused
+{ struct event_handler_s *h;
   struct event_context_s *c;
   struct tree_s *t;
   int i;
@@ -364,7 +364,7 @@ printf("\n");
 	if( cb->do_phase==0 || cb->do_phase==1 )
 	{	if( cb->do_phase==0 )
 			evhash_foreach_first(cb->hh,cb->event->evname->handlers_hash[cb->ehh_list]);
-printf("eeeeeeeeee cb->hh=%p\n",cb->hh);
+//printf("eeeeeeeeee cb->hh=%p\n",cb->hh);
 		for(;cb->hh!=NULL;evhash_foreach_next(cb->hh,cb->event->evname->handlers_hash[cb->ehh_list]))
 		{	if( (i=do_event_handler(cb))>0 )
 			{	cb->do_phase=1;
@@ -441,18 +441,18 @@ printf("eeeeeeeeee cb->hh=%p\n",cb->hh);
 	cb->do_phase=0;		/* len tak pre istotu */
 	if( c->first )
 	{
-printf("do_event: No event executed! [%s]\n",cb->event->m.name);
+//printf("do_event: No event executed! [%s]\n",cb->event->m.name);
 		return(-1);
 	}
-printf("ZZZ: do_event return %d\n",c->result);
+//printf("ZZZ: do_event return %d\n",c->result);
 	return(0);
 }
 
 int do_event( struct comm_buffer_s *cb )
 { int r;
-printf("ZZZ: do_event\n");
+//printf("ZZZ: do_event\n");
 	r=do_event_list(cb);
-printf("ZZZ: %d do_event_list()=%d\n",cb->ehh_list,r);
+//printf("ZZZ: %d do_event_list()=%d\n",cb->ehh_list,r);
 	if( r>0 )
 		return(r);
 	if( cb->ehh_list==EHH_VS_ALLOW )
@@ -487,7 +487,7 @@ printf("ZZZ: %d do_event_list()=%d\n",cb->ehh_list,r);
 		}
 		return(do_event_list(cb));
 	}
-printf("ZZZ: do_event: return\n");
+//printf("ZZZ: do_event: return\n");
 	return(r);
 }
 
@@ -519,7 +519,7 @@ int get_empty_context( struct event_context_s *c )
 	return(0);
 }
 
-void event_context_print( struct event_context_s *c, void(*out)(int arg, char *), int arg ) 
+void event_context_print( struct event_context_s *c, void(*out)(void *arg, char *), void *arg )
 {
 	if( c->operation.class==NULL || c->operation.class->comm==NULL )
 		out(arg,"[internal]: event ");

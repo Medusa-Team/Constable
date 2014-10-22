@@ -8,13 +8,13 @@ VERSION = 1.0
 ROOT = 
 DESTDIR = $(ROOT)/usr/local
 CC = gcc
-#CFLAGS = -Wall -O2 -fPIC
-CFLAGS = -Wall -Wextra -g -fPIC -D_GNU_SOURCE
+#CFLAGS = -Wall -O2
+CFLAGS = -Wall -ggdb
 LD = ld
 LDFLAGS =
 AR = ar
 MAKE = make
-#MAKE = gmake
+# MAKE = gmake
 ##### Edit this - END #####
 
 # Do not touch rest of the file!

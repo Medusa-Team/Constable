@@ -15,18 +15,18 @@
 #include <linux/unistd.h>
 #include <linux/errno.h>
 #include <linux/string.h>
-#include <ctype.h>
+#include <linux/ctype.h>
 #include <linux/signal.h>
 #include <linux/resource.h>
 #include <linux/times.h>
 #include <linux/utime.h>
-#include <dirent.h>
+#include <linux/dirent.h>
 #include <linux/reboot.h>
 #include <linux/kernel.h>
-//#include <linux/sys.h>
+#include <linux/sys.h>
 #include <linux/utsname.h>
 #include <linux/timex.h>
-//#include <linux/module.h>
+#include <linux/module.h>
 #include <linux/uio.h>
 #include <linux/sysctl.h>
 //#include <linux/nfsd/syscall.h>
@@ -34,11 +34,11 @@
 //#include <linux/capability.h>
 #include <asm/statfs.h>
 #include <asm/vm86.h>
-//#include <asm/ipc.h>
-//#include <asm/poll.h>
+#include <asm/ipc.h>
+#include <asm/poll.h>
 #define __KERNEL__
 #include <linux/stat.h>
-//#include <asm/string.h>
+#include <asm/string.h>
 #undef __KERNEL__
 
 /* Here is stuff we must add */

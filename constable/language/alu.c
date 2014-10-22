@@ -15,8 +15,8 @@
 #include <sys/param.h>
 
 /* !!!!!!!!!!!!!!!!!!!!!! */
-typedef	int32_t		s_int32_t;
-typedef	int64_t	s_int64_t;
+typedef	signed long		s_int32_t;
+typedef	signed long long	s_int64_t;
 
 #define TYPE_u	MED_TYPE_UNSIGNED
 #define TYPE_s	MED_TYPE_SIGNED

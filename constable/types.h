@@ -8,7 +8,6 @@
 #define _TYPES_H
 
 #include <sys/types.h>
-#include <stdint.h>
 
 typedef struct { char bitmap[8]; } event_mask_t;
 

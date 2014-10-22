@@ -185,10 +185,10 @@ static lextab_t rules_comment_line[]={
 	{NULL,END,0}
 };
 
-static void gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
-static void gen_lex_str( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
-static void gen_lex_num( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
-static void gen_lex_ip( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
+static void gen_lex_ident( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
+static void gen_lex_str( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
+static void gen_lex_num( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
+static void gen_lex_ip( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
 
 static lexstattab_t mcp_lex_tab[]={
 	{LS_start,operators,rules_start,NULL,NULL},
@@ -206,17 +206,17 @@ static lexstattab_t mcp_lex_tab[]={
 static int mcp_error( const char *fmt, ... );
 static int mcp_warning( const char *fmt, ... );
 
-static void gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
-{	*sym=T_id; *data=(uintptr_t)strdup(buf);	}
-static void gen_lex_str( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
-{	*sym=T_str; *data=(uintptr_t)strdup(buf);	}
-static void gen_lex_num( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
-{	*sym=T_num; *data=(uintptr_t)strtol(buf,NULL,0);
+static void gen_lex_ident( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+{	*sym=T_id; *data=(unsigned long)strdup(buf);	}
+static void gen_lex_str( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+{	*sym=T_str; *data=(unsigned long)strdup(buf);	}
+static void gen_lex_num( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+{	*sym=T_num; *data=(unsigned long)strtol(buf,NULL,0);
 	if( errno==ERANGE ) { mcp_error("Constant out of range"); }
 }
-static void gen_lex_ip( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
+static void gen_lex_ip( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
 {	*sym=T_ip;
-	*data=(uintptr_t)inet_addr(buf);
+	*data=(unsigned long)inet_addr(buf);
 }
 
 static compiler_class_t *mcp_compiler;

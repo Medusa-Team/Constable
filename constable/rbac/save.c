@@ -10,8 +10,6 @@
 #include "../space.h"
 #include "../language/language.h"
 #include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
 
 static char *at2str( int a )
 { lextab_t *l=keywords;

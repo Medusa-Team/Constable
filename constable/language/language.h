@@ -157,9 +157,9 @@ extern lextab_t keywords[];
 extern lextab_t *keywords2;
 extern lexstattab_t lex_tab[];
 
-uintptr_t lex_getkeyword( char *keyword, sym_t sym );
-int lex_updatekeyword( char *keyword, sym_t sym, uintptr_t data );
-int lex_addkeyword( char *keyword, sym_t sym, uintptr_t data );
+unsigned long lex_getkeyword( char *keyword, sym_t sym );
+int lex_updatekeyword( char *keyword, sym_t sym, unsigned long data );
+int lex_addkeyword( char *keyword, sym_t sym, unsigned long data );
 
 extern struct compiler_err_class s_error;
 

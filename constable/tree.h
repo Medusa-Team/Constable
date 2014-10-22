@@ -63,7 +63,7 @@ int tree_expand_alternatives( void );
 //int path_add_vs( char *path, int recursive, int which, const vs_t *vs );
 
 char *tree_get_path( struct tree_s *t );
-void tree_print_node( struct tree_s *t, int level, void(*out)(int arg, char *), int arg );
+void tree_print_node( struct tree_s *t, int level, void(*out)(void *arg, char *), void *arg );
 
 #endif
 

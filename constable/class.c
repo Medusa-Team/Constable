@@ -54,7 +54,6 @@ struct class_s *add_class( struct comm_s *comm, struct medusa_class_s *mc, struc
 	l=sizeof(struct class_s)+i*sizeof(struct medusa_attribute_s);
 	if( (c=malloc(l))==NULL )
 		return(NULL);
-	c->cinfo_mask = 0;
 	c->m=*mc;
 	memcpy(c->attr,a,i*sizeof(struct medusa_attribute_s));
 
@@ -166,7 +165,7 @@ int class_comm_init( struct comm_s *comm )
 	return(0);
 }
 
-void attr_print( struct medusa_attribute_s *a, void(*out)(int arg, char *), int arg ) 
+void attr_print( struct medusa_attribute_s *a, void(*out)(void *arg, char *), void *arg )
 { int i;
   static char *t[]={"END","unsigned","signed","string","bitmap"};
   char buf[32];
@@ -186,7 +185,7 @@ void attr_print( struct medusa_attribute_s *a, void(*out)(int arg, char *), int 
 	}
 }
 
-void class_print( struct class_s *c, void(*out)(int arg, char *), int arg ) 
+void class_print( struct class_s *c, void(*out)(void *arg, char *), void *arg )
 {
 	out(arg,"[\"");
 	out(arg,c->comm->name);

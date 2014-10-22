@@ -1,0 +1,1455 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.5.4	//
+ADDON	Makefile	/^ADDON = Mlibc$/;"	m
+ALL_OBJ	event.h	87;"	d
+AR	Makefile	/^		LD="$(LD)" AR="$(AR)" MAKE="$(MAKE)" ; done$/;"	m
+AR	Makefile	/^AR = ar$/;"	m
+ARGC	force/dloader.S	/^ARGC		= 0x14$/;"	d
+ARGC	force/dloader_old.S	/^ARGC		= 0x14$/;"	d
+ARGET	Makefile	/^	$(MAKE) addon TARGET=clean$/;"	m
+ARGET	Makefile	/^	$(MAKE) addon TARGET=mrproper$/;"	m
+ARGET	Makefile	/^	$(MAKE) modules TARGET=clean$/;"	m
+ARGET	Makefile	/^	$(MAKE) modules TARGET=module.o$/;"	m
+ARGET	Makefile	/^	$(MAKE) modules TARGET=mrproper$/;"	m
+ARGV	force/dloader.S	/^ARGV		= 0x18$/;"	d
+ARGV	force/dloader_old.S	/^ARGV		= 0x18$/;"	d
+AS	Mlibc/Makefile	/^AS= as$/;"	m
+ASOPTS	Mlibc/Makefile	/^ASOPTS=$/;"	m
+ATO	Mlibc/mlibc.c	45;"	d	file:
+AT_CONTROL	access_types.h	19;"	d
+AT_CREATE	access_types.h	16;"	d
+AT_ENTER	access_types.h	18;"	d
+AT_ERASE	access_types.h	17;"	d
+AT_MEMBER	access_types.h	12;"	d
+AT_RECEIVE	access_types.h	13;"	d
+AT_SEE	access_types.h	15;"	d
+AT_SEND	access_types.h	14;"	d
+AV_MAX	force/force.c	24;"	d	file:
+BINDIR	Makefile	/^BINDIR = $(DESTDIR)\/bin$/;"	m
+BN	comm_buf.c	13;"	d	file:
+BUILDIN_FUNC	force/force.c	/^static BUILDIN_FUNC(cmd_force_code)$/;"	f	file:
+BUILDIN_FUNC	force/force.c	/^static BUILDIN_FUNC(cmd_force_code_old)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_comm)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_constable_pid)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_enter)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_hex)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_nameof)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_object)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_operation)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_primaryspace)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_sizeof)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_spaces)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_str2path)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_strcut)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_strshl)$/;"	f	file:
+BUILDIN_FUNC	language/cmds.c	/^static BUILDIN_FUNC(cmd_subject)$/;"	f	file:
+BUILDIN_FUNC	language/execute.h	55;"	d
+C1	language/language.c	11;"	d	file:
+C2	language/language.c	12;"	d	file:
+C3	language/language.c	13;"	d	file:
+C4	language/language.c	14;"	d	file:
+C5	language/language.c	15;"	d	file:
+C6	language/language.c	16;"	d	file:
+C7	language/language.c	17;"	d	file:
+CC	Makefile	/^		CC="$(CC)" CFLAGS="$(CFLAGS)" \\$/;"	m
+CC	Makefile	/^CC = gcc$/;"	m
+CC	Mlibc/Makefile	/^CC= gcc$/;"	m
+CCOPTS	Mlibc/Makefile	/^CCOPTS= -Wall -O2$/;"	m
+CFLAGS	Makefile	/^		CC="$(CC)" CFLAGS="$(CFLAGS)" \\$/;"	m
+CFLAGS	Makefile	/^CFLAGS = -Wall -ggdb -DRBAC -DDEBUG_TRACE -I`pwd`\/..\/libmcompiler\/$/;"	m
+CINFO	object.h	96;"	d
+CMD	language/language.h	141;"	d
+CMDS	language/language.h	142;"	d
+CNE	language/language.c	19;"	d	file:
+CP	Makefile	/^CP = cp$/;"	m
+CR	language/language.c	20;"	d	file:
+Cw	language/language.c	18;"	d	file:
+DESTDIR	Makefile	/^DESTDIR = $(PREFIX)$/;"	m
+DREL_TAB	force/dloader.S	/^DREL_TAB	= 0x0C$/;"	d
+DREL_TAB	force/dloader_old.S	/^DREL_TAB	= 0x0C$/;"	d
+DT_POS_MAX	event.h	65;"	d
+DT_POS_MAX	event.h	67;"	d
+EHH_LISTS	event.h	49;"	d
+EHH_NOTIFY_ALLOW	event.h	47;"	d
+EHH_NOTIFY_DENY	event.h	48;"	d
+EHH_VS_ALLOW	event.h	45;"	d
+EHH_VS_DENY	event.h	46;"	d
+E_BADMACHINE	force/elf.h	20;"	d
+E_BADSECTION	force/elf.h	23;"	d
+E_BADTYPE	force/elf.h	22;"	d
+E_BADVERSION	force/elf.h	21;"	d
+E_IMPOSIBLE	force/linker.h	29;"	d
+E_MODEXIST	force/linker.h	24;"	d
+E_MODINUSE	force/linker.h	27;"	d
+E_MODSYMUSED	force/linker.h	26;"	d
+E_MODUNINIT	force/linker.h	25;"	d
+E_NOINIT	force/linker.h	22;"	d
+E_NOMOD	force/linker.h	23;"	d
+E_NOTELF	force/elf.h	19;"	d
+E_OTHER	force/elf.h	24;"	d
+E_UNDEF	force/linker.h	21;"	d
+F_OBJS	Mlibc/Makefile	/^F_OBJS = f_exit.mo f_getpeername.mo f_secure_unlink.mo f_showargs.mo f_test.mo f_test2.mo$/;"	m
+GFL_FROM_OBJECT	generic.h	35;"	d
+GFL_USE_VSE	generic.h	34;"	d
+INT_MAX	Mlibc/mlibc.h	46;"	d
+INT_MIN	Mlibc/mlibc.h	47;"	d
+LARGE	Mlibc/mlibc.c	111;"	d	file:
+LD	Makefile	/^		LD="$(LD)" AR="$(AR)" MAKE="$(MAKE)" ; done$/;"	m
+LD	Makefile	/^LD = ld$/;"	m
+LDFLAGS	Makefile	/^LDFLAGS = ..\/libmcompiler\/libmcompiler.a$/;"	m
+LDOPTS	Mlibc/Makefile	/^LDOPTS=$/;"	m
+LEFT	Mlibc/mlibc.c	109;"	d	file:
+LEN_ALIGN	language/alu2.c	45;"	d	file:
+LEN_MAX	language/alu2.c	46;"	d	file:
+LONG_MAX	Mlibc/mlibc.h	49;"	d
+LONG_MIN	Mlibc/mlibc.h	50;"	d
+LS_arg	language/lex.c	/^	LS_arg,$/;"	e	file:
+LS_char	language/lex.c	/^	LS_char,$/;"	e	file:
+LS_comment	language/lex.c	/^	LS_comment,$/;"	e	file:
+LS_comment	mcp/conf_lang.c	/^	LS_comment,$/;"	e	file:
+LS_comment2	language/lex.c	/^	LS_comment2,$/;"	e	file:
+LS_comment2	mcp/conf_lang.c	/^	LS_comment2,$/;"	e	file:
+LS_comment_line	language/lex.c	/^	LS_comment_line,$/;"	e	file:
+LS_comment_line	mcp/conf_lang.c	/^	LS_comment_line,$/;"	e	file:
+LS_et	language/lex.c	/^	LS_et,$/;"	e	file:
+LS_et2	language/lex.c	/^	LS_et2,$/;"	e	file:
+LS_ident	language/lex.c	/^	LS_ident,$/;"	e	file:
+LS_ident	mcp/conf_lang.c	/^	LS_ident,$/;"	e	file:
+LS_ip	mcp/conf_lang.c	/^	LS_ip,$/;"	e	file:
+LS_num	language/lex.c	/^	LS_num,$/;"	e	file:
+LS_num	mcp/conf_lang.c	/^	LS_num,$/;"	e	file:
+LS_numip	mcp/conf_lang.c	/^	LS_numip,$/;"	e	file:
+LS_start	language/lex.c	/^	LS_start=LS|1,$/;"	e	file:
+LS_start	mcp/conf_lang.c	/^	LS_start=LS|1,$/;"	e	file:
+LS_str	mcp/conf_lang.c	/^	LS_str,$/;"	e	file:
+LS_string	language/lex.c	/^	LS_string,$/;"	e	file:
+LTI	language/execute.c	32;"	d	file:
+LTO	language/execute.c	35;"	d	file:
+LTP	language/execute.c	34;"	d	file:
+LTREE_EXCLUDE	space.h	21;"	d
+LTREE_RECURSIVE	space.h	27;"	d
+LTREE_T_MASK	space.h	22;"	d
+LTREE_T_NSPACE	space.h	26;"	d
+LTREE_T_NTREE	space.h	24;"	d
+LTREE_T_SPACE	space.h	25;"	d
+LTREE_T_TREE	space.h	23;"	d
+LTS	language/execute.c	33;"	d	file:
+LTa	language/execute.c	36;"	d	file:
+MAIN	force/dloader.S	/^MAIN		= 0x04$/;"	d
+MAIN	force/dloader_old.S	/^MAIN		= 0x04$/;"	d
+MAKE	Makefile	/^		LD="$(LD)" AR="$(AR)" MAKE="$(MAKE)" ; done$/;"	m
+MAKE	Makefile	/^MAKE = make$/;"	m
+MAXINT	Mlibc/mlibc.h	54;"	d
+MAXLONG	Mlibc/mlibc.h	55;"	d
+MAX_REG_SIZE	language/execute.h	15;"	d
+MAX_SPACE_PATH	space.c	15;"	d	file:
+MAX_VS_BITS	vs.h	12;"	d
+MEDUSA_ATTRNAME_MAX	medusa_object.h	77;"	d
+MEDUSA_CLASSNAME_MAX	medusa_object.h	78;"	d
+MEDUSA_COMM_ACCTYPEDEF	medusa_object.h	35;"	d
+MEDUSA_COMM_ACCTYPEUNDEF	medusa_object.h	36;"	d
+MEDUSA_COMM_ATTRNAME_MAX	medusa_object.h	24;"	d
+MEDUSA_COMM_AUTHANSWER	medusa_object.h	31;"	d
+MEDUSA_COMM_AUTHREQUEST	medusa_object.h	30;"	d
+MEDUSA_COMM_CLASSDEF	medusa_object.h	33;"	d
+MEDUSA_COMM_CLASSNAME_MAX	medusa_object.h	25;"	d
+MEDUSA_COMM_CLASSUNDEF	medusa_object.h	34;"	d
+MEDUSA_COMM_FETCH_ANSWER	medusa_object.h	39;"	d
+MEDUSA_COMM_FETCH_ERROR	medusa_object.h	40;"	d
+MEDUSA_COMM_FETCH_REQUEST	medusa_object.h	38;"	d
+MEDUSA_COMM_OPNAME_MAX	medusa_object.h	26;"	d
+MEDUSA_COMM_UPDATE_ANSWER	medusa_object.h	43;"	d
+MEDUSA_COMM_UPDATE_REQUEST	medusa_object.h	42;"	d
+MEDUSA_COMM_VERSION	medusa_object.h	22;"	d
+MEDUSA_INITNAME	init.c	23;"	d	file:
+MEDUSA_OPNAME_MAX	medusa_object.h	79;"	d
+MED_ATTR_BITMAP	medusa_object.h	97;"	d
+MED_ATTR_END	medusa_object.h	92;"	d
+MED_ATTR_SIGNED	medusa_object.h	95;"	d
+MED_ATTR_STRING	medusa_object.h	96;"	d
+MED_ATTR_UNSIGNED	medusa_object.h	94;"	d
+MED_ATTR_x	medusa_object.h	93;"	d
+MED_COMM_TYPE_BITMAP	medusa_object.h	56;"	d
+MED_COMM_TYPE_END	medusa_object.h	52;"	d
+MED_COMM_TYPE_PRIMARY_KEY	medusa_object.h	59;"	d
+MED_COMM_TYPE_READ_ONLY	medusa_object.h	58;"	d
+MED_COMM_TYPE_SIGNED	medusa_object.h	54;"	d
+MED_COMM_TYPE_STRING	medusa_object.h	55;"	d
+MED_COMM_TYPE_UNSIGNED	medusa_object.h	53;"	d
+MED_TYPE_BITMAP	medusa_object.h	87;"	d
+MED_TYPE_END	medusa_object.h	83;"	d
+MED_TYPE_PRIMARY_KEY	medusa_object.h	90;"	d
+MED_TYPE_READ_ONLY	medusa_object.h	89;"	d
+MED_TYPE_SIGNED	medusa_object.h	85;"	d
+MED_TYPE_STRING	medusa_object.h	86;"	d
+MED_TYPE_UNSIGNED	medusa_object.h	84;"	d
+MININT	Mlibc/mlibc.h	52;"	d
+MINLONG	Mlibc/mlibc.h	53;"	d
+MLIBC_OBJS	Mlibc/Makefile	/^MLIBC_OBJS = mlibc.o$/;"	m
+MODULES	Makefile	/^MODULES = language mcp rbac force$/;"	m
+NR_ACCESS_TYPES	access_types.h	10;"	d
+NULL	types.h	15;"	d
+OBJECTS	Makefile	/^OBJECTS = vs.o tree.o space.o class.o object.o object_endian.o event.o \\$/;"	m
+OBJECTS	force/Makefile	/^OBJECTS = elf.o linker.o force.o dloader.o dloader_old.o$/;"	m
+OBJECTS	language/Makefile	/^OBJECTS = conf_lang.o language.o expression.o data.o variables.o lex.o \\$/;"	m
+OBJECTS	mcp/Makefile	/^OBJECTS = mcp.o conf_lang.o$/;"	m
+OBJECTS	rbac/Makefile	/^OBJECTS = users.o roles.o load.o save.o adm.o adm_perm.o kobjects.o proc.o$/;"	m
+OBJECT_FLAG_CHENDIAN	object.h	81;"	d
+OBJECT_FLAG_LOCAL	object.h	80;"	d
+OPbb	language/alu.c	27;"	d	file:
+OPbx	language/alu.c	/^OPbx(add,s,setbit)$/;"	f
+OPbx	language/alu.c	51;"	d	file:
+OPci	language/alu.c	305;"	d	file:
+OPi	language/alu.c	71;"	d	file:
+Out_of_memory	language/error.c	/^char *Out_of_memory="Out of memory";$/;"	v
+PCINFO	object.h	95;"	d
+PLUS	Mlibc/mlibc.c	107;"	d	file:
+PREFIX	Makefile	/^PREFIX = $/;"	m
+PU32_COMM_BUF_TEMP	comm.h	101;"	d
+P_COMM_BUF_TEMP	comm.h	100;"	d
+Paccess	language/conf_lang.h	24;"	d
+Paddpath	language/conf_lang.h	11;"	d
+Paddvs	language/conf_lang.h	25;"	d
+Pallspaces	language/conf_lang.h	26;"	d
+Pbind	mcp/conf_lang.c	/^	Pbind,$/;"	e	file:
+Pchdir	mcp/conf_lang.c	/^	Pchdir,$/;"	e	file:
+Pcommbind	mcp/conf_lang.c	/^	Pcommbind,$/;"	e	file:
+Pcommfile	mcp/conf_lang.c	/^	Pcommfile,$/;"	e	file:
+Pconfig	mcp/conf_lang.c	/^	Pconfig,$/;"	e	file:
+Pehh_list	language/conf_lang.h	36;"	d
+Pfindspa2	language/conf_lang.h	19;"	d
+Pfindspace	language/conf_lang.h	18;"	d
+Pfuncdec	language/conf_lang.h	28;"	d
+Pfuncend	language/conf_lang.h	27;"	d
+Pid2class	language/language.h	147;"	d
+Pip	mcp/conf_lang.c	/^	Pip,$/;"	e	file:
+Pmask	mcp/conf_lang.c	/^	Pmask,$/;"	e	file:
+Pmaskfull	mcp/conf_lang.c	/^	Pmaskfull,$/;"	e	file:
+Pmasknum	mcp/conf_lang.c	/^	Pmasknum,$/;"	e	file:
+Pmodfile	mcp/conf_lang.c	/^	Pmodfile,$/;"	e	file:
+Pmodule	mcp/conf_lang.c	/^	Pmodule,$/;"	e	file:
+Pname	mcp/conf_lang.c	/^	Pname = PO|0x0000,$/;"	e	file:
+Pnullpath	language/conf_lang.h	34;"	d
+Pobject	language/conf_lang.h	21;"	d
+Pport	mcp/conf_lang.c	/^	Pport,$/;"	e	file:
+Pport0	mcp/conf_lang.c	/^	Pport0,$/;"	e	file:
+Pprogstart	language/conf_lang.h	22;"	d
+Ppspace	language/conf_lang.h	10;"	d
+Pptexcl	language/conf_lang.h	16;"	d
+Pptnull	language/conf_lang.h	12;"	d
+Pptpath	language/conf_lang.h	13;"	d
+Pptrecur	language/conf_lang.h	15;"	d
+Pptree	language/conf_lang.h	37;"	d
+Pptspace	language/conf_lang.h	14;"	d
+Preg	language/conf_lang.h	23;"	d
+Psetclass	language/conf_lang.h	31;"	d
+Psetpath	language/conf_lang.h	35;"	d
+Psgvs	language/conf_lang.h	38;"	d
+Pspace	language/conf_lang.h	9;"	d
+Pstr2path	language/conf_lang.h	33;"	d
+Psubject	language/conf_lang.h	20;"	d
+Psystem	mcp/conf_lang.c	/^	Psystem,$/;"	e	file:
+Ptreeflags	language/conf_lang.h	30;"	d
+Ptreereg	language/conf_lang.h	32;"	d
+Ptreetype	language/conf_lang.h	29;"	d
+R1	rbac/load.c	45;"	d	file:
+R2	rbac/load.c	46;"	d	file:
+R21	rbac/load.c	47;"	d	file:
+R22	rbac/load.c	48;"	d	file:
+R23	rbac/load.c	49;"	d	file:
+RESERVED	force/dloader.S	/^RESERVED	= 0x1C$/;"	d
+RESERVED	force/dloader_old.S	/^RESERVED	= 0x1C$/;"	d
+RESULT_ALLOW	event.h	115;"	d
+RESULT_DENY	event.h	116;"	d
+RESULT_OK	event.h	118;"	d
+RESULT_RETRY	event.h	119;"	d
+RESULT_SKIP	event.h	117;"	d
+RESULT_UNKNOWN	event.h	114;"	d
+ROPb	language/alu.c	125;"	d	file:
+ROPc	language/alu.c	146;"	d	file:
+ROPi	language/alu.c	98;"	d	file:
+R_pop	language/execute.c	/^void R_pop( struct execute_s *e, struct register_s *r )$/;"	f
+R_push	language/execute.c	/^void R_push( struct execute_s *e, struct register_s *r )$/;"	f
+S	force/elf.c	25;"	d	file:
+S1	mcp/conf_lang.c	/^	S1,$/;"	e	file:
+S1m	mcp/conf_lang.c	/^	S1m,$/;"	e	file:
+S1n	mcp/conf_lang.c	/^	S1n,$/;"	e	file:
+S1p	mcp/conf_lang.c	/^	S1p,$/;"	e	file:
+S2	language/conf_lang.c	29;"	d	file:
+S3	language/conf_lang.c	31;"	d	file:
+S4	language/conf_lang.c	34;"	d	file:
+S5	language/conf_lang.c	35;"	d	file:
+S6	language/conf_lang.c	36;"	d	file:
+SA	language/conf_lang.c	32;"	d	file:
+SA	language/data.c	26;"	d	file:
+SD	force/linker.h	37;"	d
+SE	force/elf.c	26;"	d	file:
+SE	force/linker.h	39;"	d
+SF	force/linker.h	36;"	d
+SGT	language/conf_lang.c	33;"	d	file:
+SIGN	Mlibc/mlibc.c	106;"	d	file:
+SLEV	language/conf_lang.c	38;"	d	file:
+SM	mcp/conf_lang.c	/^	SM,$/;"	e	file:
+SOBJ	language/conf_lang.c	30;"	d	file:
+SPACE	Mlibc/mlibc.c	108;"	d	file:
+SPATH	language/conf_lang.c	37;"	d	file:
+SPECIAL	Mlibc/mlibc.c	110;"	d	file:
+SPRIMARY	language/conf_lang.c	28;"	d	file:
+SPSP	language/conf_lang.c	40;"	d	file:
+SRET0	language/language.h	140;"	d
+SS1	language/data.c	25;"	d	file:
+SSP	language/conf_lang.c	39;"	d	file:
+STACKLEN	language/execute_stack.c	15;"	d	file:
+STARGET	language/conf_lang.c	24;"	d	file:
+STARGET1	language/conf_lang.c	25;"	d	file:
+STARGET2	language/conf_lang.c	26;"	d	file:
+STARGET3	language/conf_lang.c	27;"	d	file:
+START	force/dloader.S	/^START		= 0x08$/;"	d
+START	force/dloader_old.S	/^START		= 0x08$/;"	d
+START	language/language.h	139;"	d
+START	mcp/conf_lang.c	/^	START = N|0x0000,$/;"	e	file:
+SV10	language/expression.c	28;"	d	file:
+SV10d	language/expression.c	29;"	d	file:
+SV11	language/expression.c	30;"	d	file:
+SV11d	language/expression.c	31;"	d	file:
+SV11e	language/expression.c	32;"	d	file:
+SV12	language/expression.c	33;"	d	file:
+SV12d	language/expression.c	34;"	d	file:
+SV13	language/expression.c	35;"	d	file:
+SV13d	language/expression.c	36;"	d	file:
+SV13e	language/expression.c	37;"	d	file:
+SV14	language/expression.c	38;"	d	file:
+SV14d	language/expression.c	39;"	d	file:
+SV15	language/expression.c	40;"	d	file:
+SV15d	language/expression.c	41;"	d	file:
+SV1a	language/data.c	17;"	d	file:
+SV1a	language/expression.c	11;"	d	file:
+SV2	language/data.c	18;"	d	file:
+SV2	language/expression.c	12;"	d	file:
+SV2a	language/expression.c	13;"	d	file:
+SV3	language/data.c	19;"	d	file:
+SV3	language/expression.c	14;"	d	file:
+SV3d	language/expression.c	15;"	d	file:
+SV4	language/data.c	20;"	d	file:
+SV4	language/expression.c	16;"	d	file:
+SV4d	language/expression.c	17;"	d	file:
+SV5	language/data.c	21;"	d	file:
+SV5	language/expression.c	18;"	d	file:
+SV5d	language/expression.c	19;"	d	file:
+SV6	language/data.c	22;"	d	file:
+SV6	language/expression.c	20;"	d	file:
+SV6d	language/expression.c	21;"	d	file:
+SV7	language/data.c	23;"	d	file:
+SV7	language/expression.c	22;"	d	file:
+SV7d	language/expression.c	23;"	d	file:
+SV8	language/data.c	24;"	d	file:
+SV8	language/expression.c	24;"	d	file:
+SV8d	language/expression.c	25;"	d	file:
+SV9	language/expression.c	26;"	d	file:
+SV9d	language/expression.c	27;"	d	file:
+S_exp	language/language.h	144;"	d
+S_exp2	language/language.h	145;"	d
+S_exp2d	language/expression.c	42;"	d	file:
+S_val	language/language.h	143;"	d
+TOTAL_LEN	force/dloader.S	/^TOTAL_LEN	= 0x10$/;"	d
+TOTAL_LEN	force/dloader_old.S	/^TOTAL_LEN	= 0x10$/;"	d
+TYPE_b	language/alu.c	23;"	d	file:
+TYPE_s	language/alu.c	22;"	d	file:
+TYPE_u	language/alu.c	21;"	d	file:
+T_arg	language/language.h	/^	T_arg,$/;"	e
+T_id	language/language.h	/^	T_id,			\/* <identifikator> *\/$/;"	e
+T_id	mcp/conf_lang.c	/^	T_id = T|100,$/;"	e	file:
+T_ip	mcp/conf_lang.c	/^	T_ip,$/;"	e	file:
+T_num	language/language.h	/^	T_num,$/;"	e
+T_num	mcp/conf_lang.c	/^	T_num,$/;"	e	file:
+T_path	language/language.h	/^	T_path,$/;"	e
+T_str	language/language.h	/^	T_str,$/;"	e
+T_str	mcp/conf_lang.c	/^	T_str,$/;"	e	file:
+Taccess	language/language.h	/^	Taccess,		\/* <access type> *\/$/;"	e
+Talias	language/language.h	/^	Talias,			\/* alias *\/$/;"	e
+Tand	language/language.h	/^	Tand,			\/* && *\/$/;"	e
+Tbreak	language/language.h	/^	Tbreak,			\/* break *\/$/;"	e
+Tbuildin	language/language.h	/^	Tbuildin,		\/* buildin *\/$/;"	e
+Tby	language/language.h	/^	Tby,			\/* by *\/$/;"	e
+Tcallfunc	language/language.h	/^	Tcallfunc,		\/* callfunc *\/$/;"	e
+Tcase	language/language.h	/^	Tcase,			\/* case *\/$/;"	e
+Tchdir	mcp/conf_lang.c	/^	Tchdir,		\/* chdir *\/$/;"	e	file:
+Tcommof	language/language.h	/^	Tcommof,		\/* commof *\/$/;"	e
+Tconfig	mcp/conf_lang.c	/^	Tconfig,	\/* config *\/$/;"	e	file:
+Tcontinue	language/language.h	/^	Tcontinue,		\/* continue *\/$/;"	e
+Tdefault	language/language.h	/^	Tdefault,		\/* default *\/$/;"	e
+Tdo	language/language.h	/^	Tdo,			\/* do *\/$/;"	e
+Tehhlist	language/language.h	/^	Tehhlist,		\/* <ehh_list> *\/$/;"	e
+Telse	language/language.h	/^	Telse,			\/* else *\/$/;"	e
+Teq	language/language.h	/^	Teq,			\/* == *\/$/;"	e
+Tfetch	language/language.h	/^	Tfetch,			\/* fetch *\/$/;"	e
+Tfile	mcp/conf_lang.c	/^	Tfile,		\/* file *\/$/;"	e	file:
+Tfor	language/language.h	/^	Tfor,			\/* for *\/$/;"	e
+Tfunction	language/language.h	/^	Tfunction,		\/* function *\/$/;"	e
+Tge	language/language.h	/^	Tge,			\/* >= *\/$/;"	e
+Tgoto	language/language.h	/^	Tgoto,			\/* goto *\/$/;"	e
+Tif	language/language.h	/^	Tif,			\/* if *\/$/;"	e
+Tle	language/language.h	/^	Tle,			\/* <= *\/$/;"	e
+Tlocal	language/language.h	/^	Tlocal,			\/* local *\/$/;"	e
+Tmm	language/language.h	/^	Tmm,			\/* -- *\/$/;"	e
+Tmodule	mcp/conf_lang.c	/^	Tmodule,	\/* module *\/$/;"	e	file:
+Tne	language/language.h	/^	Tne,			\/* != *\/$/;"	e
+Tof	language/language.h	/^	Tof,			\/* of *\/$/;"	e
+Tor	language/language.h	/^	Tor,			\/* || *\/$/;"	e
+Tpp	language/language.h	/^	Tpp = T|0x100,		\/* ++ *\/$/;"	e
+Tprimary	language/language.h	/^	Tprimary,		\/* primary *\/$/;"	e
+Trecursive	language/language.h	/^	Trecursive,		\/* recursive *\/$/;"	e
+Treturn	language/language.h	/^	Treturn,		\/* return *\/$/;"	e
+TshiftL	language/language.h	/^	TshiftL,		\/* << *\/$/;"	e
+TshiftR	language/language.h	/^	TshiftR,		\/* >> *\/$/;"	e
+Tspace	language/language.h	/^	Tspace,			\/* space *\/$/;"	e
+Tswitch	language/language.h	/^	Tswitch,		\/* switch *\/$/;"	e
+Tsystem	mcp/conf_lang.c	/^	Tsystem,	\/* system *\/$/;"	e	file:
+Ttcp	mcp/conf_lang.c	/^	Ttcp,		\/* tcp *\/$/;"	e	file:
+Ttransparent	language/language.h	/^	Ttransparent,		\/* transparent *\/$/;"	e
+Ttree	language/language.h	/^	Ttree,			\/* tree *\/$/;"	e
+Ttypeof	language/language.h	/^	Ttypeof,		\/* typeof *\/$/;"	e
+Tupdate	language/language.h	/^	Tupdate,		\/* update *\/$/;"	e
+Twhile	language/language.h	/^	Twhile,			\/* while *\/$/;"	e
+Txor	language/language.h	/^	Txor,			\/* ^^ *\/$/;"	e
+UINT_MAX	Mlibc/mlibc.h	48;"	d
+ULONG_MAX	Mlibc/mlibc.h	51;"	d
+USER_MAX_ROLES	rbac/rbac.h	21;"	d
+VALIDATE_ROLES	rbac/rbac.h	98;"	d
+VERSION	force/dloader.S	/^VERSION		= 0x00$/;"	d
+VERSION	force/dloader_old.S	/^VERSION		= 0x00$/;"	d
+ZEROPAD	Mlibc/mlibc.c	105;"	d	file:
+_ACCESS_TYPES_H	access_types.h	8;"	d
+_AS	language/language.h	15;"	d
+_COMM_H	comm.h	8;"	d
+_CONSTABLE_H	constable.h	8;"	d
+_ELF_H	force/elf.h	10;"	d
+_ERROR_H	language/error.h	10;"	d
+_EVENT_H	event.h	8;"	d
+_EXECUTE_H	language/execute.h	10;"	d
+_GENERIC_H	generic.h	8;"	d
+_HASH_H	hash.h	8;"	d
+_INIT_H	init.h	8;"	d
+_LANGUAGE_H	language/language.h	10;"	d
+_LOOSE_KERNEL_NAMES	Mlibc/mlibc.h	9;"	d
+_MCP_H	mcp/mcp.h	10;"	d
+_MEDUSA_COMM_H	medusa_object.h	8;"	d
+_MODULES_H	force/linker.h	10;"	d
+_OBJECT_H	object.h	8;"	d
+_RBAC_H	rbac/rbac.h	10;"	d
+_TARGET_H	space.h	8;"	d
+_TREE_H	tree.h	8;"	d
+_TYPES_H	types.h	8;"	d
+_VARIABLES_H	language/variables.h	10;"	d
+_VS_H	vs.h	8;"	d
+__GLIBC__	Mlibc/mlibc.h	13;"	d
+__GLIBC__	Mlibc/mlibc.h	273;"	d
+__KERNEL__	Mlibc/mlibc.h	39;"	d
+__KERNEL__	Mlibc/mlibc.h	42;"	d
+__NR_rbac_adm	rbacadm.c	13;"	d	file:
+__NR_setup	Mlibc/mlibc.c	385;"	d	file:
+_add_event_handlers	tree.c	/^static void _add_event_handlers( struct event_hadler_hash_s **from, struct event_hadler_hash_s **to )$/;"	f	file:
+_ctype	Mlibc/mlibc.c	/^unsigned char _ctype[] = {$/;"	v
+_n	comm.h	/^	int			_n;	\/* position in buffers[] *\/$/;"	m	struct:comm_buffer_s
+_rbac_init	rbac/kobjects.c	/^int _rbac_init( void )$/;"	f
+access	rbac/rbac.h	/^	int access;$/;"	m	struct:perm_s
+access	rbac/rbac.h	/^	int access[8];$/;"	m	struct:permission_assignment_s
+access_names	access_types.c	/^char *access_names[NR_ACCESS_TYPES]={$/;"	v
+actbit	medusa_object.h	/^	u_int16_t	actbit;	\/* 0x8000 - means subject *\/$/;"	m	struct:medusa_comm_acctype_s
+activate_module	init.c	/^struct module_s *activate_module( char *name )$/;"	f
+active_modules	init.c	/^static struct module_s *active_modules=NULL;$/;"	v	file:
+add_class	class.c	/^struct class_s *add_class( struct comm_s *comm, struct medusa_class_s *mc, struct medusa_attribute_s *a )$/;"	f
+add_drel	force/linker.c	/^static int add_drel(modules_t * m, int pos)$/;"	f	file:
+add_module	init.c	/^int add_module( struct module_s *module )$/;"	f
+addend	force/linker.h	/^	long addend;$/;"	m	struct:s_modrel
+addr	Mlibc/mlibc.h	/^	unsigned long addr;$/;"	m	struct:mmap_arg_struct
+addr	force/linker.h	/^	void *addr;$/;"	m
+align16	force/linker.c	/^static int align16(int len)$/;"	f	file:
+alloc_var	language/variables.c	/^struct object_s *alloc_var( char *name, struct medusa_attribute_s *attr, struct class_s * class )$/;"	f
+allow_ip	mcp/mcp.c	/^	in_addr_t	allow_ip;$/;"	m	struct:mcp_comm_s	file:
+allow_mask	mcp/mcp.c	/^	in_addr_t	allow_mask;$/;"	m	struct:mcp_comm_s	file:
+allow_port	mcp/mcp.c	/^	in_port_t	allow_port;$/;"	m	struct:mcp_comm_s	file:
+alt	tree.h	/^	struct tree_s	*alt;		\/* alternative *\/$/;"	m	struct:tree_s
+answer	comm.h	/^	int(*answer)(struct comm_s*,struct comm_buffer_s*,int);$/;"	m	struct:comm_s
+arg	space.c	/^	void *arg;$/;"	m	struct:space_for_one_path_s	file:
+argc	force/linker.h	/^\/*+14*\/	u32 argc;$/;"	m	struct:fctab_s
+argv	force/linker.h	/^\/*+18*\/	u32 argv;		\/* dloader relocate this *\/$/;"	m	struct:fctab_s
+at2str	rbac/save.c	/^static char *at2str( int a )$/;"	f	file:
+attr	language/execute.h	/^	struct medusa_attribute_s *attr;$/;"	m	struct:register_s
+attr	object.h	/^	struct medusa_attribute_s	attr[0];$/;"	m	struct:class_s
+attr	object.h	/^	struct medusa_attribute_s attr;$/;"	m	struct:object_s
+attr_print	class.c	/^void attr_print( struct medusa_attribute_s *a, void(*out)(void *arg, char *), void *arg )$/;"	f
+attr_uid	rbac/proc.c	/^	struct medusa_attribute_s **attr_uid;$/;"	m	struct:proc_class_handler_s	file:
+base	force/elf.h	/^	void *base;$/;"	m
+base	language/execute.h	/^	int	base;$/;"	m	struct:execute_s
+bitmap	types.h	/^typedef struct { char bitmap[8]; } event_mask_t;$/;"	m
+buf	comm.h	/^	char			buf[0]; 	\/* for comm *\/$/;"	m	struct:comm_buffer_s
+buf	comm.h	/^	struct comm_buffer_s *buf;$/;"	m	struct:comm_s
+buf	language/execute.h	/^	char buf[MAX_REG_SIZE];$/;"	m	struct:register_s
+buffers	comm_buf.c	/^static struct comm_buffer_s *buffers[2];$/;"	v	file:
+buildin_t	language/execute.h	/^typedef int(*buildin_t)( struct execute_s *e, struct register_s *ret, int(*getarg)(struct execute_s *,struct register_s*) );$/;"	t
+byte_reorder_acctype	object_endian.c	/^void byte_reorder_acctype( int flags, struct medusa_acctype_s *a )$/;"	f
+byte_reorder_attrs	object_endian.c	/^void byte_reorder_attrs( int flags, struct medusa_attribute_s *a )$/;"	f
+byte_reorder_class	object_endian.c	/^void byte_reorder_class( int flags, struct medusa_class_s *c )$/;"	f
+byte_reorder_get_int16	object.h	108;"	d
+byte_reorder_get_int32	object.h	106;"	d
+byte_reorder_put_int16	object.h	109;"	d
+byte_reorder_put_int32	object.h	107;"	d
+c	language/execute.h	/^	struct event_context_s *c;$/;"	m	struct:execute_s
+call_buf	force/linker.c	/^void call_buf(char *buf)$/;"	f
+canf_lang_out	language/conf_lang.c	/^void canf_lang_out( struct compiler_out_class *o, sym_t s, unsigned long d )$/;"	f
+canf_lang_out	mcp/conf_lang.c	/^static void canf_lang_out( struct compiler_out_class *o, sym_t s, unsigned long d )$/;"	f	file:
+cb	event.h	/^	struct comm_buffer_s *cb;	\/* ??? asi zbytocne ??? *\/$/;"	m	struct:event_context_s
+ch	comm.h	/^	struct class_handler_s	*ch;$/;"	m	struct:comm_buffer_s
+ch	rbac/proc.c	/^	struct class_handler_s ch;$/;"	m	struct:proc_class_handler_s	file:
+child	tree.h	/^	struct tree_s	*child;		\/* normalny potomkovia *\/$/;"	m	struct:tree_s
+child_type	tree.h	/^	struct tree_type_s *child_type;$/;"	m	struct:tree_type_s
+cinfo	rbac/rbac.h	/^	struct tree_s *cinfo;$/;"	m	struct:perm_s
+cinfo	rbac/rbac.h	/^	struct tree_s *cinfo;$/;"	m	struct:user_s
+cinfo_mask	object.h	/^			u_int32_t	cinfo_mask;$/;"	m	struct:class_s::<anonymous>
+cinfo_mask	object.h	/^	u_int32_t			cinfo_mask;$/;"	m	struct:class_s
+cinfo_offset	object.h	/^			u_int16_t	cinfo_offset;$/;"	m	struct:class_s::<anonymous>
+cinfo_offset	object.h	/^	int		*cinfo_offset;$/;"	m	struct:class_handler_s
+cinfo_offset	object.h	/^	u_int16_t			cinfo_offset;$/;"	m	struct:class_s
+cinfo_size	object.h	/^			u_int16_t	cinfo_size;	\/* v 32 bit slovach *\/$/;"	m	struct:class_s::<anonymous>
+cinfo_size	object.h	/^	u_int16_t			cinfo_size;	\/* v 32 bit slovach *\/$/;"	m	struct:class_s
+cinfo_sub	rbac/rbac.h	/^	struct tree_s *cinfo_sub;$/;"	m	struct:role_s
+cinfo_sup	rbac/rbac.h	/^	struct tree_s *cinfo_sup;$/;"	m	struct:role_s
+class_add_handler	class.c	/^int class_add_handler( struct class_names_s *c, struct class_handler_s *handler )$/;"	f
+class_alloc_object_cinfo	class.c	/^int class_alloc_object_cinfo( struct class_s *c )$/;"	f
+class_alloc_subject_cinfo	class.c	/^int class_alloc_subject_cinfo( struct class_s *c )$/;"	f
+class_comm_init	class.c	/^int class_comm_init( struct comm_s *comm )$/;"	f
+class_free_all_clases	class.c	/^int class_free_all_clases( struct comm_s *comm )$/;"	f
+class_handler	generic.h	/^	struct class_handler_s *class_handler;$/;"	m	struct:g_event_handler_s
+class_handler	object.h	/^	struct class_handler_s	*class_handler;$/;"	m	struct:class_names_s
+class_handler	tree.h	/^	struct class_handler_s *class_handler;$/;"	m	struct:tree_type_s
+class_handler_s	object.h	/^struct class_handler_s {$/;"	s
+class_names_s	object.h	/^struct class_names_s {$/;"	s
+class_print	class.c	/^void class_print( struct class_s *c, void(*out)(void *arg, char *), void *arg )$/;"	f
+class_s	object.h	/^struct class_s {$/;"	s
+classes	class.c	/^static struct class_names_s *classes=NULL;$/;"	v	file:
+classes	comm.h	/^	struct hash_s	classes;$/;"	m	struct:comm_s
+classes	object.h	/^	struct class_s		**classes;$/;"	m	struct:class_names_s
+classid	medusa_object.h	/^	u_int32_t	classid;	\/* (1,2,...): unique identifier of this class *\/$/;"	m	struct:medusa_comm_class_s
+classname	object.h	/^	struct class_names_s		*classname;$/;"	m	struct:class_s
+classname	object.h	/^	struct class_names_s	*classname;$/;"	m	struct:class_handler_s
+close	comm.h	/^	int(*close)(struct comm_s*);$/;"	m	struct:comm_s
+cmds_init	language/cmds.c	/^int cmds_init( void )$/;"	f
+code	force/force.c	/^	struct fctab_s *code;$/;"	m	struct:fcs_s	file:
+comm	comm.h	/^	struct comm_s		*comm;$/;"	m	struct:comm_buffer_s
+comm	language/execute.h	/^	struct comm_s	*comm;$/;"	m	struct:execute_s
+comm	object.h	/^	struct comm_s			*comm;$/;"	m	struct:class_s
+comm_alloc_buf_temp	comm.c	/^int comm_alloc_buf_temp( int size )$/;"	f
+comm_buf_free	comm_buf.c	/^static void comm_buf_free( struct comm_buffer_s *b )$/;"	f	file:
+comm_buf_from_queue	comm_buf.c	/^struct comm_buffer_s *comm_buf_from_queue( struct comm_buffer_queue_s *q )$/;"	f
+comm_buf_get	comm_buf.c	/^struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )$/;"	f
+comm_buf_get_todo	comm.h	96;"	d
+comm_buf_init	comm_buf.c	/^int comm_buf_init( void )$/;"	f
+comm_buf_init2	comm_buf.c	/^int comm_buf_init2( void )$/;"	f
+comm_buf_resize	comm_buf.c	/^struct comm_buffer_s *comm_buf_resize( struct comm_buffer_s *b, int size )$/;"	f
+comm_buf_temp_offset	object.h	/^	int		comm_buf_temp_offset;$/;"	m	struct:class_handler_s
+comm_buf_to_queue	comm_buf.c	/^int comm_buf_to_queue( struct comm_buffer_queue_s *q, struct comm_buffer_s *b )$/;"	f
+comm_buf_todo	comm.h	95;"	d
+comm_buffer_queue_s	comm.h	/^struct comm_buffer_queue_s {$/;"	s
+comm_buffer_s	comm.h	/^struct comm_buffer_s {$/;"	s
+comm_conn_init	comm.c	/^int comm_conn_init( struct comm_s *comm )$/;"	f
+comm_do	comm.c	/^int comm_do( void )$/;"	f
+comm_error	comm.c	/^int comm_error( const char *fmt, ... )$/;"	f
+comm_find	comm.c	/^struct comm_s *comm_find( char *name )$/;"	f
+comm_info	comm.c	/^int comm_info( const char *fmt, ... )$/;"	f
+comm_malloc_temps	comm.c	/^static struct comm_buffer_s *comm_malloc_temps( struct comm_buffer_s * b )$/;"	f	file:
+comm_new	comm.c	/^struct comm_s *comm_new( char *name, int user_size )$/;"	f
+comm_new_array	comm.c	/^void *comm_new_array( int size )$/;"	f
+comm_nr_connections	comm.c	/^int comm_nr_connections=0;$/;"	v
+comm_s	comm.h	/^struct comm_s {$/;"	s
+comm_temp_size	comm.c	/^static int comm_temp_size=0;$/;"	v	file:
+comm_todo	comm_buf.c	/^struct comm_buffer_queue_s comm_todo;$/;"	v
+comm_user_data	comm.h	84;"	d
+completed	comm.h	/^	int(*completed)(struct comm_buffer_s*);	\/* for comm *\/$/;"	m	struct:comm_buffer_s
+conf_error	comm.h	/^	int(*conf_error)(struct comm_s *,const char *fmt,...);$/;"	m	struct:comm_s
+conf_lang	language/conf_lang.c	/^struct compile_tab_s conf_lang[]={$/;"	v
+conf_lang_param_out	language/conf_lang.c	/^void conf_lang_param_out( struct compiler_class *c, sym_t s )$/;"	f
+conn	comm.h	/^	int		conn;		\/* connection number *\/$/;"	m	struct:comm_s
+conn	obsoleted/zal_space.c	/^	int conn;$/;"	m	struct:tree_add_event_mask_do_s	file:
+conn	space.c	/^	int conn;$/;"	m	struct:tree_add_event_mask_do_s	file:
+constable_init	Examples/include/std.h	/^function constable_init;$/;"	v
+cont	language/execute.h	/^	int	cont;$/;"	m	struct:execute_s
+context	comm.h	/^	struct event_context_s	context;$/;"	m	struct:comm_buffer_s
+create_comm	init.h	/^	int(*create_comm)( struct module_s * );$/;"	m	struct:module_s
+create_one	tree.c	/^static struct tree_s *create_one( struct tree_s *base, char **name )$/;"	f	file:
+create_one_i	tree.c	/^static struct tree_s *create_one_i( struct tree_s *base, char *name, int regexp )$/;"	f	file:
+create_path	tree.c	/^struct tree_s *create_path( char *path )$/;"	f
+data	event.h	/^	char			data[0];$/;"	m	struct:event_handler_s
+data	language/execute.h	/^	char *data;$/;"	m	struct:register_s
+data	object.h	/^	char	*data;$/;"	m	struct:object_s
+data_alias_var	language/variables.c	/^struct object_s *data_alias_var( char *name, struct object_s *o )$/;"	f
+data_find_var	language/execute.c	/^static struct object_s *data_find_var( struct execute_s *e, char *name )$/;"	f	file:
+debug_def_arg	init.c	/^void *debug_def_arg=NULL;$/;"	v
+debug_def_out	init.c	/^void(*debug_def_out)( void *arg, char *str )=NULL;$/;"	v
+debug_do_arg	init.c	/^void *debug_do_arg=NULL;$/;"	v
+debug_do_out	init.c	/^void(*debug_do_out)( void *arg, char *str )=NULL;$/;"	v
+debug_fd_write	init.c	/^static void debug_fd_write( void *arg, char *s )$/;"	f	file:
+def_attr_integer	language/types.c	/^static struct medusa_attribute_s def_attr_integer[]={$/;"	v	file:
+def_attr_string	language/types.c	/^static struct medusa_attribute_s def_attr_string[]={$/;"	v	file:
+def_class_integer	language/types.c	/^static struct medusa_class_s def_class_integer={$/;"	v	file:
+def_class_string	language/types.c	/^static struct medusa_class_s def_class_string={$/;"	v	file:
+default_path	tree.c	/^static char *default_path=NULL;$/;"	v	file:
+dloader	force/dloader.S	/^dloader:$/;"	l
+dloader	force/zzz.dloader.c	/^char dloader[] =$/;"	v
+dloader_init	force/zzz.dloader.c	/^void dloader_init(void)$/;"	f
+dloader_old	force/dloader_old.S	/^dloader_old:$/;"	l
+dloader_old_size	force/dloader_old.S	/^dloader_old_size:$/;"	l
+dloader_size	force/dloader.S	/^dloader_size:$/;"	l
+do_bin_op	language/alu.c	/^void do_bin_op( int op, struct register_s *v, struct register_s *d )$/;"	f
+do_div	Mlibc/mlibc.c	113;"	d	file:
+do_event	event.c	/^int do_event( struct comm_buffer_s *cb )$/;"	f
+do_event_handler	event.c	/^static int do_event_handler( struct comm_buffer_s *cb )$/;"	f	file:
+do_event_list	event.c	/^static int do_event_list( struct comm_buffer_s *cb )$/;"	f	file:
+do_handler	event.c	/^static int do_handler( struct comm_buffer_s *cb )$/;"	f	file:
+do_phase	comm.h	/^	int			do_phase;$/;"	m	struct:comm_buffer_s
+drel_len	force/linker.h	/^	int drel_len;$/;"	m	struct:s_modules_t
+drel_tab	force/linker.h	/^	u32 *drel_tab;		\/* free *\/$/;"	m	struct:s_modules_t
+drel_tab	force/linker.h	/^\/*+0c*\/	u32 drel_tab;		\/* reloc. table  (dloader relocate this) *\/$/;"	m	struct:fctab_s
+ehh_list	comm.h	/^	int			ehh_list;$/;"	m	struct:comm_buffer_s
+elf_close	force/elf.c	/^int elf_close(elf_t * elf)$/;"	f
+elf_errno	force/elf.c	/^int elf_errno;$/;"	v
+elf_for_each_section	force/elf.h	42;"	d
+elf_map_section	force/elf.c	/^void *elf_map_section(elf_t * elf, int section, elfmap_t * map, int prot)$/;"	f
+elf_open	force/elf.c	/^elf_t *elf_open(const char *filename)$/;"	f
+elf_read_section	force/elf.c	/^void *elf_read_section(elf_t * elf, int section)$/;"	f
+elf_sect	force/elf.h	45;"	d
+elf_t	force/elf.h	/^} elf_t;$/;"	t
+elf_test	force/elf.c	/^int elf_test(elf_t * elf)$/;"	f
+elf_unmap	force/elf.c	/^int elf_unmap(elfmap_t * map)$/;"	f
+elfmap_t	force/elf.h	/^} elfmap_t;$/;"	t
+enter_tree_node	object.h	/^	int(*enter_tree_node)(struct class_handler_s *,struct comm_s *,struct object_s *,struct tree_s *);$/;"	m	struct:class_handler_s
+err_destroy	language/error.c	/^static void err_destroy( struct compiler_err_class *this )$/;"	f	file:
+err_destroy	mcp/conf_lang.c	/^static void err_destroy( struct compiler_err_class *this )$/;"	f	file:
+err_error	language/error.c	/^static sym_t err_error( struct compiler_err_class *this, sym_t errsym, sym_t info )$/;"	f	file:
+err_error	mcp/conf_lang.c	/^static sym_t err_error( struct compiler_err_class *this, sym_t errsym, sym_t info )$/;"	f	file:
+err_warning	language/error.c	/^static sym_t err_warning( struct compiler_err_class *this, sym_t errsym, sym_t info )$/;"	f	file:
+err_warning	mcp/conf_lang.c	/^static sym_t err_warning( struct compiler_err_class *this, sym_t errsym, sym_t info )$/;"	f	file:
+errno	Mlibc/mlibc.c	/^static int errno = 0;$/;"	v	file:
+error	language/error.c	/^int error( const char *fmt, ... )$/;"	f
+errstr	language/error.c	/^char *errstr=NULL;$/;"	v
+evaluate_result	event.c	/^int evaluate_result( int old, int new )$/;"	f
+event	comm.h	/^	struct event_type_s	*event;$/;"	m	struct:comm_buffer_s
+event	tree.h	/^	event_mask_t	event[2];$/;"	m	struct:tree_event_s
+event_context_print	event.c	/^void event_context_print( struct event_context_s *c, void(*out)(void *arg, char *), void *arg )$/;"	f
+event_context_s	event.h	/^struct event_context_s {$/;"	s
+event_free_all_events	event.c	/^int event_free_all_events( struct comm_s *comm )$/;"	f
+event_hadler_hash_s	event.h	/^struct event_hadler_hash_s {$/;"	s
+event_handler_s	event.h	/^struct event_handler_s {$/;"	s
+event_mask_and	event.c	/^int event_mask_and( event_mask_t *e, event_mask_t *f )$/;"	f
+event_mask_clear	event.c	/^int event_mask_clear( event_mask_t *e )$/;"	f
+event_mask_clear2	event.c	/^int event_mask_clear2( event_mask_t *e )$/;"	f
+event_mask_clrbit	event.c	/^int event_mask_clrbit( event_mask_t *e, int b )$/;"	f
+event_mask_copy	event.c	/^int event_mask_copy( event_mask_t *e, event_mask_t *f )$/;"	f
+event_mask_copy2	event.c	/^int event_mask_copy2( event_mask_t *e, event_mask_t *f )$/;"	f
+event_mask_or	event.c	/^int event_mask_or( event_mask_t *e, event_mask_t *f )$/;"	f
+event_mask_or2	event.c	/^int event_mask_or2( event_mask_t *e, event_mask_t *f )$/;"	f
+event_mask_setbit	event.c	/^int event_mask_setbit( event_mask_t *e, int b )$/;"	f
+event_mask_sub	event.c	/^int event_mask_sub( event_mask_t *e, event_mask_t *f )$/;"	f
+event_mask_t	types.h	/^typedef struct { char bitmap[8]; } event_mask_t;$/;"	t
+event_names_s	event.h	/^struct event_names_s {$/;"	s
+event_offset	object.h	/^			u_int16_t	event_offset;$/;"	m	struct:class_s::<anonymous>
+event_offset	object.h	/^	u_int16_t			event_offset;$/;"	m	struct:class_s
+event_size	object.h	/^			u_int16_t	event_size;	\/* v bajtoch *\/$/;"	m	struct:class_s::<anonymous>
+event_size	object.h	/^	u_int16_t			event_size;	\/* v bajtoch *\/$/;"	m	struct:class_s
+event_type_add	event.c	/^struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_s *m, struct medusa_attribute_s *a )$/;"	f
+event_type_find_name	event.c	/^struct event_names_s *event_type_find_name( char *name )$/;"	f
+event_type_s	event.h	/^struct event_type_s {$/;"	s
+events	comm.h	/^	struct hash_s	events;$/;"	m	struct:comm_s
+events	event.c	/^static struct event_names_s *events;$/;"	v	file:
+events	event.h	/^	struct event_type_s	**events;$/;"	m	struct:event_names_s
+events	tree.h	/^	struct tree_event_s	*events;$/;"	m	struct:tree_s
+evhash_add	event.c	/^struct event_hadler_hash_s *evhash_add( struct event_hadler_hash_s **hash, struct event_handler_s *handler, struct event_names_s *evname )$/;"	f
+evhash_foreach	event.h	98;"	d
+evhash_foreach_first	event.h	99;"	d
+evhash_foreach_next	event.h	100;"	d
+evname	event.h	/^	struct event_names_s		*evname;$/;"	m	struct:event_hadler_hash_s
+evname	event.h	/^	struct event_names_s	*evname;$/;"	m	struct:event_type_s
+exec_str	force/linker.c	/^int exec_str(struct fctab_s *fc, int argc, int *argv)$/;"	f
+execute	comm.h	/^	struct execute_s	*execute;$/;"	m	struct:comm_s
+execute_alloc_execute	language/execute_stack.c	/^struct execute_s *execute_alloc_execute( void )$/;"	f
+execute_attr_int	language/execute.c	/^struct medusa_attribute_s execute_attr_int={ 0,4,MED_TYPE_SIGNED|MED_TYPE_READ_ONLY,"" };$/;"	v
+execute_attr_pointer	language/execute.c	/^struct medusa_attribute_s execute_attr_pointer={ 0,4,MED_TYPE_UNSIGNED|MED_TYPE_READ_ONLY,"" };$/;"	v
+execute_attr_str	language/execute.c	/^struct medusa_attribute_s execute_attr_str={ 0,MAX_REG_SIZE,MED_TYPE_STRING|MED_TYPE_READ_ONLY,"" };$/;"	v
+execute_get_last_attr	language/execute.c	/^struct medusa_attribute_s *execute_get_last_attr( void )$/;"	f
+execute_get_last_data	language/execute.c	/^char *execute_get_last_data( void )$/;"	f
+execute_get_stack	language/execute_stack.c	/^struct stack_s *execute_get_stack( void )$/;"	f
+execute_handler	language/execute.c	/^int execute_handler( struct comm_buffer_s *comm_buff, struct event_handler_s *h, struct event_context_s *c )$/;"	f
+execute_handler_do	language/execute.c	/^static int execute_handler_do( struct execute_s *e )$/;"	f	file:
+execute_init	language/execute.c	/^int execute_init( int n )$/;"	f
+execute_init_stacks	language/execute_stack.c	/^int execute_init_stacks( int n )$/;"	f
+execute_pop	language/execute_stack.c	/^u_int32_t execute_pop( struct execute_s *e )$/;"	f
+execute_push	language/execute_stack.c	/^void execute_push( struct execute_s *e, u_int32_t data )$/;"	f
+execute_put_stack	language/execute_stack.c	/^void execute_put_stack( struct stack_s *stack )$/;"	f
+execute_readstack	language/execute_stack.c	/^u_int32_t execute_readstack( struct execute_s *e, int pos )$/;"	f
+execute_s	language/execute.h	/^struct execute_s {$/;"	s
+execute_stack_pointer	language/execute_stack.c	/^u_int32_t *execute_stack_pointer( struct execute_s *e, int pos )$/;"	f
+exp_sym	force/linker.c	104;"	d	file:
+expression	language/expression.c	/^struct compile_tab_s expression[]={$/;"	v
+extra	tree.h	/^	void		*extra;		\/* precompiled regexp... *\/$/;"	m	struct:tree_s
+fatal	constable.c	/^int fatal( const char *fmt, ... )$/;"	f
+fcs_s	force/force.c	/^struct fcs_s {$/;"	s	file:
+fcs_tab	force/force.c	/^static struct fcs_s *fcs_tab = NULL;$/;"	v	file:
+fctab_s	force/linker.h	/^struct fctab_s {	\/* also defined in dloader.S *\/$/;"	s
+fd	Mlibc/mlibc.h	/^	unsigned long fd;$/;"	m	struct:mmap_arg_struct
+fd	comm.h	/^	int		fd;$/;"	m	struct:comm_s
+fd	force/elf.h	/^	int fd;			\/* filedes. of elf file *\/$/;"	m
+fdprintf	Mlibc/mlibc.c	/^void fdprintf(int fd, const char *format, ...)$/;"	f
+fepf_t	obsoleted/zal_space.c	/^typedef void(*fepf_t)(struct tree_s *t, int recursive, void *arg);$/;"	t	file:
+fepf_t	space.c	/^typedef void(*fepf_t)(struct tree_s *t, void *arg);$/;"	t	file:
+fetch_object	comm.h	/^	int(*fetch_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);$/;"	m	struct:comm_s
+file_rotate	rbac/save.c	/^static void file_rotate( char *filename, int limit )$/;"	f	file:
+filename	init.h	/^	char *filename;$/;"	m	struct:module_s
+find_one	tree.c	/^struct tree_s *find_one( struct tree_s *base, char *name )$/;"	f
+find_one2	tree.c	/^static struct tree_s *find_one2( struct tree_s *base, char **name )$/;"	f	file:
+find_path	tree.c	/^struct tree_s *find_path( char *path )$/;"	f
+first	comm.h	/^	struct comm_buffer_s	*first;$/;"	m	struct:comm_buffer_queue_s
+first	event.h	/^	int		first;$/;"	m	struct:event_context_s
+first_comm	comm.c	/^static struct comm_s *first_comm=NULL;$/;"	v	file:
+first_module	init.c	/^static struct module_s *first_module=NULL;$/;"	v	file:
+flag	rbac/rbac.h	/^	int flag;			\/* for rbac_save *\/$/;"	m	struct:role_s
+flags	Mlibc/mlibc.h	/^	unsigned long flags;$/;"	m	struct:mmap_arg_struct
+flags	comm.h	/^	int		flags;$/;"	m	struct:comm_s
+flags	language/execute.h	/^	int flags;$/;"	m	struct:register_s
+flags	object.h	/^	int		flags;$/;"	m	struct:class_handler_s
+flags	object.h	/^	int	flags;$/;"	m	struct:object_s
+fn_getargsval	language/execute.c	/^static int fn_getargsval( struct execute_s *e, struct register_s *r, int i )$/;"	f	file:
+fn_getsval	language/execute.c	/^static int fn_getsval( struct execute_s *e, struct register_s *r )$/;"	f	file:
+fn_getsval_p	language/execute.h	/^	int	fn_getsval_p;$/;"	m	struct:execute_s
+force_init	force/force.c	/^int force_init(void)$/;"	f
+free	comm.h	/^	void(*free)(struct comm_buffer_s*);$/;"	m	struct:comm_buffer_s
+free_modules_t	force/linker.c	/^static void free_modules_t(modules_t * m)$/;"	f	file:
+free_stack	language/execute_stack.c	/^static struct stack_s *free_stack=NULL;$/;"	v	file:
+free_var	language/variables.c	/^struct object_s *free_var( struct object_s *v )$/;"	f
+free_vars	language/variables.c	/^void free_vars( struct object_s **v )$/;"	f
+func	space.c	/^	void(*func)(struct tree_s *t, void *arg);$/;"	m	struct:space_for_one_path_s	file:
+function_debug	language/conf_lang.c	/^struct event_handler_s *function_debug=NULL;$/;"	v
+function_init	language/conf_lang.c	/^struct event_handler_s *function_init=NULL;$/;"	v
+g_event_handler_s	generic.h	/^struct g_event_handler_s {$/;"	s
+gen_lex_arg	language/lex.c	/^static void gen_lex_arg( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )$/;"	f	file:
+gen_lex_char	language/lex.c	/^static void gen_lex_char( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )$/;"	f	file:
+gen_lex_et	language/lex.c	/^static void gen_lex_et( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )$/;"	f	file:
+gen_lex_ident	language/lex.c	/^static void gen_lex_ident( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )$/;"	f	file:
+gen_lex_ident	mcp/conf_lang.c	/^static void gen_lex_ident( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )$/;"	f	file:
+gen_lex_ip	mcp/conf_lang.c	/^static void gen_lex_ip( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )$/;"	f	file:
+gen_lex_num	language/lex.c	/^static void gen_lex_num( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )$/;"	f	file:
+gen_lex_num	mcp/conf_lang.c	/^static void gen_lex_num( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )$/;"	f	file:
+gen_lex_str	mcp/conf_lang.c	/^static void gen_lex_str( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )$/;"	f	file:
+gen_lex_string	language/lex.c	/^static void gen_lex_string( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )$/;"	f	file:
+generic_enter_tree_node	generic.c	/^int generic_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, struct tree_s *node )$/;"	f
+generic_get_new_class_handler_s	generic.c	/^struct class_handler_s *generic_get_new_class_handler_s( struct class_names_s *class, int size )$/;"	f
+generic_get_primary_space	generic.c	/^struct space_s *generic_get_primary_space( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )$/;"	f
+generic_get_tree_node	generic.c	/^struct tree_s *generic_get_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )$/;"	f
+generic_get_vs	generic.c	/^int generic_get_vs( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, vs_t *vs, int n )$/;"	f
+generic_hierarchy_handler_decide	generic.c	/^int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )$/;"	f
+generic_hierarchy_handler_notify	generic.c	/^int generic_hierarchy_handler_notify( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )$/;"	f
+generic_init	generic.c	/^int generic_init( char *name, struct event_handler_s *subhandler, struct event_names_s *event, struct class_names_s *class, int flags )$/;"	f
+generic_init_comm	generic.c	/^int generic_init_comm( struct class_handler_s *h, struct comm_s *comm )$/;"	f
+generic_set_handler	generic.c	/^int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )$/;"	f
+generic_test_vs	generic.c	/^int generic_test_vs( int acctype, struct event_context_s *c )$/;"	f
+generic_test_vs_tree	generic.c	/^int generic_test_vs_tree( int acctype, struct event_context_s *c, struct tree_s *t )$/;"	f
+get_attribute	class.c	/^struct medusa_attribute_s *get_attribute( struct class_s *c, char *name )$/;"	f
+get_class_by_name	class.c	/^struct class_names_s *get_class_by_name( char *name )$/;"	f
+get_empty_context	event.c	/^int get_empty_context( struct event_context_s *c )$/;"	f
+get_event_context	mcp/mcp.c	/^static int get_event_context( struct comm_s *comm, struct event_context_s *c, struct event_type_s *t, void *data )$/;"	f	file:
+get_event_context	rbac/adm.c	/^static int get_event_context( struct comm_s *comm, struct event_context_s *c, struct event_type_s *t, void *op, struct object_s *subject, void *object )$/;"	f	file:
+get_primary_space	object.h	/^	struct space_s *(*get_primary_space)(struct class_handler_s *,struct comm_s *,struct object_s *);$/;"	m	struct:class_handler_s
+get_tree_node	object.h	/^	struct tree_s *(*get_tree_node)(struct class_handler_s *,struct comm_s *,struct object_s *);$/;"	m	struct:class_handler_s
+get_var	language/variables.c	/^struct object_s *get_var( struct object_s *v, char *name )$/;"	f
+get_vs	object.h	/^	int(*get_vs)(struct class_handler_s *,struct comm_s *,struct object_s *,vs_t *,int);$/;"	m	struct:class_handler_s
+global_compiler	language/conf_lang.c	/^compiler_class_t *global_compiler;$/;"	v
+global_root	tree.c	/^struct tree_s global_root={NULL,NULL,NULL,NULL,NULL,&global_root_type,$/;"	v
+global_root_type	tree.c	/^static struct tree_type_s global_root_type={$/;"	v	file:
+global_spaces	obsoleted/zal_space.c	/^struct space_s *global_spaces=NULL;$/;"	v
+global_spaces	space.c	/^struct space_s *global_spaces=NULL;$/;"	v
+h	generic.h	/^	struct event_handler_s h;$/;"	m	struct:g_event_handler_s
+h	language/execute.h	/^	struct event_handler_s *h;$/;"	m	struct:execute_s
+handler	comm.h	/^	struct event_handler_s	*handler;$/;"	m	struct:comm_buffer_s
+handler	event.h	/^	int(*handler)(struct comm_buffer_s *,struct event_handler_s *,struct event_context_s *);$/;"	m	struct:event_handler_s
+handler	event.h	/^	struct event_handler_s		*handler;$/;"	m	struct:event_hadler_hash_s
+handler	language/conf_lang.c	/^static struct event_handler_s *handler=NULL;$/;"	v	file:
+handler	space.h	/^	struct event_handler_s	*handler;$/;"	m	struct:levent_s
+handler_pos	language/conf_lang.c	/^static int handler_pos=0;$/;"	v	file:
+handler_size	language/conf_lang.c	/^static int handler_size=0;$/;"	v	file:
+handlers_hash	event.h	/^	struct event_hadler_hash_s	*handlers_hash[EHH_LISTS];$/;"	m	struct:event_names_s
+hash_add	hash.c	/^void hash_add( struct hash_s *h, struct hash_ent_s *e, u_int32_t key )$/;"	f
+hash_ent_s	hash.h	/^struct hash_ent_s {$/;"	s
+hash_find	hash.c	/^struct hash_ent_s *hash_find( struct hash_s *h, u_int32_t key )$/;"	f
+hash_func	hash.c	9;"	d	file:
+hash_s	hash.h	/^struct hash_s {$/;"	s
+hashent	event.h	/^	struct hash_ent_s	hashent;$/;"	m	struct:event_type_s
+hashent	object.h	/^	struct hash_ent_s		hashent;$/;"	m	struct:class_s
+head	force/elf.h	/^	Elf32_Ehdr head;$/;"	m
+hh	comm.h	/^	struct event_hadler_hash_s *hh;$/;"	m	struct:comm_buffer_s
+hierarchy_s	rbac/rbac.h	/^struct hierarchy_s {			\/* H - hierarchy *\/$/;"	s
+init	tree.h	/^	int(*init)(struct tree_s*);$/;"	m	struct:tree_type_s
+init_all	init.c	/^int init_all( char *filename )$/;"	f
+init_comm	init.h	/^	int(*init_comm)( struct module_s * );$/;"	m	struct:module_s
+init_comm	object.h	/^	int(*init_comm)(struct class_handler_s *,struct comm_s *);$/;"	m	struct:class_handler_s
+init_error	constable.c	/^int init_error( const char *fmt, ... )$/;"	f
+init_namespace	init.h	/^	int(*init_namespace)( struct module_s * );$/;"	m	struct:module_s
+init_rules	init.h	/^	int(*init_rules)( struct module_s * );$/;"	m	struct:module_s
+init_sig_handler	init.c	/^void init_sig_handler( int signum )$/;"	f
+is_excluded	obsoleted/zal_space.c	/^static int is_excluded( struct tree_s *test, struct space_s *space )$/;"	f	file:
+is_excluded	space.c	/^static int is_excluded( struct tree_s *test, struct space_s *space )$/;"	f	file:
+is_included	obsoleted/zal_space.c	/^static int is_included( struct tree_s *test, struct space_s *space, int force_recursive )$/;"	f	file:
+is_included	space.c	/^static int is_included( struct tree_s *test, struct space_s *space, int force_recursive )$/;"	f	file:
+is_included_i	space.c	/^static int is_included_i( struct tree_s *test, struct space_path_s *sp, struct space_s *space, int force_recursive )$/;"	f	file:
+is_subrole	rbac/roles.c	/^static int is_subrole( struct role_s *role, struct role_s *test )$/;"	f	file:
+isreg	tree.c	/^static int isreg( char *name )$/;"	f	file:
+keep_stack	language/execute.h	/^	int	keep_stack;		\/* 1 - pop neuvolnuje stack *\/$/;"	m	struct:execute_s
+key	hash.h	/^	u_int32_t	key;$/;"	m	struct:hash_ent_s
+keywords	language/lex.c	/^lextab_t keywords[]={$/;"	v
+keywords	mcp/conf_lang.c	/^static lextab_t keywords[]={$/;"	v	file:
+keywords2	language/lex.c	/^lextab_t *keywords2=NULL;$/;"	v
+keywords2_nr	language/lex.c	/^int keywords2_nr=0;$/;"	v
+language	language/language.c	/^struct compile_tab_s language[]={$/;"	v
+language_do	language/conf_lang.c	/^int language_do( void )$/;"	f
+language_init	language/conf_lang.c	/^int language_init( char *filename )$/;"	f
+language_init_comm_datatypes	language/types.c	/^int language_init_comm_datatypes( struct comm_s *comm )$/;"	f
+last	comm.h	/^	struct comm_buffer_s	*last;$/;"	m	struct:comm_buffer_queue_s
+last_comm	comm.c	/^static struct comm_s *last_comm=NULL;$/;"	v	file:
+len	Mlibc/mlibc.h	/^	unsigned long len;$/;"	m	struct:mmap_arg_struct
+len	comm.h	/^	int			len;		\/* for comm *\/$/;"	m	struct:comm_buffer_s
+len	force/elf.h	/^	long len;$/;"	m
+length	medusa_object.h	/^	u_int16_t length;			\/* bytes consumed by data *\/$/;"	m	struct:medusa_comm_attribute_s
+levent	space.h	/^	levent_t	*levent;$/;"	m	struct:space_s
+levent_s	space.h	/^typedef struct levent_s {$/;"	s
+levent_t	space.h	/^} levent_t;$/;"	t
+lex_addkeyword	language/lex.c	/^int lex_addkeyword( char *keyword, sym_t sym, unsigned long data )$/;"	f
+lex_getkeyword	language/lex.c	/^unsigned long lex_getkeyword( char *keyword, sym_t sym )$/;"	f
+lex_tab	language/lex.c	/^lexstattab_t lex_tab[]={$/;"	v
+lex_updatekeyword	language/lex.c	/^int lex_updatekeyword( char *keyword, sym_t sym, unsigned long data )$/;"	f
+link_symbols	force/linker.c	/^static int link_symbols(modules_t * m, elf_t * elf,$/;"	f	file:
+load_constant	language/constant.c	/^int load_constant( struct register_s *r , u_int32_t typ, char * name )$/;"	f
+load_force_code	force/force.c	/^static struct fcs_s *load_force_code(char *file)$/;"	f	file:
+load_roles	rbac/load.c	/^static int load_roles( char *file )$/;"	f	file:
+load_segments	force/linker.c	/^static int load_segments(modules_t * m, elf_t * elf)$/;"	f	file:
+load_users	rbac/load.c	/^int load_users( char *file )$/;"	f
+local_vars	event.h	/^	struct object_s		*local_vars;$/;"	m	struct:event_handler_s
+local_vars	event.h	/^	struct object_s *local_vars;$/;"	m	struct:event_context_s
+ltree	space.h	/^	ltree_t		*ltree;$/;"	m	struct:space_s
+ltree_exclude	space.h	/^	ltree_t		*ltree_exclude;$/;"	m	struct:space_s
+ltree_s	space.h	/^typedef struct ltree_s {$/;"	s
+ltree_t	space.h	/^} ltree_t;$/;"	t
+m	event.h	/^	struct medusa_acctype_s	m;$/;"	m	struct:event_type_s
+m	object.h	/^	struct medusa_class_s		m;$/;"	m	struct:class_s
+main	Mlibc/f_exit.c	/^void main(int argc, int *argv)$/;"	f
+main	Mlibc/f_getpeername.c	/^void main(int argc, int *argv)$/;"	f
+main	Mlibc/f_secure_unlink.c	/^void main(int argc, int *argv)$/;"	f
+main	Mlibc/f_showargs.c	/^void main(int argc, int *argv)$/;"	f
+main	Mlibc/f_test.c	/^void main(int argc, int *argv)$/;"	f
+main	Mlibc/f_test2.c	/^void main(int argc, int *argv)$/;"	f
+main	force/linker.c	/^int main(int argc, char *argv[])$/;"	f
+main	force/linker.h	/^\/*+04*\/	u32 main;$/;"	m	struct:fctab_s
+main	init.c	/^int main( int argc, char *argv[] )$/;"	f
+main	rbacadm.c	/^int main( int argc, char *argv[] )$/;"	f
+malloc_buf	comm_buf.c	/^static struct comm_buffer_s *malloc_buf( int size )$/;"	f	file:
+map_addr	force/elf.h	/^	void *map_addr;$/;"	m
+map_len	force/elf.h	/^	long map_len;$/;"	m
+map_symnames	force/linker.h	/^	elfmap_t map_symnames;	\/* unmap *\/$/;"	m	struct:s_modules_t
+mask	event.h	/^	event_mask_t		mask[2];$/;"	m	struct:event_type_s
+mcp_accept	mcp/mcp.c	/^static int mcp_accept( struct comm_s *c )$/;"	f	file:
+mcp_alloc_comm	mcp/mcp.c	/^struct comm_s *mcp_alloc_comm( char *name )$/;"	f
+mcp_answer	mcp/mcp.c	/^static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )$/;"	f	file:
+mcp_close	mcp/mcp.c	/^static int mcp_close( struct comm_s *c )$/;"	f	file:
+mcp_comm_s	mcp/mcp.c	/^struct mcp_comm_s {$/;"	s	file:
+mcp_compiler	mcp/conf_lang.c	/^static compiler_class_t *mcp_compiler;$/;"	v	file:
+mcp_conf_error	mcp/mcp.c	/^static int mcp_conf_error( struct comm_s *comm, const char *fmt, ... )$/;"	f	file:
+mcp_conf_lang	mcp/conf_lang.c	/^struct compile_tab_s mcp_conf_lang[]={$/;"	v
+mcp_conf_lang_param_out	mcp/conf_lang.c	/^static void mcp_conf_lang_param_out( struct compiler_class *c, sym_t s )$/;"	f	file:
+mcp_data	mcp/mcp.c	97;"	d	file:
+mcp_error	mcp/conf_lang.c	/^static int mcp_error( const char *fmt, ... )$/;"	f	file:
+mcp_fetch_object	mcp/mcp.c	/^static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake )$/;"	f	file:
+mcp_fetch_object_wait	mcp/mcp.c	/^static int mcp_fetch_object_wait( struct comm_buffer_s *b )$/;"	f	file:
+mcp_fetch_object_write	mcp/mcp.c	/^static int mcp_fetch_object_write( struct comm_buffer_s *b )$/;"	f	file:
+mcp_init	mcp/mcp.c	/^int mcp_init( char *filename )$/;"	f
+mcp_language_do	mcp/conf_lang.c	/^int mcp_language_do( char *filename )$/;"	f
+mcp_lex_tab	mcp/conf_lang.c	/^static lexstattab_t mcp_lex_tab[]={$/;"	v	file:
+mcp_listen	mcp/mcp.c	/^struct comm_s *mcp_listen( in_port_t port )$/;"	f
+mcp_nowrite	mcp/mcp.c	/^static int mcp_nowrite( struct comm_s *c )$/;"	f	file:
+mcp_open	mcp/mcp.c	/^int mcp_open( struct comm_s *c, char *filename )$/;"	f
+mcp_opened	mcp/mcp.c	/^static int mcp_opened( struct comm_s *c )$/;"	f	file:
+mcp_r_acctypedef_attr	mcp/mcp.c	/^static int mcp_r_acctypedef_attr( struct comm_buffer_s *b )$/;"	f	file:
+mcp_r_classdef_attr	mcp/mcp.c	/^static int mcp_r_classdef_attr( struct comm_buffer_s *b )$/;"	f	file:
+mcp_r_discard	mcp/mcp.c	/^static int mcp_r_discard( struct comm_buffer_s *b )$/;"	f	file:
+mcp_r_fetch_answer	mcp/mcp.c	/^static int mcp_r_fetch_answer( struct comm_buffer_s *b )$/;"	f	file:
+mcp_r_fetch_answer_done	mcp/mcp.c	/^static int mcp_r_fetch_answer_done( struct comm_buffer_s *b )$/;"	f	file:
+mcp_r_greeting	mcp/mcp.c	/^static int mcp_r_greeting( struct comm_buffer_s *b )$/;"	f	file:
+mcp_r_head	mcp/mcp.c	/^static int mcp_r_head( struct comm_buffer_s *b )$/;"	f	file:
+mcp_r_query	mcp/mcp.c	/^static int mcp_r_query( struct comm_buffer_s *b )$/;"	f	file:
+mcp_r_update_answer	mcp/mcp.c	/^static int mcp_r_update_answer( struct comm_buffer_s *b )$/;"	f	file:
+mcp_read	mcp/mcp.c	/^static int mcp_read( struct comm_s *c )$/;"	f	file:
+mcp_s_canf_lang_out	mcp/conf_lang.c	/^struct compiler_out_class mcp_s_canf_lang_out={$/;"	v
+mcp_s_error	mcp/conf_lang.c	/^struct compiler_err_class mcp_s_error={$/;"	v
+mcp_to_accept	mcp/mcp.c	/^int mcp_to_accept( struct comm_s *c, struct comm_s *listen, in_addr_t ip, in_addr_t mask, in_port_t port )$/;"	f
+mcp_update_object	mcp/mcp.c	/^static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake )$/;"	f	file:
+mcp_update_object_wait	mcp/mcp.c	/^static int mcp_update_object_wait( struct comm_buffer_s *b )$/;"	f	file:
+mcp_update_object_write	mcp/mcp.c	/^static int mcp_update_object_write( struct comm_buffer_s *b )$/;"	f	file:
+mcp_warning	mcp/conf_lang.c	/^static int mcp_warning( const char *fmt, ... )$/;"	f	file:
+mcp_write	mcp/mcp.c	/^static int mcp_write( struct comm_s *c )$/;"	f	file:
+medusa_acctype_s	medusa_object.h	82;"	d
+medusa_attribute_s	medusa_object.h	80;"	d
+medusa_class_s	medusa_object.h	81;"	d
+medusa_comm_acctype_s	medusa_object.h	/^struct medusa_comm_acctype_s {$/;"	s
+medusa_comm_attribute_s	medusa_object.h	/^struct medusa_comm_attribute_s {$/;"	s
+medusa_comm_class_s	medusa_object.h	/^struct medusa_comm_class_s {$/;"	s
+medusa_config_file	init.c	/^char *medusa_config_file="\/etc\/medusa.conf";$/;"	v
+mem	force/linker.h	/^	char *mem;		\/* free *\/$/;"	m	struct:s_modules_t
+mem_addr	force/linker.c	42;"	d	file:
+mem_alloc	force/linker.c	/^static int mem_alloc(modules_t * m, int size)$/;"	f	file:
+memrcpy	object_endian.c	/^void memrcpy( void *dest, const void *src, size_t n )$/;"	f
+memsize	force/linker.h	/^	int memsize;$/;"	m	struct:s_modules_t
+mmap_arg_struct	Mlibc/mlibc.h	/^struct mmap_arg_struct {$/;"	s
+mod_syms_t	force/linker.h	/^} mod_syms_t;$/;"	t
+module_s	init.h	/^struct module_s {$/;"	s
+modules_get_symbol	force/linker.c	/^struct s_modsym *modules_get_symbol(modules_t * mod, char *name)$/;"	f
+modules_load_module	force/linker.c	/^modules_t *modules_load_module(const char *filename,$/;"	f
+modules_print_undef	force/linker.c	/^int modules_print_undef(int fd, modules_t * mod)$/;"	f
+modules_t	force/linker.h	/^} modules_t;$/;"	t
+my_comm_buff	language/execute.h	/^	struct comm_buffer_s	*my_comm_buff;$/;"	m	struct:execute_s
+my_offset	language/execute.h	/^	int	my_offset;$/;"	m	struct:stack_s
+my_vs	space.h	/^	struct vs_s	*my_vs;$/;"	m	struct:space_s
+n	rbac/rbac.h	/^	int n;$/;"	m	struct:permission_assignment_s
+n	space.c	/^	int	n;$/;"	m	struct:space_path_s	file:
+name	comm.h	/^	char		name[64];$/;"	m	struct:comm_s
+name	event.h	/^	char			*name;$/;"	m	struct:event_names_s
+name	force/elf.c	/^	char *name;$/;"	m	file:
+name	force/force.c	/^	char *name;$/;"	m	struct:fcs_s	file:
+name	force/linker.h	/^	char *name;		\/* free *\/$/;"	m	struct:s_modseg
+name	force/linker.h	/^	char *name;		\/* free *\/$/;"	m	struct:s_modules_t
+name	force/linker.h	/^	char *name;		\/* none *\/$/;"	m	struct:s_modsym
+name	force/linker.h	/^	char *name;$/;"	m
+name	init.h	/^	char name[64];$/;"	m	struct:module_s
+name	medusa_object.h	/^	char		name[MEDUSA_COMM_CLASSNAME_MAX];$/;"	m	struct:medusa_comm_class_s
+name	medusa_object.h	/^	char		name[MEDUSA_COMM_OPNAME_MAX];$/;"	m	struct:medusa_comm_acctype_s
+name	medusa_object.h	/^	char name[MEDUSA_COMM_ATTRNAME_MAX];	\/* string: attribute name *\/$/;"	m	struct:medusa_comm_attribute_s
+name	object.h	/^	char			*name;$/;"	m	struct:class_names_s
+name	rbac/rbac.h	/^	char name[32];$/;"	m	struct:user_s
+name	rbac/rbac.h	/^	char name[64];$/;"	m	struct:role_s
+name	space.h	/^	char		name[0];$/;"	m	struct:space_s
+name	tree.h	/^	char		*name;$/;"	m	struct:tree_s
+name	tree.h	/^	char	*name;$/;"	m	struct:tree_type_s
+name	vs.h	/^	char name[0];$/;"	m	struct:vs_s
+name_offset	object.h	/^	u_int16_t			name_offset;$/;"	m	struct:class_s
+name_size	object.h	/^	u_int16_t			name_size;	\/* v bajtoch *\/$/;"	m	struct:class_s
+new_levent	obsoleted/zal_space.c	/^static levent_t *new_levent( levent_t **prev, struct event_handler_s *handler, struct space_s *subject, struct space_s *object )$/;"	f	file:
+new_levent	space.c	/^static levent_t *new_levent( levent_t **prev, struct event_handler_s *handler, struct space_s *subject, struct space_s *object )$/;"	f	file:
+new_path	obsoleted/zal_space.c	/^static ltree_t *new_path( ltree_t *prev, void *path_or_space )$/;"	f	file:
+new_path	space.c	/^static ltree_t *new_path( ltree_t *prev, void *path_or_space )$/;"	f	file:
+next	comm.h	/^	struct comm_buffer_s	*next;$/;"	m	struct:comm_buffer_s
+next	comm.h	/^	struct comm_s	*next;$/;"	m	struct:comm_s
+next	event.h	/^	struct event_hadler_hash_s	*next;$/;"	m	struct:event_hadler_hash_s
+next	event.h	/^	struct event_names_s	*next;$/;"	m	struct:event_names_s
+next	force/force.c	/^	struct fcs_s *next;$/;"	m	struct:fcs_s	file:
+next	force/linker.h	/^	struct s_modules_t *next;$/;"	m	struct:s_modules_t
+next	hash.h	/^	struct hash_ent_s *next;$/;"	m	struct:hash_ent_s
+next	init.h	/^	struct module_s *next;$/;"	m	struct:module_s
+next	language/execute.h	/^	struct stack_s	*next;$/;"	m	struct:stack_s
+next	language/lex.c	/^	struct str_archive_s *next;$/;"	m	struct:str_archive_s	file:
+next	mcp/mcp.c	/^	struct comm_s	*next;$/;"	m	struct:mcp_comm_s	file:
+next	object.h	/^	struct class_handler_s *next;	\/* for class *\/$/;"	m	struct:class_handler_s
+next	object.h	/^	struct class_names_s	*next;$/;"	m	struct:class_names_s
+next	object.h	/^	struct object_s *next;$/;"	m	struct:object_s
+next	rbac/rbac.h	/^	struct permission_assignment_s *next;$/;"	m	struct:permission_assignment_s
+next	rbac/rbac.h	/^	struct role_s *next;$/;"	m	struct:role_s
+next	rbac/rbac.h	/^	struct user_s *next;$/;"	m	struct:user_s
+next	space.h	/^	struct space_s	*next;$/;"	m	struct:space_s
+next	tree.h	/^	struct tree_s	*next;$/;"	m	struct:tree_s
+next	vs.h	/^	struct vs_s	*next;$/;"	m	struct:vs_s
+next_role	rbac/rbac.h	/^	struct user_assignment_s *next_role;$/;"	m	struct:user_assignment_s
+next_sub	rbac/rbac.h	/^	struct hierarchy_s *next_sub;$/;"	m	struct:hierarchy_s
+next_sup	rbac/rbac.h	/^	struct hierarchy_s *next_sup;$/;"	m	struct:hierarchy_s
+next_user	rbac/rbac.h	/^	struct user_assignment_s *next_user;$/;"	m	struct:user_assignment_s
+no_vs	tree.h	/^	vs_t	no_vs[NR_ACCESS_TYPES][MAX_VS_BITS\/32];$/;"	m	struct:tree_s
+nr_roles	rbac/rbac.h	/^	int nr_roles;$/;"	m	struct:user_s
+nr_seg	force/linker.h	/^	u_long nr_seg;$/;"	m	struct:s_modules_t
+nr_sym	force/linker.h	/^	u_long nr_sym, sym_size;$/;"	m	struct:s_modules_t
+num	force/elf.c	/^	int num;$/;"	m	file:
+number	Mlibc/mlibc.c	/^static char *number(char *str, long num, int base, int size, int precision,$/;"	f	file:
+number_of_vs	vs.c	11;"	d	file:
+oACCESSTYPE	rbac/load.c	/^	oACCESSTYPE,$/;"	e	file:
+oADD	language/language.h	/^	oADD,	\/* poradie oADD - oXOR sa nesmie zmenit! *\/$/;"	e
+oADDPERM	rbac/load.c	/^	oADDPERM,$/;"	e	file:
+oADDSUBROLE	rbac/load.c	/^	oADDSUBROLE$/;"	e	file:
+oADDUSER	rbac/load.c	/^	oADDUSER,$/;"	e	file:
+oALI	language/language.h	/^	oALI,$/;"	e
+oAND	language/language.h	/^	oAND,$/;"	e
+oARG	language/language.h	/^	oARG,$/;"	e
+oATR	language/language.h	/^	oATR,$/;"	e
+oBIN	language/language.h	/^	oBIN,	\/* buildin *\/$/;"	e
+oCOF	language/language.h	/^	oCOF,$/;"	e
+oDEL	language/language.h	/^	oDEL,$/;"	e
+oDEn	language/language.h	/^	oDEn,$/;"	e
+oDIV	language/language.h	/^	oDIV,$/;"	e
+oDUP	language/language.h	/^	oDUP,$/;"	e
+oEQ	language/language.h	/^	oEQ,$/;"	e
+oFET	language/language.h	/^	oFET,	\/* fetch *\/$/;"	e
+oGE	language/language.h	/^	oGE,$/;"	e
+oGT	language/language.h	/^	oGT,$/;"	e
+oILL	language/language.h	/^	oILL=O|0x0fff	\/* illegal *\/$/;"	e
+oIMM	language/language.h	/^	oIMM,$/;"	e
+oJIZ	language/language.h	/^	oJIZ,$/;"	e
+oJNZ	language/language.h	/^	oJNZ,$/;"	e
+oJR	language/language.h	/^	oJR,$/;"	e
+oJSR	language/language.h	/^	oJSR,$/;"	e
+oLD0	language/language.h	/^	oLD0,$/;"	e
+oLD1	language/language.h	/^	oLD1,$/;"	e
+oLDC	language/language.h	/^	oLDC,$/;"	e
+oLDI	language/language.h	/^	oLDI,$/;"	e
+oLDS	language/language.h	/^	oLDS,$/;"	e
+oLDV	language/language.h	/^	oLDV,$/;"	e
+oLE	language/language.h	/^	oLE,$/;"	e
+oLT	language/language.h	/^	oLT,$/;"	e
+oLTI	language/language.h	/^	oLTI,$/;"	e
+oLTP	language/language.h	/^	oLTP,$/;"	e
+oLTS	language/language.h	/^	oLTS,$/;"	e
+oMOD	language/language.h	/^	oMOD,$/;"	e
+oMUL	language/language.h	/^	oMUL,$/;"	e
+oNE	language/language.h	/^	oNE,$/;"	e
+oNEG	language/language.h	/^	oNEG,$/;"	e
+oNEW	language/language.h	/^	oNEW,$/;"	e
+oNOP	language/language.h	/^	oNOP = PO|0x100,$/;"	e
+oNOT	language/language.h	/^	oNOT,$/;"	e
+oOR	language/language.h	/^	oOR,$/;"	e
+oRET	language/language.h	/^	oRET,$/;"	e
+oROLEDEF	rbac/load.c	/^enum {	oROLEDEF= O|0x0200,$/;"	e	file:
+oS2C	language/language.h	/^	oS2C,$/;"	e
+oSCD	language/language.h	/^	oSCD,$/;"	e
+oSCS	language/language.h	/^	oSCS,$/;"	e
+oSHL	language/language.h	/^	oSHL,$/;"	e
+oSHR	language/language.h	/^	oSHR,$/;"	e
+oSTO	language/language.h	/^	oSTO,$/;"	e
+oSUB	language/language.h	/^	oSUB,$/;"	e
+oSWP	language/language.h	/^	oSWP,$/;"	e
+oTOF	language/language.h	/^	oTOF,$/;"	e
+oUPD	language/language.h	/^	oUPD,	\/* update *\/$/;"	e
+oVRL	language/language.h	/^	oVRL,$/;"	e
+oVRT	language/language.h	/^	oVRT,$/;"	e
+oXOR	language/language.h	/^	oXOR,$/;"	e
+obj_to_reg	language/execute.c	/^void obj_to_reg( struct register_s *r, struct object_s *o, char *attr )$/;"	f
+object	event.h	/^	struct class_s		*object; \/* komu sa nastavuje sledovanie *\/$/;"	m	struct:event_type_s
+object	event.h	/^	struct object_s object;$/;"	m	struct:event_context_s
+object	language/execute.h	/^	struct object_s	*object;	\/* ak je to object *\/$/;"	m	struct:register_s
+object	rbac/rbac.h	/^	struct object_s object;$/;"	m	struct:role_s
+object	rbac/rbac.h	/^	struct object_s object;$/;"	m	struct:user_s
+object	space.h	/^	struct space_s		*object;$/;"	m	struct:levent_s
+object_add_event	object.c	/^int object_add_event( struct object_s *o, event_mask_t *e )$/;"	f
+object_add_vs	object.c	/^int object_add_vs( struct object_s *o, int n, vs_t *vs )$/;"	f
+object_clear_all_vs	object.c	/^int object_clear_all_vs( struct object_s *o )$/;"	f
+object_clear_event	object.c	/^int object_clear_event( struct object_s *o )$/;"	f
+object_cmp_vs	object.c	/^int object_cmp_vs( vs_t *vs, int n, struct object_s *o )$/;"	f
+object_copy	object_endian.c	/^int object_copy( struct object_s *d, struct object_s *s )$/;"	f
+object_do_sethandler	object.c	/^int object_do_sethandler( struct object_s *o )$/;"	f
+object_get_val	object_endian.c	/^int object_get_val( struct object_s *o, struct medusa_attribute_s *a, void *buf, int maxlen )$/;"	f
+object_get_vs	object.c	/^int object_get_vs( vs_t *vs, int n, struct object_s *o )$/;"	f
+object_handlers	tree.h	/^	struct event_hadler_hash_s	*object_handlers[EHH_LISTS];$/;"	m	struct:tree_s
+object_is_invalid	object.c	/^int object_is_invalid( struct object_s *o )$/;"	f
+object_is_same	object.c	/^int object_is_same( struct object_s *a, struct object_s *b )$/;"	f
+object_print	object.c	/^void object_print( struct object_s *o, void(*out)(void *arg, char *), void *arg )$/;"	f
+object_resize_data	object_endian.c	/^int object_resize_data( void *buf, struct medusa_attribute_s *a, int newlen )$/;"	f
+object_resize_data_short	object_endian.c	/^static int object_resize_data_short( void *buf, struct medusa_attribute_s *a, int newlen )$/;"	f	file:
+object_s	object.h	/^struct object_s {$/;"	s
+object_set_byte_order	object_endian.c	/^int object_set_byte_order( struct object_s *o, int flags )$/;"	f
+object_set_val	object_endian.c	/^int object_set_val( struct object_s *o, struct medusa_attribute_s *a, void *buf, int maxlen )$/;"	f
+object_swap_endian	object_endian.c	/^static void object_swap_endian( struct object_s *o, struct medusa_attribute_s *a )$/;"	f	file:
+object_to_string	force/linker.c	/^struct fctab_s *object_to_string(const char *filename)$/;"	f
+object_vs	event.h	/^	vs_t				object_vs[MAX_VS_BITS\/32];$/;"	m	struct:event_hadler_hash_s
+offset	Mlibc/mlibc.h	/^	unsigned long offset;$/;"	m	struct:mmap_arg_struct
+offset	medusa_object.h	/^	u_int16_t offset;			\/* offset of attribute in object *\/$/;"	m	struct:medusa_comm_attribute_s
+op	event.h	/^	struct class_s		*op[2];$/;"	m	struct:event_type_s
+op_class	medusa_object.h	/^	u_int32_t	op_class[2];$/;"	m	struct:medusa_comm_acctype_s
+op_func	language/alu.c	/^static void(*op_func[16][4][4])(struct register_s *v, struct register_s *d)={$/;"	v	file:
+op_name	event.h	/^	char	op_name[MEDUSA_OPNAME_MAX];$/;"	m	struct:event_handler_s
+op_name	medusa_object.h	/^	char		op_name[2][MEDUSA_COMM_ATTRNAME_MAX];$/;"	m	struct:medusa_comm_acctype_s
+open_counter	comm.h	/^	int			open_counter;$/;"	m	struct:comm_buffer_s
+open_counter	comm.h	/^	int		open_counter;$/;"	m	struct:comm_s
+operation	event.h	/^	struct object_s operation;$/;"	m	struct:event_context_s
+operation_class	event.h	/^	struct class_s		operation_class;$/;"	m	struct:event_type_s
+operators	language/lex.c	/^lextab_t operators[]={$/;"	v
+operators	mcp/conf_lang.c	/^static lextab_t operators[]={$/;"	v	file:
+opid	medusa_object.h	/^	u_int32_t	opid;$/;"	m	struct:medusa_comm_acctype_s
+out_destroy	language/conf_lang.c	/^static void out_destroy( struct compiler_out_class *this )$/;"	f	file:
+out_destroy	mcp/conf_lang.c	/^static void out_destroy( struct compiler_out_class *this )$/;"	f	file:
+out_destroy	rbac/load.c	/^static void out_destroy( struct compiler_out_class *this )$/;"	f	file:
+output	comm.h	/^	struct comm_buffer_queue_s output;$/;"	m	struct:comm_s
+p	language/execute.h	/^	u_int32_t *p;$/;"	m	struct:execute_s
+p_stab_t	force/elf.c	/^} p_stab_t;$/;"	t	file:
+parent	tree.h	/^	struct tree_s	*parent;$/;"	m	struct:tree_s
+path	space.c	/^	struct space_s *path[MAX_SPACE_PATH];$/;"	m	struct:space_path_s	file:
+path_or_space	space.h	/^	void		*path_or_space;$/;"	m	struct:ltree_s
+pathcmp	tree.c	/^static int pathcmp( char *name, char **path )$/;"	f	file:
+pbuf	comm.h	/^	char			*pbuf;		\/*  for read\/write *\/$/;"	m	struct:comm_buffer_s
+perm	rbac/rbac.h	/^	struct permission_assignment_s *perm;$/;"	m	struct:role_s
+perm_s	rbac/rbac.h	/^struct perm_s {				\/* P - permissions *\/$/;"	s
+permission_assignment_s	rbac/rbac.h	/^struct permission_assignment_s {$/;"	s
+pop	language/execute.c	66;"	d	file:
+pos	force/linker.h	/^	int pos;$/;"	m	struct:s_modrel
+pos	force/linker.h	/^	int pos;$/;"	m	struct:s_modseg
+pos	language/execute.h	/^	int	pos;$/;"	m	struct:execute_s
+prep	language/conf_lang.c	/^static struct compiler_preprocessor_class *prep;$/;"	v	file:
+prereloc_module	force/linker.c	/^static int prereloc_module(modules_t * m, elf_t * elf,$/;"	f	file:
+prev	force/linker.h	/^	struct s_modules_t *prev;$/;"	m	struct:s_modules_t
+prev	language/execute.h	/^	struct stack_s	*prev;$/;"	m	struct:stack_s
+prev	space.h	/^	struct levent_s		*prev;$/;"	m	struct:levent_s
+prev	space.h	/^	struct ltree_s	*prev;$/;"	m	struct:ltree_s
+primary	space.h	/^	int		primary;$/;"	m	struct:space_s
+primary_space	tree.h	/^	struct space_s	*primary_space;$/;"	m	struct:tree_s
+print_buf	Mlibc/mlibc.c	/^char print_buf[1024] = { };$/;"	v
+printf	Mlibc/mlibc.h	79;"	d
+proc_class_handler_s	rbac/proc.c	/^struct proc_class_handler_s {$/;"	s	file:
+process	Examples/include/std.h	/^\/ "domain" of process;$/;"	v
+prot	Mlibc/mlibc.h	/^	unsigned long prot;$/;"	m	struct:mmap_arg_struct
+prot	force/linker.h	/^	int prot;$/;"	m	struct:s_modseg
+push	language/execute.c	67;"	d	file:
+r0	language/execute.c	/^static struct register_s r0,r1;$/;"	v	file:
+r1	language/execute.c	/^static struct register_s r0,r1;$/;"	v	file:
+r2o	language/alu2.c	/^struct object_s *r2o( struct register_s *r )$/;"	f
+r2o2	language/alu2.c	/^struct object_s *r2o2( struct register_s *r )$/;"	f
+r_add_cb	language/alu.c	/^static void r_add_cb( struct register_s *v, struct register_s *d )$/;"	f	file:
+r_add_cc	language/alu.c	/^static void r_add_cc( struct register_s *v, struct register_s *d )$/;"	f	file:
+r_imm	language/alu2.c	/^void r_imm( struct register_s *r )$/;"	f
+r_int	language/alu2.c	/^int r_int( struct register_s *r )$/;"	f
+r_not	language/alu.c	/^void r_not( struct register_s *v )$/;"	f
+r_nz	language/alu.c	/^int r_nz( struct register_s *v )$/;"	f
+r_pop	language/execute.c	68;"	d	file:
+r_push	language/execute.c	69;"	d	file:
+r_resize	language/alu2.c	/^void r_resize( struct register_s *v, int size )$/;"	f
+r_sto	language/alu2.c	/^void r_sto( struct register_s *v, struct register_s *d )$/;"	f
+rbac_ROLE_attr	rbac/kobjects.c	/^static struct medusa_comm_attribute_s rbac_ROLE_attr[]={$/;"	v	file:
+rbac_ROLE_class	rbac/kobjects.c	/^struct class_s *rbac_user_class,*rbac_perm_class,*rbac_role_class,*rbac_ROLE_class;$/;"	v
+rbac_ROLE_mclass	rbac/kobjects.c	/^static struct medusa_comm_class_s rbac_ROLE_mclass={$/;"	v	file:
+rbac_acc_attr_create_role	rbac/kobjects.c	/^static struct medusa_comm_attribute_s rbac_acc_attr_create_role[]={$/;"	v	file:
+rbac_acc_attr_none	rbac/kobjects.c	/^static struct medusa_comm_attribute_s rbac_acc_attr_none[]={$/;"	v	file:
+rbac_acc_create_role	rbac/kobjects.c	/^static struct medusa_comm_acctype_s rbac_acc_create_role={$/;"	v	file:
+rbac_acc_delete_role	rbac/kobjects.c	/^static struct medusa_comm_acctype_s rbac_acc_delete_role={$/;"	v	file:
+rbac_acc_perm_assign	rbac/kobjects.c	/^static struct medusa_comm_acctype_s rbac_acc_perm_assign={$/;"	v	file:
+rbac_acc_role_assign	rbac/kobjects.c	/^static struct medusa_comm_acctype_s rbac_acc_role_assign={$/;"	v	file:
+rbac_acc_role_hierarchy	rbac/kobjects.c	/^static struct medusa_comm_acctype_s rbac_acc_role_hierarchy={$/;"	v	file:
+rbac_acc_user_assign	rbac/kobjects.c	/^static struct medusa_comm_acctype_s rbac_acc_user_assign={$/;"	v	file:
+rbac_add_ua	rbac/roles.c	/^int rbac_add_ua( struct user_s *user, struct role_s *role )$/;"	f
+rbac_adm	rbac/adm.c	/^int rbac_adm( struct comm_buffer_s *to_wait, char *op, char *s1, char *s2, char *s3 )$/;"	f
+rbac_adm_create_role	rbac/adm.c	/^int rbac_adm_create_role( struct comm_buffer_s *to_wait, char *name )$/;"	f
+rbac_adm_create_role_do	rbac/adm.c	/^int rbac_adm_create_role_do( struct comm_buffer_s *b )$/;"	f
+rbac_adm_delete_role	rbac/adm.c	/^int rbac_adm_delete_role( struct comm_buffer_s *to_wait, char *name )$/;"	f
+rbac_adm_delete_role_do	rbac/adm.c	/^int rbac_adm_delete_role_do( struct comm_buffer_s *b )$/;"	f
+rbac_adm_hierarchy	rbac/adm.c	/^int rbac_adm_hierarchy( int add, struct comm_buffer_s *to_wait, char *sup_name, char *sub_name )$/;"	f
+rbac_adm_hierarchy_do1	rbac/adm.c	/^int rbac_adm_hierarchy_do1( struct comm_buffer_s *b )$/;"	f
+rbac_adm_hierarchy_do2	rbac/adm.c	/^int rbac_adm_hierarchy_do2( struct comm_buffer_s *b )$/;"	f
+rbac_adm_interf_handler_notify	rbac/interface.c	/^static int rbac_adm_interf_handler_notify( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )$/;"	f	file:
+rbac_adm_perm	rbac/adm.c	/^int rbac_adm_perm( int add, struct comm_buffer_s *to_wait, char *role, char *access, char *space )$/;"	f
+rbac_adm_perm_do1	rbac/adm.c	/^int rbac_adm_perm_do1( struct comm_buffer_s *b )$/;"	f
+rbac_adm_perm_do2	rbac/adm.c	/^int rbac_adm_perm_do2( struct comm_buffer_s *b )$/;"	f
+rbac_adm_perm_init	rbac/adm_perm.c	/^int rbac_adm_perm_init( void )$/;"	f
+rbac_adm_user	rbac/adm.c	/^int rbac_adm_user( int add, struct comm_buffer_s *to_wait, char *role, char *user )$/;"	f
+rbac_adm_user_do1	rbac/adm.c	/^int rbac_adm_user_do1( struct comm_buffer_s *b )$/;"	f
+rbac_adm_user_do2	rbac/adm.c	/^int rbac_adm_user_do2( struct comm_buffer_s *b )$/;"	f
+rbac_comm	rbac/kobjects.c	/^struct comm_s *rbac_comm;$/;"	v
+rbac_comm_alloc	rbac/kobjects.c	/^int rbac_comm_alloc( struct module_s *m )$/;"	f
+rbac_comm_answer	rbac/adm.c	/^int rbac_comm_answer( struct comm_s *c, struct comm_buffer_s *b, int result )$/;"	f
+rbac_comm_init	rbac/kobjects.c	/^int rbac_comm_init( struct module_s *m )$/;"	f
+rbac_conffile	rbac/load.c	/^char *rbac_conffile=NULL;$/;"	v
+rbac_del_hierarchy	rbac/roles.c	/^int rbac_del_hierarchy( struct role_s *sup_role, struct role_s *sub_role )$/;"	f
+rbac_del_ua	rbac/roles.c	/^int rbac_del_ua( struct user_s *user, struct role_s *role )$/;"	f
+rbac_enter_tree_node	rbac/kobjects.c	/^static int rbac_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, struct tree_s *node )$/;"	f	file:
+rbac_h_create_role	rbac/adm_perm.c	/^static int rbac_h_create_role( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )$/;"	f	file:
+rbac_h_delete_role	rbac/adm_perm.c	/^static int rbac_h_delete_role( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )$/;"	f	file:
+rbac_h_perm_assign	rbac/adm_perm.c	/^static int rbac_h_perm_assign( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )$/;"	f	file:
+rbac_h_role_assign	rbac/adm_perm.c	/^static int rbac_h_role_assign( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )$/;"	f	file:
+rbac_h_role_hierarchy	rbac/adm_perm.c	/^static int rbac_h_role_hierarchy( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )$/;"	f	file:
+rbac_h_user_assign	rbac/adm_perm.c	/^static int rbac_h_user_assign( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )$/;"	f	file:
+rbac_inherit_sub	rbac/roles.c	/^void rbac_inherit_sub( struct role_s *r )$/;"	f
+rbac_inherit_sup	rbac/roles.c	/^void rbac_inherit_sup( struct role_s *r )$/;"	f
+rbac_init	rbac/proc.c	/^int rbac_init( struct module_s *m )$/;"	f
+rbac_load	rbac/load.c	/^int rbac_load( struct module_s *m )$/;"	f
+rbac_module	rbac/kobjects.c	/^struct module_s rbac_module={$/;"	v
+rbac_object_init	rbac/kobjects.c	/^int rbac_object_init( void )$/;"	f
+rbac_out	rbac/load.c	/^static void rbac_out( struct compiler_out_class *o, sym_t s, unsigned long d )$/;"	f	file:
+rbac_perm_attr	rbac/kobjects.c	/^static struct medusa_comm_attribute_s rbac_perm_attr[]={$/;"	v	file:
+rbac_perm_class	rbac/kobjects.c	/^struct class_s *rbac_user_class,*rbac_perm_class,*rbac_role_class,*rbac_ROLE_class;$/;"	v
+rbac_perm_mclass	rbac/kobjects.c	/^static struct medusa_comm_class_s rbac_perm_mclass={$/;"	v	file:
+rbac_proc_ch	rbac/proc.c	/^static struct class_handler_s *rbac_proc_ch;$/;"	v	file:
+rbac_proc_enter_tree_node	rbac/proc.c	/^static int rbac_proc_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, struct tree_s *node )$/;"	f	file:
+rbac_proc_get_primary_space	rbac/proc.c	/^static struct space_s *rbac_proc_get_primary_space( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )$/;"	f	file:
+rbac_proc_get_tree_node	rbac/proc.c	/^static struct tree_s *rbac_proc_get_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )$/;"	f	file:
+rbac_proc_get_vs	rbac/proc.c	/^static int rbac_proc_get_vs( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, vs_t *vs, int n )$/;"	f	file:
+rbac_proc_init_comm	rbac/proc.c	/^static int rbac_proc_init_comm( struct class_handler_s *h, struct comm_s *comm )$/;"	f	file:
+rbac_proc_set_handler	rbac/proc.c	/^static int rbac_proc_set_handler( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )$/;"	f	file:
+rbac_proc_setuid_handler_notify	rbac/proc.c	/^static int rbac_proc_setuid_handler_notify( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )$/;"	f	file:
+rbac_role_add	rbac/roles.c	/^struct role_s * rbac_role_add( char *name )$/;"	f
+rbac_role_add_perm	rbac/roles.c	/^int rbac_role_add_perm( struct role_s *role, int which, struct space_s *t )$/;"	f
+rbac_role_attr	rbac/kobjects.c	/^static struct medusa_comm_attribute_s rbac_role_attr[]={$/;"	v	file:
+rbac_role_class	rbac/kobjects.c	/^struct class_s *rbac_user_class,*rbac_perm_class,*rbac_role_class,*rbac_ROLE_class;$/;"	v
+rbac_role_del	rbac/roles.c	/^int rbac_role_del( struct role_s *role )$/;"	f
+rbac_role_del_perm	rbac/roles.c	/^int rbac_role_del_perm( struct role_s *role, int which, struct space_s *t )$/;"	f
+rbac_role_find	rbac/roles.c	/^struct role_s * rbac_role_find( char *name )$/;"	f
+rbac_role_mclass	rbac/kobjects.c	/^static struct medusa_comm_class_s rbac_role_mclass={$/;"	v	file:
+rbac_roles	rbac/roles.c	/^struct role_s *rbac_roles=NULL;$/;"	v
+rbac_roles_need_reinit	rbac/roles.c	/^int rbac_roles_need_reinit=1;$/;"	v
+rbac_roles_reinit	rbac/roles.c	/^int rbac_roles_reinit( void )$/;"	f
+rbac_save	rbac/save.c	/^int rbac_save( char *file, int rotate )$/;"	f
+rbac_save_role	rbac/save.c	/^static void rbac_save_role( FILE *f, struct role_s *r )$/;"	f	file:
+rbac_save_roles	rbac/save.c	/^static void rbac_save_roles( FILE *f )$/;"	f	file:
+rbac_set_hierarchy	rbac/roles.c	/^int rbac_set_hierarchy( struct role_s *sup_role, struct role_s *sub_role )$/;"	f
+rbac_set_perm	rbac/kobjects.c	/^static int rbac_set_perm( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )$/;"	f	file:
+rbac_set_roles	rbac/kobjects.c	/^static int rbac_set_roles( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )$/;"	f	file:
+rbac_t_ROLE	rbac/kobjects.c	/^struct tree_type_s rbac_t_user,rbac_t_perm,rbac_t_role,rbac_t_ROLE;$/;"	v
+rbac_t_perm	rbac/kobjects.c	/^struct tree_type_s rbac_t_user,rbac_t_perm,rbac_t_role,rbac_t_ROLE;$/;"	v
+rbac_t_role	rbac/kobjects.c	/^struct tree_type_s rbac_t_user,rbac_t_perm,rbac_t_role,rbac_t_ROLE;$/;"	v
+rbac_t_user	rbac/kobjects.c	/^struct tree_type_s rbac_t_user,rbac_t_perm,rbac_t_role,rbac_t_ROLE;$/;"	v
+rbac_tab	rbac/load.c	/^struct compile_tab_s rbac_tab[]={$/;"	v
+rbac_user_add	rbac/users.c	/^struct user_s * rbac_user_add( char *name, uid_t uid )$/;"	f
+rbac_user_attr	rbac/kobjects.c	/^static struct medusa_comm_attribute_s rbac_user_attr[]={$/;"	v	file:
+rbac_user_class	rbac/kobjects.c	/^struct class_s *rbac_user_class,*rbac_perm_class,*rbac_role_class,*rbac_ROLE_class;$/;"	v
+rbac_user_find	rbac/users.c	/^struct user_s * rbac_user_find( char *name )$/;"	f
+rbac_user_find_by_uid	rbac/users.c	/^struct user_s * rbac_user_find_by_uid( uid_t uid )$/;"	f
+rbac_user_mclass	rbac/kobjects.c	/^static struct medusa_comm_class_s rbac_user_mclass={$/;"	v	file:
+rbac_users	rbac/users.c	/^struct user_s *rbac_users=NULL;$/;"	v
+read	comm.h	/^	int(*read)(struct comm_s*);$/;"	m	struct:comm_s
+recursive	space.c	/^	int recursive;$/;"	m	struct:space_for_one_path_s	file:
+reg	tree.h	/^	struct tree_s	*reg;		\/* potomkovia s regexpami *\/$/;"	m	struct:tree_s
+reg_data	language/execute.h	27;"	d
+reg_load_var	language/execute.c	/^void reg_load_var( struct register_s *r, struct execute_s *e, char *name, char *attr )$/;"	f
+regcmp	tree.c	/^static int regcmp( regex_t *r, char *name )$/;"	f	file:
+regcompile	tree.c	/^static void *regcompile( char *reg )$/;"	f	file:
+register_event_handler	event.c	/^int register_event_handler( struct event_handler_s *h, struct event_names_s *evname, struct event_hadler_hash_s **hash, vs_t *subject_vs, vs_t *object_vs )$/;"	f
+register_s	language/execute.h	/^struct register_s {$/;"	s
+register_tree_type	tree.c	/^struct tree_s *register_tree_type( tree_type_t *type )$/;"	f
+rel	force/linker.h	/^	struct s_modrel *rel;	\/* free *\/$/;"	m	struct:s_modules_t
+rel_len	force/linker.h	/^	long rel_len, rel_size;$/;"	m	struct:s_modules_t
+rel_size	force/linker.h	/^	long rel_len, rel_size;$/;"	m	struct:s_modules_t
+reserved	force/linker.h	/^\/*+1c*\/	u32 reserved;$/;"	m	struct:fctab_s
+result	event.h	/^	int		result;$/;"	m	struct:event_context_s
+retprintf	constable.c	/^char *retprintf( const char *fmt, ... )$/;"	f
+role	rbac/rbac.h	/^	struct role_s *role;$/;"	m	struct:user_assignment_s
+role_s	rbac/rbac.h	/^struct role_s {				\/* R - roles *\/$/;"	s
+roles	rbac/rbac.h	/^	struct role_s *roles[USER_MAX_ROLES];$/;"	m	struct:user_s
+root	object.h	/^	struct tree_s	*root;$/;"	m	struct:class_handler_s
+rules_arg	language/lex.c	/^static lextab_t rules_arg[]= {$/;"	v	file:
+rules_char	language/lex.c	/^static lextab_t rules_char[]={$/;"	v	file:
+rules_comment	language/lex.c	/^static lextab_t rules_comment[]={$/;"	v	file:
+rules_comment	mcp/conf_lang.c	/^static lextab_t rules_comment[]={$/;"	v	file:
+rules_comment2	language/lex.c	/^static lextab_t rules_comment2[]={$/;"	v	file:
+rules_comment2	mcp/conf_lang.c	/^static lextab_t rules_comment2[]={$/;"	v	file:
+rules_comment_line	language/lex.c	/^static lextab_t rules_comment_line[]={$/;"	v	file:
+rules_comment_line	mcp/conf_lang.c	/^static lextab_t rules_comment_line[]={$/;"	v	file:
+rules_et	language/lex.c	/^static lextab_t rules_et[]={$/;"	v	file:
+rules_et2	language/lex.c	/^static lextab_t rules_et2[]={$/;"	v	file:
+rules_ident	language/lex.c	/^static lextab_t rules_ident[]= {$/;"	v	file:
+rules_ident	mcp/conf_lang.c	/^static lextab_t rules_ident[]= {$/;"	v	file:
+rules_ip	mcp/conf_lang.c	/^static lextab_t rules_ip[]= {$/;"	v	file:
+rules_num	language/lex.c	/^static lextab_t rules_num[]= {$/;"	v	file:
+rules_num	mcp/conf_lang.c	/^static lextab_t rules_num[]= {$/;"	v	file:
+rules_numip	mcp/conf_lang.c	/^static lextab_t rules_numip[]= {$/;"	v	file:
+rules_start	language/lex.c	/^static lextab_t rules_start[]= {$/;"	v	file:
+rules_start	mcp/conf_lang.c	/^static lextab_t rules_start[]= {$/;"	v	file:
+rules_str	mcp/conf_lang.c	/^static lextab_t rules_str[]={$/;"	v	file:
+rules_string	language/lex.c	/^static lextab_t rules_string[]={$/;"	v	file:
+run_init	init.c	/^static int run_init( int argc, char *argv[] )$/;"	f	file:
+runtime	constable.c	/^int runtime( const char *fmt, ... )$/;"	f
+runtime_file	constable.c	/^  char runtime_file[64];$/;"	v
+runtime_pos	constable.c	/^  char runtime_pos[12];$/;"	v
+s_canf_lang_out	language/conf_lang.c	/^struct compiler_out_class s_canf_lang_out={$/;"	v
+s_error	language/error.c	/^struct compiler_err_class s_error={$/;"	v
+s_int32_t	language/alu.c	/^typedef	signed long		s_int32_t;$/;"	t	file:
+s_int64_t	language/alu.c	/^typedef	signed long long	s_int64_t;$/;"	t	file:
+s_modrel	force/linker.h	/^struct s_modrel {$/;"	s
+s_modseg	force/linker.h	/^struct s_modseg {$/;"	s
+s_modsym	force/linker.h	/^struct s_modsym {$/;"	s
+s_modules_t	force/linker.h	/^typedef struct s_modules_t {$/;"	s
+s_rbac_out	rbac/load.c	/^static struct compiler_out_class s_rbac_out={$/;"	v	file:
+section	force/linker.h	/^	int section;$/;"	m	struct:s_modseg
+segment	force/linker.h	/^	struct s_modseg *segment;	\/* free *\/$/;"	m	struct:s_modules_t
+segment	force/linker.h	/^	u_short segment;$/;"	m	struct:s_modsym
+set_handler	object.h	/^	int(*set_handler)(struct class_handler_s *,struct comm_s *,struct object_s *);$/;"	m	struct:class_handler_s
+set_primary_space_do	obsoleted/zal_space.c	/^static void set_primary_space_do( struct tree_s *t, int recursive, struct space_s *space )$/;"	f	file:
+set_primary_space_do	space.c	/^static void set_primary_space_do( struct tree_s *t, struct space_s *space )$/;"	f	file:
+sighandler_t	Mlibc/mlibc.h	/^typedef __sighandler_t(*sighandler_t) (int);$/;"	t
+size	comm.h	/^	int			size;$/;"	m	struct:comm_buffer_s
+size	force/linker.h	/^	long size;$/;"	m	struct:s_modseg
+size	force/linker.h	/^	u_long size;$/;"	m	struct:s_modsym
+size	language/execute.h	/^	int	size;$/;"	m	struct:stack_s
+size	medusa_object.h	/^	u_int16_t	size;		\/* size of object *\/$/;"	m	struct:medusa_comm_class_s
+size	medusa_object.h	/^	u_int16_t	size;$/;"	m	struct:medusa_comm_acctype_s
+size	tree.h	/^	int	size;		\/* size of node *\/$/;"	m	struct:tree_type_s
+skip_atoi	Mlibc/mlibc.c	/^static inline int skip_atoi(const char **s)$/;"	f	file:
+sp	space.c	/^	struct space_path_s *sp;$/;"	m	struct:space_for_one_path_s	file:
+space	rbac/rbac.h	/^	char space[32];$/;"	m	struct:perm_s
+space	rbac/rbac.h	/^	struct space_s *space[8];$/;"	m	struct:permission_assignment_s
+space_add_event	obsoleted/zal_space.c	/^int space_add_event( struct event_handler_s *handler, int ehh_list, struct space_s *subject, struct space_s *object, struct tree_s *subj_node, struct tree_s *obj_node )$/;"	f
+space_add_event	space.c	/^int space_add_event( struct event_handler_s *handler, int ehh_list, struct space_s *subject, struct space_s *object, struct tree_s *subj_node, struct tree_s *obj_node )$/;"	f
+space_add_path	obsoleted/zal_space.c	/^int space_add_path( struct space_s *space, int type, void *path_or_space )$/;"	f
+space_add_path	space.c	/^int space_add_path( struct space_s *space, int type, void *path_or_space )$/;"	f
+space_add_vs	obsoleted/zal_space.c	/^int space_add_vs( struct space_s *space, int which, vs_t *vs )$/;"	f
+space_add_vs	space.c	/^int space_add_vs( struct space_s *space, int which, vs_t *vs )$/;"	f
+space_apply_all	space.c	/^int space_apply_all( void )$/;"	f
+space_create	obsoleted/zal_space.c	/^struct space_s *space_create( char *name, int primary )$/;"	f
+space_create	space.c	/^struct space_s *space_create( char *name, int primary )$/;"	f
+space_find	obsoleted/zal_space.c	/^struct space_s *space_find( char *name )$/;"	f
+space_find	space.c	/^struct space_s *space_find( char *name )$/;"	f
+space_for_each_path	obsoleted/zal_space.c	/^int space_for_each_path( struct space_s *space, int force_recursive, void(*func)(struct tree_s *t, int recursive, void *arg), void *arg )$/;"	f
+space_for_each_path	space.c	/^int space_for_each_path( struct space_s *space, void(*func)(struct tree_s *t, void *arg), void *arg )$/;"	f
+space_for_each_path_i	space.c	/^int space_for_each_path_i( struct space_s *space, struct space_path_s *sp, int force_recursive, void(*func)(struct tree_s *t, void *arg), void *arg )$/;"	f
+space_for_one_path	obsoleted/zal_space.c	/^void space_for_one_path( struct tree_s *t, struct space_s *space, int recursive, void(*func)(struct tree_s *t, int recursive, void *arg), void *arg )$/;"	f
+space_for_one_path	space.c	/^static void space_for_one_path( struct tree_s *t, struct space_path_s *sp, int recursive, void(*func)(struct tree_s *t, void *arg), void *arg )$/;"	f	file:
+space_for_one_path_i	space.c	/^static void space_for_one_path_i( struct tree_s *t, struct space_for_one_path_s *a )$/;"	f	file:
+space_for_one_path_s	space.c	/^struct space_for_one_path_s {$/;"	s	file:
+space_get_vs	obsoleted/zal_space.c	/^vs_t *space_get_vs( struct space_s *space )$/;"	f
+space_get_vs	space.c	/^vs_t *space_get_vs( struct space_s *space )$/;"	f
+space_init_event_mask	obsoleted/zal_space.c	/^int space_init_event_mask( struct comm_s *comm )$/;"	f
+space_init_event_mask	space.c	/^int space_init_event_mask( struct comm_s *comm )$/;"	f
+space_path_add	space.c	/^static int space_path_add( struct space_path_s *sp, struct space_s *space )$/;"	f	file:
+space_path_exclude	space.c	/^static int space_path_exclude( struct space_path_s *sp, struct tree_s *t )$/;"	f	file:
+space_path_s	space.c	/^struct space_path_s {$/;"	s	file:
+space_s	space.h	/^struct space_s {$/;"	s
+space_vs_to_str	space.c	/^int space_vs_to_str( vs_t *vs, char *out, int size )$/;"	f
+sprintf	Mlibc/mlibc.c	/^int sprintf(char *str, const char *format, ...)$/;"	f
+st	force/elf.h	/^	Elf32_Shdr *st;		\/* section table *\/$/;"	m
+st_len	force/elf.h	/^	int st_len;		\/* sections *\/$/;"	m
+stack	language/execute.h	/^	struct stack_s	*stack;$/;"	m	struct:execute_s
+stack	language/execute.h	/^	u_int32_t stack[0];$/;"	m	struct:stack_s
+stack_s	language/execute.h	/^struct stack_s {$/;"	s
+start	force/linker.h	/^\/*+08*\/	u32 start;		\/* dloader set this to begin of this struct *\/$/;"	m	struct:fctab_s
+start	language/execute.h	/^	int	start;$/;"	m	struct:execute_s
+state	comm.h	/^	int		state;$/;"	m	struct:comm_s
+status	force/linker.h	/^	int status;$/;"	m	struct:s_modules_t
+store_string	language/lex.c	/^static char *store_string( char *s )$/;"	f	file:
+str	language/lex.c	/^	char str[0];$/;"	m	struct:str_archive_s	file:
+str2at	rbac/adm.c	/^static int str2at( char *str )$/;"	f	file:
+str_archive	language/lex.c	/^static struct str_archive_s *str_archive;$/;"	v	file:
+str_archive_s	language/lex.c	/^struct str_archive_s {$/;"	s	file:
+strnlen	language/alu2.c	/^int strnlen( char *s, int n )$/;"	f
+strtol	Mlibc/mlibc.c	/^long strtol(const char *nptr, char **endptr, int base)$/;"	f
+strtoul	Mlibc/mlibc.c	/^unsigned long strtoul(const char *nptr, char **endptr, int base)$/;"	f
+sub	rbac/rbac.h	/^	struct hierarchy_s *sub;$/;"	m	struct:role_s
+sub_role	rbac/rbac.h	/^	struct role_s *sub_role;$/;"	m	struct:hierarchy_s
+subhandler	generic.h	/^	struct event_handler_s *subhandler;$/;"	m	struct:g_event_handler_s
+subject	event.h	/^	struct object_s subject;$/;"	m	struct:event_context_s
+subject	object.h	/^	}				subject;$/;"	m	struct:class_s
+subject	space.h	/^	struct space_s		*subject;$/;"	m	struct:levent_s
+subject_handlers	tree.h	/^	struct event_hadler_hash_s	*subject_handlers[EHH_LISTS];$/;"	m	struct:tree_s
+subject_vs	event.h	/^	vs_t				subject_vs[MAX_VS_BITS\/32];$/;"	m	struct:event_hadler_hash_s
+sup	rbac/rbac.h	/^	struct hierarchy_s *sup;$/;"	m	struct:role_s
+sup_role	rbac/rbac.h	/^	struct role_s *sup_role;$/;"	m	struct:hierarchy_s
+sym	force/linker.h	/^	struct s_modsym *sym;	\/* free *\/$/;"	m	struct:s_modules_t
+sym2str	language/error.c	/^static char *sym2str( sym_t sym )$/;"	f	file:
+sym2str	mcp/conf_lang.c	/^static char *sym2str( sym_t sym )$/;"	f	file:
+sym_size	force/linker.h	/^	u_long nr_sym, sym_size;$/;"	m	struct:s_modules_t
+symbol	force/linker.h	/^	int symbol;$/;"	m	struct:s_modrel
+symnames	force/linker.h	/^	char *symnames;$/;"	m	struct:s_modules_t
+t_e_machine	force/elf.c	/^p_stab_t t_e_machine[] = {$/;"	v
+t_e_type	force/elf.c	/^p_stab_t t_e_type[] = {$/;"	v
+t_r_type	force/elf.c	/^p_stab_t t_r_type[] = {$/;"	v
+t_sh_flags	force/elf.c	/^p_stab_t t_sh_flags[] = {$/;"	v
+t_sh_type	force/elf.c	/^p_stab_t t_sh_type[] = {$/;"	v
+t_shn	force/elf.c	/^p_stab_t t_shn[] = {$/;"	v
+t_stb	force/elf.c	/^p_stab_t t_stb[] = {$/;"	v
+t_stt	force/elf.c	/^p_stab_t t_stt[] = {$/;"	v
+table	hash.h	/^	struct hash_ent_s *table[256];$/;"	m	struct:hash_s
+temp	comm.h	/^	void			*temp;$/;"	m	struct:comm_buffer_s
+test	init.c	/^static int test=0;$/;"	v	file:
+tmp_attr	language/execute.h	/^	struct medusa_attribute_s tmp_attr;$/;"	m	struct:register_s
+to_accept	mcp/mcp.c	/^	struct comm_s	*to_accept;$/;"	m	struct:mcp_comm_s	file:
+to_wake	comm.h	/^	struct comm_buffer_queue_s	to_wake;$/;"	m	struct:comm_buffer_s
+total_len	force/linker.h	/^\/*+10*\/	u32 total_len;$/;"	m	struct:fctab_s
+tree_add_event_mask_do	obsoleted/zal_space.c	/^static void tree_add_event_mask_do( struct tree_s *p, int recursive, struct tree_add_event_mask_do_s *arg )$/;"	f	file:
+tree_add_event_mask_do	space.c	/^static void tree_add_event_mask_do( struct tree_s *p, struct tree_add_event_mask_do_s *arg )$/;"	f	file:
+tree_add_event_mask_do_s	obsoleted/zal_space.c	/^struct tree_add_event_mask_do_s {$/;"	s	file:
+tree_add_event_mask_do_s	space.c	/^struct tree_add_event_mask_do_s {$/;"	s	file:
+tree_add_vs_do	obsoleted/zal_space.c	/^static void tree_add_vs_do( struct tree_s *p, int recursive, struct tree_add_vs_do_s *arg )$/;"	f	file:
+tree_add_vs_do	space.c	/^static void tree_add_vs_do( struct tree_s *p, struct tree_add_vs_do_s *arg )$/;"	f	file:
+tree_add_vs_do_s	obsoleted/zal_space.c	/^struct tree_add_vs_do_s {$/;"	s	file:
+tree_add_vs_do_s	space.c	/^struct tree_add_vs_do_s {$/;"	s	file:
+tree_apply_alts	tree.c	/^static void tree_apply_alts( struct tree_s *dir )$/;"	f	file:
+tree_comm_reinit	obsoleted/zal_space.c	/^static void tree_comm_reinit( struct comm_s *comm, struct tree_s *t )$/;"	f	file:
+tree_comm_reinit	space.c	/^static void tree_comm_reinit( struct comm_s *comm, struct tree_s *t )$/;"	f	file:
+tree_event_s	tree.h	/^struct tree_event_s {$/;"	s
+tree_expand_alternatives	tree.c	/^int tree_expand_alternatives( void )$/;"	f
+tree_for_alt_i	tree.c	/^static void tree_for_alt_i( struct tree_s *t, struct tree_s *p, int n, void(*func)(struct tree_s *t, void *arg), void *arg )$/;"	f	file:
+tree_for_alternatives	tree.c	/^void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, void *arg), void *arg )$/;"	f
+tree_get_path	tree.c	/^char *tree_get_path( struct tree_s *t )$/;"	f
+tree_get_rnth	tree.c	/^static struct tree_s *tree_get_rnth( struct tree_s *t, int n )$/;"	f	file:
+tree_is_equal	tree.c	/^int tree_is_equal( struct tree_s *test, struct tree_s *p )$/;"	f
+tree_is_equal_i	tree.c	/^static void tree_is_equal_i( struct tree_s *p, void *arg )$/;"	f	file:
+tree_is_offspring	tree.c	/^int tree_is_offspring( struct tree_s *offspring, struct tree_s *ancestor )$/;"	f
+tree_is_offspring_i	tree.c	/^static void tree_is_offspring_i( struct tree_s *ancestor, void *arg )$/;"	f	file:
+tree_node_merge	tree.c	/^static void tree_node_merge( struct tree_s *r, struct tree_s *t )$/;"	f	file:
+tree_print_handlers	tree.c	/^void tree_print_handlers(struct event_hadler_hash_s *h,char *name,void(*out)(void *arg, char *),void *arg)$/;"	f
+tree_print_node	tree.c	/^void tree_print_node( struct tree_s *t, int level, void(*out)(void *arg, char *), void *arg )$/;"	f
+tree_s	tree.h	/^struct tree_s {$/;"	s
+tree_set_default_path	tree.c	/^int tree_set_default_path( char *new )$/;"	f
+tree_type_s	tree.h	/^struct tree_type_s {$/;"	s
+tree_type_t	tree.h	/^typedef struct tree_type_s tree_type_t;$/;"	t
+type	force/linker.h	/^	int type;$/;"	m	struct:s_modrel
+type	force/linker.h	/^	u_short type;		\/* unused *\/$/;"	m	struct:s_modsym
+type	medusa_object.h	/^	u_int8_t type;				\/* data type (MED_COMM_TYPE_xxx) *\/$/;"	m	struct:medusa_comm_attribute_s
+type	obsoleted/zal_space.c	/^	struct event_type_s *type;$/;"	m	struct:tree_add_event_mask_do_s	file:
+type	space.c	/^	struct event_type_s *type;$/;"	m	struct:tree_add_event_mask_do_s	file:
+type	space.h	/^	int		type;$/;"	m	struct:ltree_s
+type	tree.h	/^	struct tree_type_s *type;$/;"	m	struct:tree_s
+u32	force/linker.h	/^typedef       u_int32_t  u32;$/;"	t
+ua	rbac/rbac.h	/^	struct user_assignment_s *ua;$/;"	m	struct:role_s
+ua	rbac/rbac.h	/^	struct user_assignment_s *ua;$/;"	m	struct:user_s
+uid	rbac/rbac.h	/^	uid_t uid;$/;"	m	struct:user_s
+undef	force/linker.h	/^	struct s_modsym *undef;	\/* free *\/$/;"	m	struct:s_modules_t
+undef_len	force/linker.h	/^	long undef_len, undef_size;$/;"	m	struct:s_modules_t
+undef_size	force/linker.h	/^	long undef_len, undef_size;$/;"	m	struct:s_modules_t
+unset_primary_space_do	obsoleted/zal_space.c	/^static void unset_primary_space_do( struct tree_s *t, int recursive, struct space_s *space )$/;"	f	file:
+update_object	comm.h	/^	int(*update_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);$/;"	m	struct:comm_s
+usage	init.c	/^int usage( char *me )$/;"	f
+user	object.h	/^	void		*user;	\/* struct event_names_s * for generic *\/$/;"	m	struct:class_handler_s
+user	rbac/rbac.h	/^	struct user_s *user;$/;"	m	struct:user_assignment_s
+user1	comm.h	/^	void			*user1;$/;"	m	struct:comm_buffer_s
+user2	comm.h	/^	void			*user2;$/;"	m	struct:comm_buffer_s
+user_assignment_s	rbac/rbac.h	/^struct user_assignment_s {		\/* UA - user assignment *\/$/;"	s
+user_data	comm.h	/^	char		user_data[0];$/;"	m	struct:comm_s
+user_data	comm.h	/^	int			user_data;$/;"	m	struct:comm_buffer_s
+user_s	rbac/rbac.h	/^struct user_s {				\/* U - users *\/$/;"	s
+utsname	Mlibc/mlibc.h	56;"	d
+value	force/linker.h	/^	long value;$/;"	m	struct:s_modsym
+value	language/data.c	/^struct compile_tab_s value[]={$/;"	v
+var_link	language/variables.c	/^struct object_s *var_link( struct object_s **v, struct object_s *var )$/;"	f
+version	force/linker.h	/^\/*+00*\/	u32 version;$/;"	m	struct:fctab_s
+vs	obsoleted/zal_space.c	/^	const vs_t *vs;$/;"	m	struct:tree_add_vs_do_s	file:
+vs	rbac/rbac.h	/^	vs_t vs[MAX_VS_BITS\/32];$/;"	m	struct:perm_s
+vs	rbac/rbac.h	/^	vs_t vs[MAX_VS_BITS\/32];$/;"	m	struct:user_s
+vs	rbac/rbac.h	/^	vs_t vs[NR_ACCESS_TYPES][MAX_VS_BITS\/32]; \/* PA - permission assignment *\/$/;"	m	struct:role_s
+vs	space.c	/^	const vs_t *vs;$/;"	m	struct:tree_add_vs_do_s	file:
+vs	space.h	/^	vs_t		vs[NR_ACCESS_TYPES][MAX_VS_BITS\/32];$/;"	m	struct:space_s
+vs	tree.h	/^	vs_t	vs[NR_ACCESS_TYPES][MAX_VS_BITS\/32];$/;"	m	struct:tree_s
+vs	vs.h	/^	vs_t vs[MAX_VS_BITS\/32];$/;"	m	struct:vs_s
+vs_add	vs.c	/^void vs_add( const vs_t *from, vs_t *to )$/;"	f
+vs_alloc	vs.c	/^struct vs_s *vs_alloc( char *name )$/;"	f
+vs_attr	object.h	/^	struct medusa_attribute_s	*vs_attr[NR_ACCESS_TYPES];$/;"	m	struct:class_s
+vs_clear	vs.c	/^void vs_clear( vs_t *to )$/;"	f
+vs_fill	vs.c	/^void vs_fill( vs_t *to )$/;"	f
+vs_find	vs.c	/^struct vs_s *vs_find( char *name )$/;"	f
+vs_init	vs.c	/^int vs_init( void )$/;"	f
+vs_invert	vs.c	/^void vs_invert( vs_t *to )$/;"	f
+vs_is_enough	vs.c	/^int vs_is_enough( int bites )$/;"	f
+vs_isclear	vs.c	/^int vs_isclear( const vs_t *vs )$/;"	f
+vs_isfull	vs.c	/^int vs_isfull( const vs_t *vs )$/;"	f
+vs_issub	vs.c	/^int vs_issub( const vs_t *test, vs_t *vs )$/;"	f
+vs_mask	vs.c	/^void vs_mask( const vs_t *from, vs_t *to )$/;"	f
+vs_s	vs.h	/^struct vs_s {$/;"	s
+vs_set	vs.c	/^void vs_set( const vs_t *from, vs_t *to )$/;"	f
+vs_sub	rbac/rbac.h	/^	vs_t vs_sub[MAX_VS_BITS\/32];		\/* member for sup -> sub hier.*\/$/;"	m	struct:role_s
+vs_sub	vs.c	/^void vs_sub( const vs_t *from, vs_t *to )$/;"	f
+vs_t	vs.h	/^typedef __u32	vs_t;$/;"	t
+vs_tab	vs.c	/^static struct vs_s vs_tab;$/;"	v	file:
+vs_test	vs.c	/^int vs_test( const vs_t *test, const vs_t *vs )$/;"	f
+vsprintf	Mlibc/mlibc.c	/^static int vsprintf(char *buf, const char *fmt, va_list args)$/;"	f	file:
+wait_for_answer	comm.h	/^	struct comm_buffer_queue_s wait_for_answer;	\/* fetch *\/$/;"	m	struct:comm_s
+want	comm.h	/^	int			want;		\/* for comm *\/$/;"	m	struct:comm_buffer_s
+warning	language/error.c	/^int warning( const char *fmt, ... )$/;"	f
+which	obsoleted/zal_space.c	/^	int which;$/;"	m	struct:tree_add_vs_do_s	file:
+which	space.c	/^	int which;$/;"	m	struct:tree_add_vs_do_s	file:
+write	comm.h	/^	int(*write)(struct comm_s*);$/;"	m	struct:comm_s

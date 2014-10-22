@@ -9,10 +9,14 @@
 #ifndef _MODULES_H
 #define _MODULES_H
 
+#ifdef linux
 #include <linux/types.h>
+#else
+#include <machine/types.h>
+#endif
 #include "elf.h"
 
-typedef       uintptr_t  u32;
+typedef       u_int32_t  u32;
 
 #define	E_UNDEF		-200
 #define	E_NOINIT	-201	/* init_module doesn't exist */

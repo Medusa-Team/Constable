@@ -21,47 +21,47 @@ RESERVED	= 0x1C
 	.align 4;
 dloader:
 	call   .dl0
-.dl0:	popq   %rbp
-	addq   $.fctab-.dl0,%rbp
-	movq   %rbp,START(%rbp)
-	movq   DREL_TAB(%rbp),%rsi
-	addq   %rbp,%rsi
-	movq   %rsi,DREL_TAB(%rbp)
+.dl0:	popl   %ebp
+	addl   $.fctab-.dl0,%ebp
+	movl   %ebp,START(%ebp)
+	movl   DREL_TAB(%ebp),%esi
+	addl   %ebp,%esi
+	movl   %esi,DREL_TAB(%ebp)
 .dl_rel:
-	movq   (%rsi),%rdi
-	cmpq   $0xffffffffffffffff,%rdi
+	movl   (%esi),%edi
+	cmpl   $0xffffffff,%edi
 	je     .dl_relocated
-	addq   %rbp,%rdi
-	addq   %rbp,(%rdi)
-	addq   $0x4,%rsi
+	addl   %ebp,%edi
+	addl   %ebp,(%edi)
+	addl   $0x4,%esi
 	jmp    .dl_rel
 .dl_relocated:
-	movq   ARGV(%rbp),%rsi
-	addq   %rbp,%rsi
-	movq   %rsi,ARGV(%rbp)
-	movq   ARGC(%rbp),%rax
-	shlq   $3,%rax
-	addq   ARGC,%rsi
+	movl   ARGV(%ebp),%esi
+	addl   %ebp,%esi
+	movl   %esi,ARGV(%ebp)
+	movl   ARGC(%ebp),%eax
+	shll   $3,%eax
+	addl   ARGC,%esi
 .dl_do_arg:
-	movq   (%rsi),%rax
-	subq   $0x4,%rsi
-	cmpq   $0,%rax
+	movl   (%esi),%eax
+	subl   $0x4,%esi
+	cmpl   $0,%eax
 	je     .dl_do_arg_end
-	movq   (%rsi),%rdi
-	subq   $0x4,%rsi
-	cmpq   $1,%rax
+	movl   (%esi),%edi
+	subl   $0x4,%esi
+	cmpl   $1,%eax
 	je     .dl_do_arg_noreloc
-	addq   %rbp,%rdi
+	addl   %ebp,%edi
 .dl_do_arg_noreloc:
-	push   %rdi
+	push   %edi
 	jmp    .dl_do_arg
 .dl_do_arg_end:
-	movq   MAIN(%rbp),%rax
-	addq   %rbp,%rax
-	call   *%rax
-	movq   ARGC(%rbp),%rax
-	shl    $2,%rax
-	addq   %rax,%rsp
+	movl   MAIN(%ebp),%eax
+	addl   %ebp,%eax
+	call   *%eax
+	movl   ARGC(%ebp),%eax
+	shl    $2,%eax
+	addl   %eax,%esp
 	ret
 .align 4
 .fctab:

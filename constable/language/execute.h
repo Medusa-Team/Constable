@@ -11,7 +11,6 @@
 
 #include "../event.h"
 #include "../object.h"
-#include <stdint.h>
 
 #define MAX_REG_SIZE	4096
 
@@ -32,7 +31,7 @@ struct stack_s {
 	struct stack_s	*next;
 	int	size;
 	int	my_offset;
-	uintptr_t stack[0];
+	u_int32_t stack[0];
 };
 
 struct execute_s {
@@ -40,7 +39,7 @@ struct execute_s {
 	int	pos;
 	int	base;
 	int	start;
-	uintptr_t *p;
+	u_int32_t *p;
 	int	fn_getsval_p;
 	int	cont;
 	struct event_handler_s *h;
@@ -67,7 +66,7 @@ void r_imm( struct register_s *r );
 void r_sto( struct register_s *v, struct register_s *d );
 void r_resize( struct register_s *v, int size );
 
-//int strnlen( char *s, int n ); 
+//mY int strnlen( char *s, int n );
 
 void r_neg( struct register_s *v );
 void r_not( struct register_s *v );
@@ -75,7 +74,7 @@ int r_nz( struct register_s *v );
 
 void do_bin_op( int op, struct register_s *v, struct register_s *d );
 
-int load_constant( struct register_s *r , uintptr_t typ, char * name );
+int load_constant( struct register_s *r , u_int32_t typ, char * name );
 
 int language_init_comm_datatypes( struct comm_s *comm );
 
@@ -84,10 +83,10 @@ int execute_handler( struct comm_buffer_s *comm_buff, struct event_handler_s *h,
 struct stack_s *execute_get_stack( void );
 void execute_put_stack( struct stack_s *stack );
 struct execute_s *execute_alloc_execute( void );
-void execute_push( struct execute_s *e, uintptr_t data );
-uintptr_t execute_pop( struct execute_s *e );
-uintptr_t execute_readstack( struct execute_s *e, int pos );
-uintptr_t *execute_stack_pointer( struct execute_s *e, int pos );
+void execute_push( struct execute_s *e, u_int32_t data );
+u_int32_t execute_pop( struct execute_s *e );
+u_int32_t execute_readstack( struct execute_s *e, int pos );
+u_int32_t *execute_stack_pointer( struct execute_s *e, int pos );
 int execute_init_stacks( int n );
 
 #endif /* _EXECUTE_H */

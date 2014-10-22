@@ -1,0 +1,20 @@
+
+OK- classhandler cinfo je pole
+OK- generic
+OK- language
+
+OK- do_event - prehladavat aj uzly sujektu a objektu
+
+OK- VS-ka maximalna dlzka a do objektu zapisuje podla velkosti objektu
+
+OK- byte order v definicii tried a accestypov!!!
+
+- support for posix file capabilities
+- to debug ;-)
+
+ok - co ak setuid zakazem ale rbac uz vsetko nastavilo... Alebo co ak exec zakazem, ale v strome som sa uz posunul??? -- priority handlerov
+
+ok - pri closnuti spojenia vycistit - pouvolnovat definicie classov a eventov ... + dat vsade NULL
+
+
+

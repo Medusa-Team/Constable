@@ -471,7 +471,7 @@ char *tree_get_path( struct tree_s *t )
 
 /* ----------------------------------- */
 
-void tree_print_handlers(struct event_hadler_hash_s *h,char *name,void(*out)(int arg, char *),int arg)
+void tree_print_handlers(struct event_hadler_hash_s *h,char *name,void(*out)(void *arg, char *),void *arg)
 {
 	if( h!=NULL )
 	{	out(arg,"  ");
@@ -490,7 +490,7 @@ void tree_print_handlers(struct event_hadler_hash_s *h,char *name,void(*out)(int
 	}
 }
 
-void tree_print_node( struct tree_s *t, int level, void(*out)(int arg, char *), int arg )
+void tree_print_node( struct tree_s *t, int level, void(*out)(void *arg, char *), void *arg )
 { char *s,buf[4096];
   int a,i;
   struct tree_s *p;

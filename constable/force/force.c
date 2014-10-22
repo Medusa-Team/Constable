@@ -61,9 +61,9 @@ static BUILDIN_FUNC(cmd_force_code_old)
   int size,l,flags;
   struct fcs_s *f;
   struct fctab_s *head;
-  uintptr_t d;
+  u_int32_t d;
 
-	*((uintptr_t*)(ret->data))=0;
+	*((u_int32_t*)(ret->data))=0;
 	if( !getarg(e,&r) || (r.attr->type&0x0f)!=MED_TYPE_BITMAP || (r.data==r.buf) )
 	{	runtime("force_code(): 1st argument must be bitmap attribute of kobject");
 		return(-1);
@@ -121,7 +121,7 @@ too_big:	runtime("force_code(): code is too big");
 	head->total_len=byte_reorder_put_int32(flags,dest - dest_begin);
 	head->argc=byte_reorder_put_int32(flags,head->argc);
 	head->argv=byte_reorder_put_int32(flags,head->argv);
-	*((uintptr_t*)(ret->data))= dest - dest_begin;
+	*((u_int32_t*)(ret->data))= dest - dest_begin;
 	return(0);
 }
 
@@ -132,9 +132,9 @@ static BUILDIN_FUNC(cmd_force_code)
   int size,l,flags,rvarpos,rvarend;
   struct fcs_s *f;
   struct fctab_s *head;
-  uintptr_t d;
+  u_int32_t d;
 
-	*((uintptr_t*)(ret->data))=0;
+	*((u_int32_t*)(ret->data))=0;
 	if( !getarg(e,&r) || (r.attr->type&0x0f)!=MED_TYPE_BITMAP || (r.data==r.buf) )
 	{	runtime("force_code(): 1st argument must be bitmap attribute of kobject");
 		return(-1);
@@ -227,9 +227,9 @@ too_big:	runtime("force_code(): code is too big");
 		}
 	}
 	if( size>0 )
-	{ uintptr_t *pi,i;
+	{ u_int32_t *pi,i;
 		memmove(dest,dest_begin+rvarpos,rvarend-rvarpos);
-		pi=(uintptr_t*)(dest_begin+head->argv+((head->argc)<<3));
+		pi=(u_int32_t*)(dest_begin+head->argv+((head->argc)<<3));
 		while( (i=byte_reorder_get_int32(flags,*pi--))!=0 )
 		{	if( i==2 )
 			{	*pi=byte_reorder_put_int32(flags,
@@ -242,7 +242,7 @@ too_big:	runtime("force_code(): code is too big");
 	head->total_len=byte_reorder_put_int32(flags,dest - dest_begin);
 	head->argc=byte_reorder_put_int32(flags,head->argc);
 	head->argv=byte_reorder_put_int32(flags,head->argv);
-	*((uintptr_t*)(ret->data))= dest - dest_begin;
+	*((u_int32_t*)(ret->data))= dest - dest_begin;
 	return(0);
 }
 
@@ -256,8 +256,8 @@ int force_init(void)
 		printf("\n");
 	}
 */
-	lex_addkeyword("force_code_int",Tbuildin,(uintptr_t)cmd_force_code_old);
-	lex_addkeyword("force_code",Tbuildin,(uintptr_t)cmd_force_code);
+	lex_addkeyword("force_code_int",Tbuildin,(unsigned long)cmd_force_code_old);
+	lex_addkeyword("force_code",Tbuildin,(unsigned long)cmd_force_code);
 	return 0;
 }
 

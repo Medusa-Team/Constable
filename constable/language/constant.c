@@ -11,7 +11,7 @@
 #include "../constable.h"
 #include "../space.h"
 
-int load_constant( struct register_s *r , uintptr_t typ, char * name )
+int load_constant( struct register_s *r , u_int32_t typ, char * name )
 {
 	/* init register */
 	r->flags=0;
@@ -19,9 +19,9 @@ int load_constant( struct register_s *r , uintptr_t typ, char * name )
 	r->data=r->buf;
 	r->attr= &(r->tmp_attr);
 	r->attr->offset=0;
-	r->attr->length=sizeof(uintptr_t);
+	r->attr->length=sizeof(u_int32_t);
 	r->attr->type=MED_TYPE_UNSIGNED;
-	*((uintptr_t*)(r->data))=0;
+	*((u_int32_t*)(r->data))=0;
 	r->attr->name[0]=0;
 	if( typ==Tspace )
 	{ struct space_s *t;
@@ -29,7 +29,7 @@ int load_constant( struct register_s *r , uintptr_t typ, char * name )
 		{	runtime("Undefined space %s",name);
 			return(0);
 		}
-		r->data= (char*)(t->my_vs->vs);
+		r->data= (char *)(t->my_vs->vs);
 		r->attr->length=(MAX_VS_BITS/32)*4;
 		r->attr->type=MED_TYPE_BITMAP|MED_TYPE_READ_ONLY;
 		return(1);

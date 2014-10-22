@@ -15,10 +15,10 @@
 //#define MAX(a,b)	((a)>(b)?(a):(b))
 //#define MIN(a,b)	((a)<(b)?(a):(b))
 
-extern void(*debug_def_out)( int arg, char *str ); 
-extern int debug_def_arg;
-extern void(*debug_do_out)( int arg, char *str );
-extern int debug_do_arg;
+extern void(*debug_def_out)( void *arg, char *str );
+extern void *debug_def_arg;
+extern void(*debug_do_out)( void *arg, char *str );
+extern void *debug_do_arg;
 
 int medusa_printlog(char *format, ...);
 

@@ -117,7 +117,7 @@ static struct event_handler_s *handler=NULL;
 static int handler_size=0;
 static int handler_pos=0;
 
-void canf_lang_out( struct compiler_out_class *o, sym_t s, uintptr_t d )
+void canf_lang_out( struct compiler_out_class *o, sym_t s, unsigned long d )
 {
 	if( s == TEND )
 		return;
@@ -127,14 +127,14 @@ void canf_lang_out( struct compiler_out_class *o, sym_t s, uintptr_t d )
 	}
 	if( handler_pos >= handler_size )
 	{	handler_size= handler_pos + 8;
-		if( (handler=realloc(handler,sizeof(struct event_handler_s)+handler_size*sizeof(uintptr_t)))==NULL )
+		if( (handler=realloc(handler,sizeof(struct event_handler_s)+handler_size*4))==NULL )
 		{	error(Out_of_memory);
 			return;
 		}
 	}
 	if( (s & TYP) == O )
 		d=s;
-	((uintptr_t *)(handler->data))[handler_pos++]= d;
+	((u_int32_t *)(handler->data))[handler_pos++]= d;
 }
 
 static void out_destroy( struct compiler_out_class *this )
@@ -161,7 +161,7 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
   static struct class_names_s *class=NULL;
   static int path_type=0;
   struct event_names_s *event;
-  uintptr_t x;
+  u_int32_t x;
   int i=0;
   vs_t *v;
   	if( (s&0x0f00) == 0x0100 )
@@ -200,14 +200,14 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
 				{	error("NULL path!");
 					break;
 				}
-				c->l.data=(uintptr_t)create_path((char*)(c->l.data));
+				c->l.data=(u_int32_t)(create_path((char*)(c->l.data)));
 				break;
 		case Pid2class:
 				if( c->l.data == 0 )
 				{	error("NULL class name!");
 					break;
 				}
-				if( (x=(uintptr_t)(get_class_by_name((char*)(c->l.data))))==0 )
+				if( (x=(u_int32_t)(get_class_by_name((char*)(c->l.data))))==0 )
 					error("Unknown class %s",(char*)(c->l.data));
 				c->l.data=x;
 				break;
@@ -245,7 +245,7 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
 				{	error("NULL space name!");
 					break;
 				}
-				if( (c->l.data=(uintptr_t)space_find((char*)(c->l.data)))==0 )
+				if( (c->l.data=(u_int32_t)space_find((char*)(c->l.data)))==0 )
 					error("Undeclared space %s",(char*)x);
 				break;
 		case Pallspaces:
@@ -265,7 +265,7 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
 				ehh_list=EHH_VS_ALLOW;
 				handler_size=8;
 				handler_pos=0;
-				if( (handler=malloc(sizeof(struct event_handler_s)+handler_size*sizeof(uintptr_t)))==NULL )
+				if( (handler=malloc(sizeof(struct event_handler_s)+handler_size*4))==NULL )
 				{	error(Out_of_memory);
 					break;
 				}
@@ -291,13 +291,13 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
 				else
 				{
 				if( (x=lex_getkeyword(op_name,Tcallfunc))==0 )
-				{	x=(uintptr_t)(malloc(sizeof(void *)));
+				{	x=(u_int32_t)(malloc(sizeof(void *)));
 					if( lex_addkeyword(op_name,Tcallfunc,x)<0 )
 						error("Duplicate definition of function %s",op_name);
 				}
-				else if( *((uintptr_t*)x)!=0 )
+				else if( *((u_int32_t*)x)!=0 )
 					error("Duplicate definition of function %s",op_name);
-				*((uintptr_t*)x)=((uintptr_t)handler)+((uintptr_t)(((struct event_handler_s*)0)->data));
+				*((u_int32_t*)x)=((unsigned long)handler)+((unsigned long)(((struct event_handler_s*)0)->data));
 				}
 				handler=NULL;
 				break;
@@ -307,8 +307,8 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
 				{	error("NULL function name");
 					break;
 				}
-				x=(uintptr_t)(malloc(sizeof(void *)));
-				*((void**)x)=0;
+				x=(u_int32_t)(malloc(sizeof(void *)));
+				*((u_int32_t*)x)=0;
 				if( lex_addkeyword(op_name,Tcallfunc,x)<0 )
 //					warning("Duplicit declaration of function %s",op_name);
 					;
@@ -404,7 +404,7 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
 				tree_set_default_path((char*)(c->l.data));
 				break;
 		case Psgvs:
-				if( (c->l.data=(uintptr_t)(space_get_vs((struct space_s*)(c->l.data))))==0 )
+				if( (c->l.data=(u_int32_t)(space_get_vs((struct space_s*)(c->l.data))))==0 )
 				{	error("%s",errstr);
 					break;
 				}

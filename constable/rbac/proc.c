@@ -37,7 +37,7 @@ static int rbac_proc_set_handler( struct class_handler_s *h, struct comm_s *comm
 { struct user_s *u;
   struct role_s *r;
   uid_t uid;
-  uintptr_t session;
+  u_int32_t session;
   int i,a;
 
 	VALIDATE_ROLES();
@@ -49,7 +49,7 @@ static int rbac_proc_set_handler( struct class_handler_s *h, struct comm_s *comm
 		return(-1);
 	}
 	object_add_event(o,&(u->cinfo->events[comm->conn].event[0]));
-	session=(uintptr_t)CINFO(o,h,comm);
+	session=CINFO(o,h,comm);
 	i=0;
 	while( session && i<USER_MAX_ROLES )
 	{	if( (session & 0x01) && (r=u->roles[i]) )
@@ -70,7 +70,7 @@ static int rbac_proc_get_vs( struct class_handler_s *h, struct comm_s *comm, str
 { struct user_s *u;
   struct role_s *r;
   uid_t uid;
-  uintptr_t session;
+  u_int32_t session;
   int i;
 
 	VALIDATE_ROLES();
@@ -81,7 +81,7 @@ static int rbac_proc_get_vs( struct class_handler_s *h, struct comm_s *comm, str
 	{	runtime("RBAC: Unknown uid %d",uid);
 		return(-1);
 	}
-	session=(uintptr_t)CINFO(o,h,comm);
+	session=CINFO(o,h,comm);
 	i=0;
 	while( session && i<USER_MAX_ROLES )
 	{	if( (session & 0x01) && (r=u->roles[i]) )
@@ -102,7 +102,7 @@ static struct space_s *rbac_proc_get_primary_space( struct class_handler_s *h, s
 
 static int rbac_proc_setuid_handler_notify( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
 {
-	CINFO(&(c->subject),rbac_proc_ch,cb->comm)=~(uintptr_t)0;
+	CINFO(&(c->subject),rbac_proc_ch,cb->comm)=~0;
 	object_do_sethandler(&(c->subject));
 	c->result=RESULT_OK;
 	return(0);

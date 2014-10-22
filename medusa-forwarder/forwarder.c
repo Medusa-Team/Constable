@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -19,7 +18,7 @@
 #include <unistd.h>
 #include <netdb.h>
 
-static void mylog(int fd, char * banner, char * buf, int len)
+static void log(int fd, char * banner, char * buf, int len)
 {
 	struct timeval tv;
 	char msg[1024];
@@ -90,7 +89,7 @@ int main(int argc, char * argv[])
 				return 0;
 			}
 			if (log_fd != -1)
-				mylog(log_fd, "N->K", buf, i);
+				log(log_fd, "N->K", buf, i);
 			j = i;
 			while (j) {
 				tmp = write(dev, buf + i-j, j);
@@ -108,7 +107,7 @@ int main(int argc, char * argv[])
 				return 0;
 			}
 			if (log_fd != -1)
-				mylog(log_fd, "K->N", buf, i);
+				log(log_fd, "K->N", buf, i);
 			j = i;
 			while (j) {
 				tmp = write(sock, buf + i-j, j);

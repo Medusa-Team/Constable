@@ -8,15 +8,13 @@
 #ifndef _COMPILER_H
 #define _COMPILER_H
 
-#include <stdint.h>
-
 int compiler_verlib(char *ver);
 
 typedef unsigned short sym_t;
 
 struct lex_s	{
 	sym_t		sym;
-	uintptr_t	data;
+	unsigned long	data;
 		};
 
 #define	COMPILE_TAB_TERMINALS	7

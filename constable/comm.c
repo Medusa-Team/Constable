@@ -96,7 +96,7 @@ int comm_do( void )
 				r=do_event(b);
 			else
 				r=b->comm->answer(b->comm,b,r);
-printf("ZZZ: do_event()=%d\n",r);
+//printf("ZZZ: do_event()=%d\n",r);
 			if( r==1 )
 				comm_buf_todo(b);
 			else if( r<=0 )
@@ -142,7 +142,7 @@ printf("ZZZ: do_event()=%d\n",r);
 
 int comm_conn_init( struct comm_s *comm )
 {
-printf("ZZZ: comm_conn_init %s\n",comm->name);
+//printf("ZZZ: comm_conn_init %s\n",comm->name);
 /* default kobjects fo internal constable use */
 	language_init_comm_datatypes(comm);
 /* initialize event_masks and classes */
