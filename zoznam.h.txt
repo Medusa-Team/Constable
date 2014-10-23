@@ -33,3 +33,4 @@
 ./rbac/rbac.h: u_int32_t --> uintptr_t
 ./force/linker.h: u_int32_t --> uintptr_t
 ./types.h: pridana kniznica stdint.h //done
+skuska
