@@ -333,7 +333,7 @@ static void tree_for_alt_i( struct tree_s *t, struct tree_s *p, int n, void(*fun
 	{	for(a=t->child;a!=NULL;a=a->next)
 			if( !regcmp(r->extra,a->name) )
 				tree_for_alt_i(a,p,n,func,arg);
-		if( r->extra==1 /* .* speed up */ )
+		if( r->extra==(void*)1 /* .* speed up */ )
 		{	for(a=t->reg;a!=NULL;a=a->next)
 				tree_for_alt_i(a,p,n,func,arg);
 		}
@@ -425,7 +425,7 @@ static void tree_node_merge( struct tree_s *r, struct tree_s *t )
 static void tree_apply_alts( struct tree_s *dir )
 { struct tree_s *r,*t,*all=NULL;
 	for(r=dir->reg;r!=NULL;r=r->next)
-	{	if( r->extra==1 /* .* speed up */ )
+	{	if( r->extra==(void*)1 /* .* speed up */ )
 			all=r;
 		for(t=dir->child;t!=NULL;t=t->next)
 		{	if( !regcmp(r->extra,t->name) )

@@ -9,14 +9,13 @@
 #include <sys/param.h>
 #include <string.h>
 
-void memrcpy( void *dest_orig, const void *src_orig, size_t n )
+void memrcpy( void *dest, const void *src, size_t n )
 {
-	char *dest = (char*)dest_orig;
-	char *src = (char*)src_orig;
 	while( n>0 ) {
-		*dest = src[--n];
+		*((char*)dest)=((char*)src)[--n];
 		dest++;
 	}
+	//memcpy(dest, src, n);
 }
 
 int object_get_val( struct object_s *o, struct medusa_attribute_s *a, void *buf, int maxlen )

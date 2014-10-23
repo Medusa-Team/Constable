@@ -37,7 +37,7 @@ static int rbac_proc_set_handler( struct class_handler_s *h, struct comm_s *comm
 { struct user_s *u;
   struct role_s *r;
   uid_t uid;
-  u_int32_t session;
+  uintptr_t session;
   int i,a;
 
 	VALIDATE_ROLES();
@@ -70,7 +70,7 @@ static int rbac_proc_get_vs( struct class_handler_s *h, struct comm_s *comm, str
 { struct user_s *u;
   struct role_s *r;
   uid_t uid;
-  u_int32_t session;
+  uintptr_t session;
   int i;
 
 	VALIDATE_ROLES();
@@ -102,7 +102,7 @@ static struct space_s *rbac_proc_get_primary_space( struct class_handler_s *h, s
 
 static int rbac_proc_setuid_handler_notify( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
 {
-	CINFO(&(c->subject),rbac_proc_ch,cb->comm)=~0;
+	CINFO(&(c->subject),rbac_proc_ch,cb->comm)=~(uintptr_t)0;
 	object_do_sethandler(&(c->subject));
 	c->result=RESULT_OK;
 	return(0);

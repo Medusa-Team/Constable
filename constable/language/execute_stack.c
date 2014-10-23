@@ -21,7 +21,7 @@ struct stack_s *execute_get_stack( void )
 		p->my_offset=0;
 		return(p);
 	}
-	if( (p=malloc(sizeof(struct stack_s)+STACKLEN*sizeof(u_int32_t)))==NULL )
+	if( (p=malloc(sizeof(struct stack_s)+STACKLEN*sizeof(uintptr_t)))==NULL )
 		return(NULL);
 	p->prev=p->next=NULL;
 	p->size=STACKLEN;
@@ -48,7 +48,7 @@ struct execute_s *execute_alloc_execute( void )
 	return(e);
 }
 
-void execute_push( struct execute_s *e, u_int32_t data )
+void execute_push( struct execute_s *e, uintptr_t data )
 {
 	while( e->pos >= e->stack->my_offset + e->stack->size )
 	{	if( e->stack->next==NULL
@@ -63,7 +63,7 @@ void execute_push( struct execute_s *e, u_int32_t data )
 	e->stack->stack[(e->pos)++ - e->stack->my_offset]=data;
 }
 
-u_int32_t execute_pop( struct execute_s *e )
+uintptr_t execute_pop( struct execute_s *e )
 {
 	if( e->pos<=0 )
 	{	runtime("pop: Stack underrun");
@@ -80,7 +80,7 @@ u_int32_t execute_pop( struct execute_s *e )
 	return( e->stack->stack[ --(e->pos) - e->stack->my_offset ] );
 }
 
-u_int32_t execute_readstack( struct execute_s *e, int pos )
+uintptr_t execute_readstack( struct execute_s *e, int pos )
 { struct stack_s *s;
 	if( pos<0 )
 	{	runtime("readstack: Stack underrun");
@@ -98,7 +98,7 @@ u_int32_t execute_readstack( struct execute_s *e, int pos )
 	return( s->stack[ pos - s->my_offset ] );
 }
 
-u_int32_t *execute_stack_pointer( struct execute_s *e, int pos )
+uintptr_t *execute_stack_pointer( struct execute_s *e, int pos )
 { struct stack_s *s;
 	if( pos<0 )
 	{	runtime("readstack: Stack underrun");

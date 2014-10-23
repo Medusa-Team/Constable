@@ -193,12 +193,12 @@ static lextab_t rules_comment_line[]={
 	{NULL,END,0}
 };
 
-static void gen_lex_ident( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
-static void gen_lex_string( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
-static void gen_lex_char( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
-static void gen_lex_et( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
-static void gen_lex_num( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
-static void gen_lex_arg( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
+static void gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
+static void gen_lex_string( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
+static void gen_lex_char( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
+static void gen_lex_et( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
+static void gen_lex_num( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
+static void gen_lex_arg( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
 lexstattab_t lex_tab[]={
 	{LS_start,operators,rules_start,NULL,NULL},
 	{LS_ident,NULL,rules_ident,keywords,gen_lex_ident},
@@ -240,7 +240,7 @@ static char *store_string( char *s )
 	return(n->str);
 }
 
-static void gen_lex_ident( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+static void gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 { lextab_t *l=keywords2;
 	if( l!=NULL && want!=T_id )
 		while(l->keyword!=NULL)
@@ -252,52 +252,52 @@ static void gen_lex_ident( char *buf, int len, sym_t *sym, unsigned long *data, 
 			l++;
 		}
 	*sym=T_id;
-	if( (*data=(unsigned long)store_string(buf))==0 )
+	if( (*data=(uintptr_t)store_string(buf))==0 )
 		*sym=E|1;
 }
 
-static void gen_lex_string( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+static void gen_lex_string( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 {	*sym=T_str;
-	if( (*data=(unsigned long)store_string(buf))==0 )
+	if( (*data=(uintptr_t)store_string(buf))==0 )
 		*sym=E|1;
 }
 
-static void gen_lex_et( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+static void gen_lex_et( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 {	*sym=T_path;
-	if( (*data=(unsigned long)(create_path(buf)))==0 )
+	if( (*data=(uintptr_t)(create_path(buf)))==0 )
 		*sym=E|1;
 }
 
-static void gen_lex_char( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+static void gen_lex_char( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 {	*sym=T_num;
-	*data=(unsigned long)(buf[0]);
+	*data=(uintptr_t)(buf[0]);
 	if( buf[0]==0 || buf[1]!=0 )
 	{	errstr="Invalid Character constant";
 		*sym=E|1;
 	}
 }
 
-static void gen_lex_num( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+static void gen_lex_num( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 {	*sym=T_num;
 	errno=0;
-	*data=(unsigned long)strtol(buf,NULL,0);
+	*data=(uintptr_t)strtol(buf,NULL,0);
 	if( errno==ERANGE )
 	{	errstr="Constant out of range";
 		*sym=E|1;
 	}
 }
 
-static void gen_lex_arg( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+static void gen_lex_arg( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 {	*sym=T_arg;
 	errno=0;
-	*data=(unsigned long)strtol(buf,NULL,0);
+	*data=(uintptr_t)strtol(buf,NULL,0);
 	if( errno==ERANGE )
 	{	errstr="Constant out of range";
 		*sym=E|1;
 	}
 }
 
-unsigned long lex_getkeyword( char *keyword, sym_t sym )
+uintptr_t lex_getkeyword( char *keyword, sym_t sym )
 { lextab_t *l=keywords2;
 	while( l && l->keyword!=NULL )
 	{	if( l->sym==sym && !strcmp(l->keyword,keyword) )
@@ -309,7 +309,7 @@ unsigned long lex_getkeyword( char *keyword, sym_t sym )
 	return(0);
 }
 
-int lex_updatekeyword( char *keyword, sym_t sym, unsigned long data )
+int lex_updatekeyword( char *keyword, sym_t sym, uintptr_t data )
 { lextab_t *l=keywords2;
 	while( l && l->keyword!=NULL )
 	{	if( l->data==0 && !strcmp(l->keyword,keyword) )
@@ -322,7 +322,7 @@ int lex_updatekeyword( char *keyword, sym_t sym, unsigned long data )
 	return(-1);
 }
 
-int lex_addkeyword( char *keyword, sym_t sym, unsigned long data )
+int lex_addkeyword( char *keyword, sym_t sym, uintptr_t data )
 { lextab_t *l=keywords2;
 	if( l )
 	{	while(l->keyword!=NULL)

@@ -65,7 +65,7 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
 	strncpy(c->operation.attr.name,t->m.name,MIN(MEDUSA_ATTRNAME_MAX,MEDUSA_OPNAME_MAX));
 	c->operation.flags=comm->flags;
 	c->operation.class=&(t->operation_class);
-	c->operation.data=(char*)(data)+2*sizeof(u_int32_t);
+	c->operation.data=(char*)(data)+2*sizeof(uintptr_t);
 
 	c->subject.next=&(c->object);
 	c->subject.attr.offset=c->subject.attr.length=0;
@@ -73,14 +73,14 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
 	strncpy(c->subject.attr.name,t->m.op_name[0],MEDUSA_ATTRNAME_MAX);
 	c->subject.flags=comm->flags;
 	c->subject.class=t->op[0];
-	c->subject.data=(char*)(data)+2*sizeof(u_int32_t)+(t->m.size);
+	c->subject.data=(char*)(data)+2*sizeof(uintptr_t)+(t->m.size);
 	c->object.next=NULL;
 	c->object.attr.offset=c->object.attr.length=0;
 	c->object.attr.type=MED_TYPE_END;
 	strncpy(c->object.attr.name,t->m.op_name[1],MEDUSA_ATTRNAME_MAX);
 	c->object.flags=comm->flags;
 	c->object.class=t->op[1];
-	c->object.data=(char*)(data)+2*sizeof(u_int32_t)+(t->m.size);
+	c->object.data=(char*)(data)+2*sizeof(uintptr_t)+(t->m.size);
 	if( c->subject.class!=NULL )
 	{	c->object.data+= c->subject.class->m.size;
 		c->subject.attr.length=c->subject.class->m.size;
@@ -125,7 +125,7 @@ static int mcp_opened( struct comm_s *c )
 	c->open_counter++;
 	if( c->buf==NULL && (c->buf=comm_buf_get(2048,c))==NULL )
 		return(-1);
-	c->buf->want=1*sizeof(u_int32_t);
+	c->buf->want=1*sizeof(uintptr_t);
 	c->buf->completed=mcp_r_greeting;
 	return(0);
 }
@@ -213,7 +213,7 @@ static int mcp_accept( struct comm_s *c )
 
 static int mcp_r_greeting( struct comm_buffer_s *b )
 {
-	switch( ((u_int32_t*)(b->buf))[0] )
+	switch( ((uintptr_t*)(b->buf))[0] )
 	{	case 0x66007e5a:
 			comm_info("comm %s: has native byte order ;-D",b->comm->name);
 			b->comm->flags=0;
@@ -263,7 +263,7 @@ static int mcp_read( struct comm_s *c )
 	if( c->buf==NULL && (c->buf=comm_buf_get(2048,c))==NULL )
 		return(0);
 	if( c->buf->want==0 )
-	{	c->buf->want=2*sizeof(u_int32_t);
+	{	c->buf->want=2*sizeof(uintptr_t);
 		c->buf->completed=mcp_r_head;
 	}
 	if( c->buf->want > c->buf->size && c->buf->pbuf==c->buf->buf )
@@ -288,8 +288,8 @@ static int mcp_read( struct comm_s *c )
 }
 
 static int mcp_r_head( struct comm_buffer_s *b )
-{ u_int32_t x;
-	if( (x=((u_int32_t*)(b->buf))[0])!=0 )
+{ uintptr_t x;
+	if( (x=((uintptr_t*)(b->buf))[0])!=0 )
 	{
 		if( (b->event=(struct event_type_s*)hash_find(&(b->comm->events),x))==NULL )
 		{	comm_error("comm %s: Unknown access type 0x%08x!",b->comm->name,x);
@@ -317,7 +317,7 @@ static int mcp_r_head( struct comm_buffer_s *b )
 	case MEDUSA_COMM_CLASSUNDEF:
 	case MEDUSA_COMM_ACCTYPEUNDEF:
 		runtime("Huh, I don't know how to undef class or acctype ;-|");
-		b->want = b->len + sizeof(u_int32_t);
+		b->want = b->len + sizeof(uintptr_t);
 		b->completed=mcp_r_discard;
 		break;
 	case MEDUSA_COMM_FETCH_ERROR:
@@ -390,42 +390,42 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
 //printf("ZZZ: updatnute\n");
 	}
 else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
-	if( (r=comm_buf_get(3*sizeof(u_int32_t),c))==NULL )
+	if( (r=comm_buf_get(3*sizeof(uintptr_t),c))==NULL )
 	{	fatal("Can't alloc buffer for send answer!");
 		return(-1);
 	}
-	((u_int32_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_AUTHANSWER);
-	((u_int32_t*)(r->buf))[1]= ((u_int32_t*)(b->buf))[1];
+	((uintptr_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_AUTHANSWER);
+	((uintptr_t*)(r->buf))[1]= ((uintptr_t*)(b->buf))[1];
 #ifdef TRANSLATE_RESULT
 	switch( b->context.result )
 	{	case RESULT_ALLOW:
-			*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))
+			*((uint16_t*)(r->buf+2*sizeof(uintptr_t)))
 				= MED_YES;
 			break;
 		case RESULT_DENY:
-			*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))
+			*((uint16_t*)(r->buf+2*sizeof(uintptr_t)))
 				= MED_NO;
 			break;
 		case RESULT_SKIP
-			*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))
+			*((uint16_t*)(r->buf+2*sizeof(uintptr_t)))
 				= MED_SKIP;
 			break;
 		case RESULT_OK:
-			*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))
+			*((uint16_t*)(r->buf+2*sizeof(uintptr_t)))
 				= MED_OK;
 			break;
 		default:
-			*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))
+			*((uint16_t*)(r->buf+2*sizeof(uintptr_t)))
 				= MED_ERR;
 	}
-	*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))=
+	*((uint16_t*)(r->buf+2*sizeof(uintptr_t)))=
 		byte_reorder_put_int16(c->flags,
-			*((uint16_t*)(r->buf+2*sizeof(u_int32_t))));
+			*((uint16_t*)(r->buf+2*sizeof(uintptr_t))));
 #else
-	*((uint16_t*)(r->buf+2*sizeof(u_int32_t))) = 
+	*((uint16_t*)(r->buf+2*sizeof(uintptr_t))) = 
 		byte_reorder_put_int16(c->flags,b->context.result);
 #endif
-	r->len=2*sizeof(u_int32_t)+sizeof(uint16_t);
+	r->len=2*sizeof(uintptr_t)+sizeof(uint16_t);
 	r->want=0;
 	r->completed=NULL;
 	comm_buf_to_queue(&(c->output),r);
@@ -438,11 +438,11 @@ static int mcp_r_classdef_attr( struct comm_buffer_s *b )
 	{	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
 		return(0);
 	}
-	byte_reorder_class(b->comm->flags,(struct medusa_class_s*)(b->buf+2*sizeof(u_int32_t)));
-	byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->buf+2*sizeof(u_int32_t)+sizeof(struct medusa_comm_class_s)));
+	byte_reorder_class(b->comm->flags,(struct medusa_class_s*)(b->buf+2*sizeof(uintptr_t)));
+	byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->buf+2*sizeof(uintptr_t)+sizeof(struct medusa_comm_class_s)));
 	if( (cl=add_class(b->comm,
-		(struct medusa_class_s*)(b->buf+2*sizeof(u_int32_t)),
-		(struct medusa_attribute_s*)(b->buf+2*sizeof(u_int32_t)+sizeof(struct medusa_comm_class_s))))==NULL )
+		(struct medusa_class_s*)(b->buf+2*sizeof(uintptr_t)),
+		(struct medusa_attribute_s*)(b->buf+2*sizeof(uintptr_t)+sizeof(struct medusa_comm_class_s))))==NULL )
 		comm_error("comm %s: Can't add class",b->comm->name);
 	b->comm->buf=NULL;
 	b->free(b);
@@ -455,10 +455,10 @@ static int mcp_r_acctypedef_attr( struct comm_buffer_s *b )
 	{	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
 		return(0);
 	}
-	byte_reorder_acctype(b->comm->flags,(struct medusa_acctype_s*)(b->buf+2*sizeof(u_int32_t)));
-	byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->buf+2*sizeof(u_int32_t)+sizeof(struct medusa_comm_acctype_s)));
-	if( event_type_add(b->comm,(struct medusa_acctype_s*)(b->buf+2*sizeof(u_int32_t)),
-		(struct medusa_attribute_s*)(b->buf+2*sizeof(u_int32_t)+sizeof(struct medusa_comm_acctype_s)))<0 )
+	byte_reorder_acctype(b->comm->flags,(struct medusa_acctype_s*)(b->buf+2*sizeof(uintptr_t)));
+	byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->buf+2*sizeof(uintptr_t)+sizeof(struct medusa_comm_acctype_s)));
+	if( event_type_add(b->comm,(struct medusa_acctype_s*)(b->buf+2*sizeof(uintptr_t)),
+		(struct medusa_attribute_s*)(b->buf+2*sizeof(uintptr_t)+sizeof(struct medusa_comm_acctype_s)))<0 )
 		comm_error("comm %s: Can't add acctype",b->comm->name);
 	b->comm->buf=NULL;
 	b->free(b);
@@ -534,7 +534,7 @@ static int mcp_close( struct comm_s *c )
 }
 
 static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake )
-{ static u_int32_t id=2;
+{ static uintptr_t id=2;
   struct comm_buffer_s *r;
 //printf("ZZZZ mcp_fetch_object 1\n");
 	if( cont==3 )
@@ -552,17 +552,17 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
 		return(2);
 	}
 //printf("ZZZZ mcp_fetch_object 3\n");
-	if( (r=comm_buf_get(3*sizeof(u_int32_t),c))==NULL )
+	if( (r=comm_buf_get(3*sizeof(uintptr_t),c))==NULL )
 	{	fatal("Can't alloc buffer for fetch!");
 		return(-1);
 	}
 //printf("ZZZZ mcp_fetch_object 4\n");
 	r->user1=(void*)o;
 	r->user2=(void*)(&(wake->user_data));
-	((u_int32_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_FETCH_REQUEST);
-	((u_int32_t*)(r->buf))[1]= o->class->m.classid;
-	((u_int32_t*)(r->buf))[2]= id++;
-	r->len=3*sizeof(u_int32_t);
+	((uintptr_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_FETCH_REQUEST);
+	((uintptr_t*)(r->buf))[1]= o->class->m.classid;
+	((uintptr_t*)(r->buf))[2]= id++;
+	r->len=3*sizeof(uintptr_t);
 	r->want=0;
 	r->completed=mcp_fetch_object_write;
 	comm_buf_to_queue(&(r->to_wake),wake);
@@ -628,7 +628,7 @@ static int mcp_r_fetch_answer( struct comm_buffer_s *b )
 	}
 	else
 	{ struct class_s *cl;
-		cl=(struct class_s*)hash_find(&(b->comm->classes),((u_int32_t*)(b->buf))[2]);
+		cl=(struct class_s*)hash_find(&(b->comm->classes),((uintptr_t*)(b->buf))[2]);
 		if( cl==NULL )
 		{	comm_error("comm %s: Can't find class by class id",b->comm->name);
 			return(-1);
@@ -652,7 +652,7 @@ static int mcp_r_fetch_answer_done( struct comm_buffer_s *b )
 }
 
 static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake )
-{ static u_int32_t id=2;
+{ static uintptr_t id=2;
   struct comm_buffer_s *r;
 	if( cont==3 )
 	{	
@@ -673,7 +673,7 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
 	{	comm_buf_to_queue(&(c->wait_for_answer.last->to_wake),wake);
 		return(2);
 	}
-	if( (r=comm_buf_get(3*sizeof(u_int32_t),c))==NULL )
+	if( (r=comm_buf_get(3*sizeof(uintptr_t),c))==NULL )
 	{	fatal("Can't alloc buffer for update!");
 		return(-1);
 	}
@@ -685,10 +685,10 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
 
 	r->user1=(void*)o;
 	r->user2=(void*)(&(wake->user_data));
-	((u_int32_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_UPDATE_REQUEST);
-	((u_int32_t*)(r->buf))[1]= o->class->m.classid;
-	((u_int32_t*)(r->buf))[2]= id++;
-	r->len=3*sizeof(u_int32_t);
+	((uintptr_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_UPDATE_REQUEST);
+	((uintptr_t*)(r->buf))[1]= o->class->m.classid;
+	((uintptr_t*)(r->buf))[2]= id++;
+	r->len=3*sizeof(uintptr_t);
 	r->want=0;
 	r->completed=mcp_update_object_write;
 	comm_buf_to_queue(&(r->to_wake),wake);
@@ -738,7 +738,7 @@ static int mcp_r_update_answer( struct comm_buffer_s *b )
 
 	if( p!=NULL )
 	{	*((uintptr_t*)(p->user2))=
-			byte_reorder_get_int32(b->comm->flags,((u_int32_t*)(b->buf))[4]);
+			byte_reorder_get_int32(b->comm->flags,((uintptr_t*)(b->buf))[4]);
 		p->free(p);
 	}
 	b->comm->buf=NULL;

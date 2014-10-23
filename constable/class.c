@@ -54,6 +54,7 @@ struct class_s *add_class( struct comm_s *comm, struct medusa_class_s *mc, struc
 	l=sizeof(struct class_s)+i*sizeof(struct medusa_attribute_s);
 	if( (c=malloc(l))==NULL )
 		return(NULL);
+	c->cinfo_mask = 0;
 	c->m=*mc;
 	memcpy(c->attr,a,i*sizeof(struct medusa_attribute_s));
 

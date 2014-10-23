@@ -28,7 +28,7 @@ struct user_s {				/* U - users */
 	int nr_roles;
 	uid_t uid;
 	vs_t vs[MAX_VS_BITS/32];
-//	u_int32_t cinfo;
+//	uintptr_t cinfo;
 	struct tree_s *cinfo;
 	char name[32];
 };
@@ -38,7 +38,7 @@ struct perm_s {				/* P - permissions */
 	int access;
 	char space[32];
 	vs_t vs[MAX_VS_BITS/32];
-//	u_int32_t cinfo;
+//	uintptr_t cinfo;
 	struct tree_s *cinfo;
 };
 
@@ -52,9 +52,9 @@ struct role_s {				/* R - roles */
 	struct hierarchy_s *sub;
 	vs_t vs_sub[MAX_VS_BITS/32];		/* member for sup -> sub hier.*/
 	vs_t vs[NR_ACCESS_TYPES][MAX_VS_BITS/32]; /* PA - permission assignment */
-//	u_int32_t cinfo_sup;
+//	uintptr_t cinfo_sup;
 	struct tree_s *cinfo_sup;
-//	u_int32_t cinfo_sub;
+//	uintptr_t cinfo_sub;
 	struct tree_s *cinfo_sub;
 	char name[64];
 };

@@ -9,6 +9,8 @@
 #ifndef _LANGUAGE_H
 #define _LANGUAGE_H
 
+#include <stdint.h>
+
 #include <mcompiler/compiler.h>
 #include <mcompiler/lex.h>
 
@@ -157,9 +159,9 @@ extern lextab_t keywords[];
 extern lextab_t *keywords2;
 extern lexstattab_t lex_tab[];
 
-unsigned long lex_getkeyword( char *keyword, sym_t sym );
-int lex_updatekeyword( char *keyword, sym_t sym, unsigned long data );
-int lex_addkeyword( char *keyword, sym_t sym, unsigned long data );
+uintptr_t lex_getkeyword( char *keyword, sym_t sym );
+int lex_updatekeyword( char *keyword, sym_t sym, uintptr_t data );
+int lex_addkeyword( char *keyword, sym_t sym, uintptr_t data );
 
 extern struct compiler_err_class s_error;
 
