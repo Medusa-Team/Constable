@@ -10,9 +10,9 @@
 
 int object_is_invalid( struct object_s *o )
 {
-	if( o->class->cinfo_size>0 && ((u_int32_t*)(o->data+o->class->cinfo_offset))[0]!=0 )
+	if( o->class->cinfo_size>0 && ((uintptr_t*)(o->data+o->class->cinfo_offset))[0]!=0 )
 		return(0);
-	if( o->class->subject.cinfo_size>0 && ((u_int32_t*)(o->data+o->class->subject.cinfo_offset))[0]!=0 )
+	if( o->class->subject.cinfo_size>0 && ((uintptr_t*)(o->data+o->class->subject.cinfo_offset))[0]!=0 )
 		return(0);
 	return(1);
 }
@@ -154,7 +154,7 @@ int object_add_vs( struct object_s *o, int n, vs_t *vs )
 
 #include "comm.h"
 #include <stdio.h>
-void object_print( struct object_s *o, void(*out)(void *arg, char *), void *arg )
+void object_print( struct object_s *o, void(*out)(int arg, char *), int arg )
 { int i,j,bp;
   struct medusa_attribute_s *a;
   char buf[1024];

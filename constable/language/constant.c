@@ -11,7 +11,7 @@
 #include "../constable.h"
 #include "../space.h"
 
-int load_constant( struct register_s *r , u_int32_t typ, char * name )
+int load_constant( struct register_s *r , uintptr_t typ, char * name )
 {
 	/* init register */
 	r->flags=0;
@@ -19,9 +19,9 @@ int load_constant( struct register_s *r , u_int32_t typ, char * name )
 	r->data=r->buf;
 	r->attr= &(r->tmp_attr);
 	r->attr->offset=0;
-	r->attr->length=sizeof(u_int32_t);
+	r->attr->length=sizeof(uintptr_t);
 	r->attr->type=MED_TYPE_UNSIGNED;
-	*((u_int32_t*)(r->data))=0;
+	*((uintptr_t*)(r->data))=0;
 	r->attr->name[0]=0;
 	if( typ==Tspace )
 	{ struct space_s *t;

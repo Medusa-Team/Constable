@@ -22,9 +22,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <stdio.h>
 
-char g_curr_event_name[2048];
-pid_t g_curr_subject_pid;
+int g_fout = -1;
+int g_writing = 0;
+//char g_curr_event_name[2048];
+//pid_t g_curr_subject_pid;
 
 extern struct event_handler_s *function_init;
 
@@ -81,7 +84,7 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
 	if( c->subject.class!=NULL )
 	{	c->object.data+= c->subject.class->m.size;
 		c->subject.attr.length=c->subject.class->m.size;
-		g_curr_subject_pid = *(pid_t*)(c->subject.data+4);
+		//g_curr_subject_pid = *(pid_t*)(c->subject.data+4);
 	}
 	if( c->object.class!=NULL )
 	{
@@ -222,7 +225,7 @@ static int mcp_r_greeting( struct comm_buffer_s *b )
 		case 0x00000000:
 			comm_error("comm %s: does not support greeting ;-(",b->comm->name);
 			b->comm->flags=0;
-			b->want=2*sizeof(u_int32_t);
+			b->want=sizeof(uintptr_t) + sizeof(unsigned int);
 			b->completed=mcp_r_head;
 			return(0);
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -292,7 +295,7 @@ static int mcp_r_head( struct comm_buffer_s *b )
 		{	comm_error("comm %s: Unknown access type 0x%08x!",b->comm->name,x);
 			return(-1);
 		}
-		strcpy(g_curr_event_name, b->event->evname->name);
+		//strcpy(g_curr_event_name, b->event->evname->name);
 		b->want= b->len + (b->event->m.size);
 		if( b->event->op[0]!=NULL )
 			b->want += b->event->op[0]->m.size;
@@ -301,7 +304,7 @@ static int mcp_r_head( struct comm_buffer_s *b )
 		b->completed=mcp_r_query;
 		return(0);
 	}
-	else switch( byte_reorder_get_int32(b->comm->flags,((u_int32_t*)(b->buf))[1]) )
+	else switch( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->buf))[1]) )
 	{
 	case MEDUSA_COMM_CLASSDEF:
 		b->want = b->len + sizeof(struct medusa_comm_class_s)+sizeof(struct medusa_comm_attribute_s);
@@ -319,15 +322,15 @@ static int mcp_r_head( struct comm_buffer_s *b )
 		break;
 	case MEDUSA_COMM_FETCH_ERROR:
 	case MEDUSA_COMM_FETCH_ANSWER:
-		b->want = b->len + 2*sizeof(u_int32_t);
+		b->want = b->len + 2*sizeof(uintptr_t); //+sizeof(unsigned int);
 		b->completed=mcp_r_fetch_answer;
 		break;
 	case MEDUSA_COMM_UPDATE_ANSWER:
-		b->want = b->len + 3*sizeof(u_int32_t);
+		b->want = b->len + 2*sizeof(uintptr_t)+sizeof(uint32_t);
 		b->completed=mcp_r_update_answer;
 		break;
 	default:
-		comm_error("comm %s: Communication protocol error! (%d)",b->comm->name,((u_int32_t*)(b->buf))[1]);
+		comm_error("comm %s: Communication protocol error! (%d)",b->comm->name,((unsigned int*)(b->buf))[1]);
 		return(-1);
 	}
 	return(0);
@@ -396,33 +399,33 @@ else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context
 #ifdef TRANSLATE_RESULT
 	switch( b->context.result )
 	{	case RESULT_ALLOW:
-			*((u_int16_t*)(r->buf+2*sizeof(u_int32_t)))
+			*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))
 				= MED_YES;
 			break;
 		case RESULT_DENY:
-			*((u_int16_t*)(r->buf+2*sizeof(u_int32_t)))
+			*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))
 				= MED_NO;
 			break;
 		case RESULT_SKIP
-			*((u_int16_t*)(r->buf+2*sizeof(u_int32_t)))
+			*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))
 				= MED_SKIP;
 			break;
 		case RESULT_OK:
-			*((u_int16_t*)(r->buf+2*sizeof(u_int32_t)))
+			*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))
 				= MED_OK;
 			break;
 		default:
-			*((u_int16_t*)(r->buf+2*sizeof(u_int32_t)))
+			*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))
 				= MED_ERR;
 	}
-	*((u_int16_t*)(r->buf+2*sizeof(u_int32_t)))=
+	*((uint16_t*)(r->buf+2*sizeof(u_int32_t)))=
 		byte_reorder_put_int16(c->flags,
-			*((u_int16_t*)(r->buf+2*sizeof(u_int32_t))));
+			*((uint16_t*)(r->buf+2*sizeof(u_int32_t))));
 #else
-	*((u_int16_t*)(r->buf+2*sizeof(u_int32_t))) = 
+	*((uint16_t*)(r->buf+2*sizeof(u_int32_t))) = 
 		byte_reorder_put_int16(c->flags,b->context.result);
 #endif
-	r->len=2*sizeof(u_int32_t)+sizeof(u_int16_t);
+	r->len=2*sizeof(u_int32_t)+sizeof(uint16_t);
 	r->want=0;
 	r->completed=NULL;
 	comm_buf_to_queue(&(c->output),r);
@@ -589,20 +592,25 @@ static int mcp_fetch_object_wait( struct comm_buffer_s *b )
 
 static int mcp_r_fetch_answer( struct comm_buffer_s *b )
 { struct comm_buffer_s *f,*p;
+	struct {
+                uintptr_t p1,p2;
+        } * bmask = b->buf + sizeof(uint32_t) + sizeof(uintptr_t), *pmask;
+	int i;
 
 	f=b->comm->wait_for_answer.first;
 	p=NULL;
 	do {	p=comm_buf_from_queue(&(b->comm->wait_for_answer));
-		if( byte_reorder_get_int32(b->comm->flags,((u_int32_t*)(p->buf))[0])==MEDUSA_COMM_FETCH_REQUEST
-		  && ((u_int32_t*)(p->buf))[1]==((u_int32_t*)(b->buf))[2]
-		  && ((u_int32_t*)(p->buf))[2]==((u_int32_t*)(b->buf))[3]
+		pmask = p->buf + sizeof(uintptr_t);
+		if( byte_reorder_get_int32(b->comm->flags,((uintptr_t*)(p->buf))[0])==MEDUSA_COMM_FETCH_REQUEST
+		  && pmask->p1==bmask->p1
+		  && pmask->p2==bmask->p2
 		  )
 			break;
 		comm_buf_to_queue(&(b->comm->wait_for_answer),p);
 		p=NULL;
 	} while( f != b->comm->wait_for_answer.first );
 
-	if( byte_reorder_get_int32(b->comm->flags,((u_int32_t*)(b->buf))[1])==MEDUSA_COMM_FETCH_ERROR )
+	if( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->buf+ sizeof(uintptr_t)))[0])==MEDUSA_COMM_FETCH_ERROR )
 	{	if( p!=NULL )
 			p->free(p);
 		b->comm->buf=NULL;
@@ -635,7 +643,7 @@ static int mcp_r_fetch_answer_done( struct comm_buffer_s *b )
 { struct comm_buffer_s *p;
 	p=(struct comm_buffer_s *)(b->user1);
 	if( p!=NULL )
-	{	*((int*)(p->user2))=0;	/* success */
+	{	*((uintptr_t*)(p->user2))=0;	/* success */
 		p->free(p);
 	}
 	b->comm->buf=NULL;
@@ -708,13 +716,20 @@ static int mcp_update_object_wait( struct comm_buffer_s *b )
 
 static int mcp_r_update_answer( struct comm_buffer_s *b )
 { struct comm_buffer_s *f,*p;
+	struct {
+		uintptr_t p1,p2;
+		uint32_t user;
+	} * bmask = b->buf + sizeof(uint32_t) + sizeof(uintptr_t), *pmask;
+
 
 	f=b->comm->wait_for_answer.first;
 	p=NULL;
 	do {	p=comm_buf_from_queue(&(b->comm->wait_for_answer));
-		if( byte_reorder_get_int32(b->comm->flags,((u_int32_t*)(p->buf))[0])==MEDUSA_COMM_UPDATE_REQUEST
-		  && ((u_int32_t*)(p->buf))[1]==((u_int32_t*)(b->buf))[2]
-		  && ((u_int32_t*)(p->buf))[2]==((u_int32_t*)(b->buf))[3]
+		pmask = p->buf + sizeof(uintptr_t);
+		fprintf(stderr,"p = %p, p->buf = %p\n",p,p->buf);
+		if( byte_reorder_get_int32(b->comm->flags,((uintptr_t*)(p->buf))[0])==MEDUSA_COMM_UPDATE_REQUEST
+		  && pmask->p1==bmask->p1 
+		  && pmask->p2==bmask->p2
 		  )
 			break;
 		comm_buf_to_queue(&(b->comm->wait_for_answer),p);
@@ -722,7 +737,7 @@ static int mcp_r_update_answer( struct comm_buffer_s *b )
 	} while( f != b->comm->wait_for_answer.first );
 
 	if( p!=NULL )
-	{	*((int*)(p->user2))=
+	{	*((uintptr_t*)(p->user2))=
 			byte_reorder_get_int32(b->comm->flags,((u_int32_t*)(b->buf))[4]);
 		p->free(p);
 	}

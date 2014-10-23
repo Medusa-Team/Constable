@@ -7,6 +7,7 @@
  */
 
 #include "execute.h"
+#include "stdio.h"
 #include "../constable.h"
 #include "../object.h"
 #include <sys/param.h>
@@ -42,8 +43,8 @@ int r_int( struct register_s *r )
 	return(0);
 }
 
-#define LEN_ALIGN(x)	(((x)+3)&(~0x03))
-#define LEN_MAX		(MAX_REG_SIZE&(~0x03))
+#define LEN_ALIGN(x)	(((x)+(sizeof(uintptr_t)-1))&(~(sizeof(uintptr_t)-1)))
+#define LEN_MAX			(MAX_REG_SIZE&(~(sizeof(uintptr_t)-1)))
 
 void r_imm( struct register_s *r )
 { int n;
@@ -81,7 +82,7 @@ void r_sto( struct register_s *v, struct register_s *d )
 	if( v->data==v->buf )
 	{	runtime("Invalid lvalue");
 //if( (d->attr->type & 0x0f)==MED_TYPE_STRING )
-//printf("ZZZ: r_sto: str=\"%s\"\n",d->data);
+printf("ZZZ: r_sto: str=\"%s\"\n",d->data);
 		return;
 	}
 	if( !(v->flags&OBJECT_FLAG_LOCAL) && v->attr->type & MED_TYPE_READ_ONLY )

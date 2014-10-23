@@ -37,7 +37,7 @@ e->base->	local_vars
 
 struct medusa_attribute_s execute_attr_int={ 0,4,MED_TYPE_SIGNED|MED_TYPE_READ_ONLY,"" };
 struct medusa_attribute_s execute_attr_str={ 0,MAX_REG_SIZE,MED_TYPE_STRING|MED_TYPE_READ_ONLY,"" };
-struct medusa_attribute_s execute_attr_pointer={ 0,4,MED_TYPE_UNSIGNED|MED_TYPE_READ_ONLY,"" };
+struct medusa_attribute_s execute_attr_pointer={ 0,sizeof(void*),MED_TYPE_UNSIGNED|MED_TYPE_READ_ONLY,"" };
 
 void obj_to_reg( struct register_s *r, struct object_s *o, char *attr )
 {

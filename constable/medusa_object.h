@@ -8,6 +8,7 @@
 #define _MEDUSA_COMM_H
 
 //#include <medusa/l3/arch.h>
+ #include <stdint.h>
 
 /*
  * the following constants and structures cover the standard

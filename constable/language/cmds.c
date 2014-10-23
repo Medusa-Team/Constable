@@ -17,7 +17,7 @@
 
 static BUILDIN_FUNC(cmd_constable_pid)
 {
-	*((u_int32_t*)(ret->data))=(u_int32_t)getpid();
+	*((uintptr_t*)(ret->data))=(uintptr_t)getpid();
 	return(0);
 }
 
@@ -80,7 +80,7 @@ static BUILDIN_FUNC(cmd_nameof)
 
 static BUILDIN_FUNC(cmd_str2path)
 {
-	u_int32_t *tmp; // mY
+	uintptr_t *tmp; // mY
   struct register_s r;
   struct tree_s *t;
 	ret->attr=&(execute_attr_int);
@@ -95,8 +95,8 @@ static BUILDIN_FUNC(cmd_str2path)
 		return(-1);
 	}
 	ret->attr=&(execute_attr_pointer);
-	// mY (struct tree_s*)(*((u_int32_t*)(ret->data)))=t;
-	tmp = (u_int32_t*)ret->data;
+	// mY (struct tree_s*)(*((uintptr_t*)(ret->data)))=t;
+	tmp = (uintptr_t*)ret->data;
 	*tmp = t;
 	return(0);
 }
@@ -134,7 +134,7 @@ static BUILDIN_FUNC(cmd_strshl)
   unsigned int len,slen;
 	
 	ret->attr=&(execute_attr_int);
-	*((u_int32_t*)(ret->data))=(u_int32_t)(0);
+	*((uintptr_t*)(ret->data))=(uintptr_t)(0);
 
 	if( !getarg(e,&r) || ((r.attr->type&0x0f)!=MED_TYPE_STRING) )
 	{	runtime("strshl: 1st argument must be string");
@@ -144,7 +144,7 @@ static BUILDIN_FUNC(cmd_strshl)
 	{	runtime("strshl: 2nd argument must be signed or unsigned integer");
 		return(-1);
 	}
-	len=*((u_int32_t*)(r2.data));
+	len=*((uintptr_t*)(r2.data));
 	if( getarg(e,&r2) )
 	{	runtime("strshl: too many arguments");
 		return(-1);
@@ -156,7 +156,7 @@ static BUILDIN_FUNC(cmd_strshl)
 		memmove(r.data,r.data+len,slen-len);
 	if( (slen-len) < r.attr->length )
 		r.data[slen-len]=0;
-	*((u_int32_t*)(ret->data))=(u_int32_t)(slen-len);
+	*((uintptr_t*)(ret->data))=(uintptr_t)(slen-len);
 	return(0);
 }
 
@@ -168,7 +168,7 @@ static BUILDIN_FUNC(cmd_strcut)
   unsigned int len,slen;
 	
 	ret->attr=&(execute_attr_int);
-	*((u_int32_t*)(ret->data))=(u_int32_t)(0);
+	*((uintptr_t*)(ret->data))=(uintptr_t)(0);
 
 	if( !getarg(e,&r) || ((r.attr->type&0x0f)!=MED_TYPE_STRING) )
 	{	runtime("strcut: 1st argument must be string");
@@ -178,7 +178,7 @@ static BUILDIN_FUNC(cmd_strcut)
 	{	runtime("strcut: 2nd argument must be signed or unsigned integer");
 		return(-1);
 	}
-	len=*((u_int32_t*)(r2.data));
+	len=*((uintptr_t*)(r2.data));
 	if( getarg(e,&r2) )
 	{	runtime("strcut: too many arguments");
 		return(-1);
@@ -188,7 +188,7 @@ static BUILDIN_FUNC(cmd_strcut)
 		len=slen;
 	if( len < r.attr->length )
 		r.data[len]=0;
-	*((u_int32_t*)(ret->data))=(u_int32_t)(len);
+	*((uintptr_t*)(ret->data))=(uintptr_t)(len);
 	return(0);
 }
 
@@ -198,13 +198,13 @@ static BUILDIN_FUNC(cmd_sizeof)
   struct register_s r;
 
 	ret->attr=&(execute_attr_int);
-	*((u_int32_t*)(ret->data))=(u_int32_t)(0);
+	*((uintptr_t*)(ret->data))=(uintptr_t)(0);
 
 	if( !getarg(e,&r) )
 	{	runtime("sizeof: must have one argument");
 		return(-1);
 	}
-	*((u_int32_t*)(ret->data))=(u_int32_t)(r.attr->length);
+	*((uintptr_t*)(ret->data))=(uintptr_t)(r.attr->length);
 	if( getarg(e,&r) )
 	{	runtime("sizeof: too many arguments");
 		return(-1);
@@ -231,7 +231,7 @@ static BUILDIN_FUNC(cmd_primaryspace)
 	{	runtime("primaryspace: 2nd argument must be path");
 		return(-1);
 	}
-	t=(struct tree_s*)(*((u_int32_t*)(r.data)));
+	t=(*(struct tree_s**)r.data);
 	if( getarg(e,&r) )
 	{	runtime("primaryspace: too many arguments");
 		return(-1);
@@ -278,7 +278,7 @@ static BUILDIN_FUNC(cmd_enter)
 	{	runtime("enter: 2nd argument must be path");
 		return(-1);
 	}
-	t=(struct tree_s*)(*((u_int32_t*)(r.data)));
+	t=(*(struct tree_s**)r.data);
 	if( getarg(e,&r) )
 	{	runtime("enter: too many arguments");
 		return(-1);
@@ -291,28 +291,28 @@ static BUILDIN_FUNC(cmd_enter)
 	{	runtime("enter: %s",errstr);
 		i=0;
 	}
-	*((u_int32_t*)(ret->data))=(u_int32_t)(i);
+	*((uintptr_t*)(ret->data))=(uintptr_t)(i);
 	return(0);
 }
 
 int cmds_init( void )
 {
-	lex_addkeyword("constable_pid",Tbuildin,(unsigned long)cmd_constable_pid);
-	lex_addkeyword("hex",Tbuildin,(unsigned long)cmd_hex);
-	lex_addkeyword("_comm",Tbuildin,(unsigned long)cmd_comm);
-	lex_addkeyword("_operation",Tbuildin,(unsigned long)cmd_operation);
-	lex_addkeyword("_subject",Tbuildin,(unsigned long)cmd_subject);
-	lex_addkeyword("_object",Tbuildin,(unsigned long)cmd_object);
-	lex_addkeyword("nameof",Tbuildin,(unsigned long)cmd_nameof);
-	lex_addkeyword("str2path",Tbuildin,(unsigned long)cmd_str2path);
-	lex_addkeyword("spaces",Tbuildin,(unsigned long)cmd_spaces);
-	lex_addkeyword("primaryspace",Tbuildin,(unsigned long)cmd_primaryspace);
-	lex_addkeyword("enter",Tbuildin,(unsigned long)cmd_enter);
-//mY	lex_addkeyword("log",Tbuildin,(unsigned long)cmd_log);
-//	lex_addkeyword("log",Tbuildin,(unsigned long)cmd_log);
-	lex_addkeyword("strshl",Tbuildin,(unsigned long)cmd_strshl);
-	lex_addkeyword("strcut",Tbuildin,(unsigned long)cmd_strcut);
-	lex_addkeyword("sizeof",Tbuildin,(unsigned long)cmd_sizeof);
+	lex_addkeyword("constable_pid",Tbuildin,(uintptr_t)cmd_constable_pid);
+	lex_addkeyword("hex",Tbuildin,(uintptr_t)cmd_hex);
+	lex_addkeyword("_comm",Tbuildin,(uintptr_t)cmd_comm);
+	lex_addkeyword("_operation",Tbuildin,(uintptr_t)cmd_operation);
+	lex_addkeyword("_subject",Tbuildin,(uintptr_t)cmd_subject);
+	lex_addkeyword("_object",Tbuildin,(uintptr_t)cmd_object);
+	lex_addkeyword("nameof",Tbuildin,(uintptr_t)cmd_nameof);
+	lex_addkeyword("str2path",Tbuildin,(uintptr_t)cmd_str2path);
+	lex_addkeyword("spaces",Tbuildin,(uintptr_t)cmd_spaces);
+	lex_addkeyword("primaryspace",Tbuildin,(uintptr_t)cmd_primaryspace);
+	lex_addkeyword("enter",Tbuildin,(uintptr_t)cmd_enter);
+//mY	lex_addkeyword("log",Tbuildin,(uintptr_t)cmd_log);
+//	lex_addkeyword("log",Tbuildin,(uintptr_t)cmd_log);
+	lex_addkeyword("strshl",Tbuildin,(uintptr_t)cmd_strshl);
+	lex_addkeyword("strcut",Tbuildin,(uintptr_t)cmd_strcut);
+	lex_addkeyword("sizeof",Tbuildin,(uintptr_t)cmd_sizeof);
 	return(0);
 }
 

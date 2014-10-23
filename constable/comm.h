@@ -98,7 +98,7 @@ struct comm_buffer_s *comm_buf_from_queue( struct comm_buffer_queue_s *q );
 void *comm_new_array( int size );
 int comm_alloc_buf_temp( int size );
 #define	P_COMM_BUF_TEMP(cb,ofs)	((cb)->temp+(ofs))
-#define	PU32_COMM_BUF_TEMP(cb,ofs)  ((u_int32_t*)P_COMM_BUF_TEMP((cb),(ofs)))
+#define	PU32_COMM_BUF_TEMP(cb,ofs)  ((uintptr_t*)P_COMM_BUF_TEMP((cb),(ofs)))
 struct comm_s *comm_new( char *name, int user_size );
 struct comm_s *comm_find( char *name );
 

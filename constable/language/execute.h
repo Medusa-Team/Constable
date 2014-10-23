@@ -11,6 +11,7 @@
 
 #include "../event.h"
 #include "../object.h"
+#include <stdint.h>
 
 #define MAX_REG_SIZE	4096
 
