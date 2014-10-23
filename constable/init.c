@@ -12,6 +12,8 @@
 #include <sys/wait.h>
 #include <sched.h>
 #include <signal.h>
+#include <string.h>
+
 #include "event.h"
 #include "comm.h"
 #include "init.h"
@@ -161,19 +163,19 @@ static int run_init( int argc, char *argv[] )
 	return(0);
 }
 
-void(*debug_def_out)( void *arg, char *str )=NULL;
-void *debug_def_arg=NULL;
-void(*debug_do_out)( void *arg, char *str )=NULL;
-void *debug_do_arg=NULL;
+void(*debug_def_out)( int arg, char *str )=NULL;
+int debug_def_arg=NULL;
+void(*debug_do_out)( int arg, char *str )=NULL;
+int debug_do_arg=NULL;
 
-static void debug_fd_write( void *arg, char *s )
+static void debug_fd_write( int arg, char *s )
 {
-	write((int)arg,s,strlen(s));
+	write(arg,s,strlen(s));
 }
 
 int main( int argc, char *argv[] )
 { char *conf_name="/etc/constable.conf";
-  struct sched_param schedpar;
+  // struct sched_param schedpar; 
   int a;
   int kill_init=0;
   int debug_fd= -1;
@@ -194,7 +196,7 @@ int main( int argc, char *argv[] )
 			else if( argv[a][1]=='D' && a+1<argc )
 			{	a++;
 				debug_def_out=debug_fd_write;
-				debug_def_arg=(void*)(open(argv[a],O_WRONLY|O_CREAT|O_TRUNC,0600));
+				debug_def_arg=(open(argv[a],O_WRONLY|O_CREAT|O_TRUNC,0600));
 				if( argv[a-1][2]=='D' )
 				{	debug_do_out=debug_fd_write;
 					debug_do_arg=debug_def_arg;
@@ -219,7 +221,7 @@ int main( int argc, char *argv[] )
 		return(-1);
 
 	if( debug_fd>=0 )
-		tree_print_node(&global_root,0,debug_fd_write,(void*)debug_fd);
+		tree_print_node(&global_root,0,debug_fd_write,debug_fd);
 
 	if( test )
 		return(0);

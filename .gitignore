@@ -87,3 +87,5 @@ GTAGS
 *.orig
 *~
 \#*#
+#remove executable
+constable/constable

@@ -316,7 +316,7 @@ static struct tree_s *tree_get_rnth( struct tree_s *t, int n )
 	return(p);
 }
 
-static void tree_for_alt_i( struct tree_s *t, struct tree_s *p, int n, void(*func)(struct tree_s *t, void *arg), void *arg )
+static void tree_for_alt_i( struct tree_s *t, struct tree_s *p, int n, void(*func)(struct tree_s *t, int arg), int arg )
 { struct tree_s *r,*a;
 	if( n==0 )
 	{	func(t,arg);
@@ -333,7 +333,7 @@ static void tree_for_alt_i( struct tree_s *t, struct tree_s *p, int n, void(*fun
 	{	for(a=t->child;a!=NULL;a=a->next)
 			if( !regcmp(r->extra,a->name) )
 				tree_for_alt_i(a,p,n,func,arg);
-		if( r->extra==(void*)1 /* .* speed up */ )
+		if( r->extra==1 /* .* speed up */ )
 		{	for(a=t->reg;a!=NULL;a=a->next)
 				tree_for_alt_i(a,p,n,func,arg);
 		}
@@ -345,7 +345,7 @@ static void tree_for_alt_i( struct tree_s *t, struct tree_s *p, int n, void(*fun
 	}
 }
 
-void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, void *arg), void *arg )
+void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, int arg), int arg )
 { int n;
   struct tree_s *t;
 	for(n=0,t=p->parent;t!=NULL;t=t->parent)
@@ -353,7 +353,7 @@ void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, void
 	tree_for_alt_i(tree_get_rnth(p,n),p,n,func,arg);
 }
 
-static void tree_is_equal_i( struct tree_s *p, void *arg )
+static void tree_is_equal_i( struct tree_s *p, int arg )
 {
 	if( p==*((struct tree_s **)arg) )
 		*((struct tree_s **)arg)=NULL;
@@ -370,7 +370,7 @@ int tree_is_equal( struct tree_s *test, struct tree_s *p )
 	return(0);
 }
 
-static void tree_is_offspring_i( struct tree_s *ancestor, void *arg )
+static void tree_is_offspring_i( struct tree_s *ancestor, int arg )
 { struct tree_s *offspring;
 	offspring=*((struct tree_s **)arg);
 	while( offspring!=NULL )
@@ -425,7 +425,7 @@ static void tree_node_merge( struct tree_s *r, struct tree_s *t )
 static void tree_apply_alts( struct tree_s *dir )
 { struct tree_s *r,*t,*all=NULL;
 	for(r=dir->reg;r!=NULL;r=r->next)
-	{	if( r->extra==(void*)1 /* .* speed up */ )
+	{	if( r->extra==1 /* .* speed up */ )
 			all=r;
 		for(t=dir->child;t!=NULL;t=t->next)
 		{	if( !regcmp(r->extra,t->name) )
@@ -471,7 +471,7 @@ char *tree_get_path( struct tree_s *t )
 
 /* ----------------------------------- */
 
-void tree_print_handlers(struct event_hadler_hash_s *h,char *name,void(*out)(void *arg, char *),void *arg)
+void tree_print_handlers(struct event_hadler_hash_s *h,char *name,void(*out)(int arg, char *),int arg)
 {
 	if( h!=NULL )
 	{	out(arg,"  ");
@@ -490,7 +490,7 @@ void tree_print_handlers(struct event_hadler_hash_s *h,char *name,void(*out)(voi
 	}
 }
 
-void tree_print_node( struct tree_s *t, int level, void(*out)(void *arg, char *), void *arg )
+void tree_print_node( struct tree_s *t, int level, void(*out)(int arg, char *), int arg )
 { char *s,buf[4096];
   int a,i;
   struct tree_s *p;

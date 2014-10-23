@@ -3,11 +3,13 @@
  * (c)2002 by Marek Zelem <marek@terminus.sk>
  * $Id: generic.c,v 1.3 2002/12/13 16:10:32 marek Exp $
  */
+#include <stdlib.h>
+#include <stdio.h>
 
 #include "constable.h"
 #include "generic.h"
 #include "comm.h"
-#include <stdlib.h>
+
 
 struct medusa_attribute_s *execute_get_last_attr( void );
 char *execute_get_last_data( void );
@@ -26,7 +28,7 @@ struct tree_s *generic_get_tree_node( struct class_handler_s *h, struct comm_s *
  */
 int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )
 { 
-  struct tree_s *t,*p;
+  struct tree_s *t;//,*p; --matus
   int a,inh;
   u_int32_t *cinfo;
 	/* musim get_tree_node robit sam, aby sa nezacyklilo */
@@ -44,7 +46,7 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
 //printf("ZZZ: riesim generic_set_subject pre %s\n",t->type->name);
 //fflush(stdout);
 	inh=0;
-	p=t;
+	//p=t; --matus
 #ifdef USE_ALT
 	for(;t!=NULL;t=t->alt)
 	{
