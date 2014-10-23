@@ -1,13 +1,13 @@
-./comm.h: u_int32_t --> uintptr_t
+./comm.h: u_int32_t --> uintptr_t //done
 ./Mlibc/mlibc.h: kukni
-./hash.h: u_int32_t --> uintptr_t
+./hash.h: u_int32_t --> uintptr_t //done
 ./tree.h: prehodene argumenty vo funkcii tree_print_inode !!! //done
 ./object.h: 
   1. u_int32_t --> uintptr_t
   2. zakomentovane endian makra
   3. zmenene typy argumentov funkcii: //done
      a) attr_print
-     b) object_print
+     b) object_print 
      c) class_print
 ./constable.h: zmenene typy argumentov a navratovych hodnot funkcii:
   a) debug_def_out //done
@@ -15,7 +15,7 @@
   c) debug_do_out //done
   d) debug_do_arg //done
 ./medusa_object.h:
-  1. pridana kniznica stdint.h
+  1. pridana kniznica stdint.h //done
   2. zmenene konstanty
      a) MEDUSA_COMM_CLASSNAME_MAX
      b) MEDUSA_COMM_OPNAME_MAX
@@ -26,10 +26,10 @@
   b) lex_updatekeyword
   c) lex_addkeyword
 ./language/execute.h:
-  1. pridana kniznica stdint.h
+  1. pridana kniznica stdint.h //done
   2. u_int32_t --> uintptr_t
 ./language/osdep.h: generovane automaticky z kernelu
 ./event.h: zmeneny typ argumentu funkcie event_context_print
 ./rbac/rbac.h: u_int32_t --> uintptr_t
 ./force/linker.h: u_int32_t --> uintptr_t
-./types.h: pridana kniznica stdint.h
+./types.h: pridana kniznica stdint.h //done

@@ -1,39 +1,39 @@
 ./event.c:
-  1. odkomentovane komentare
-  2. struct event_handler_s *h zakomentovane: unused
-  3. event_context_print: zmenene typy argumentov
+  1. odkomentovane komentare //done
+  2. struct event_handler_s *h zakomentovane: unused //done
+  3. event_context_print: zmenene typy argumentov  //done
 ./object.c
-  1. u_int32_t --> uintptr_t
+  1. u_int32_t --> uintptr_t  //done
   2. object_print: zmenene typy argumentov //done
 ./mcp/mcp.c:
-  1. g_curr_event_name vyhodene
-  2. g_curr_subject_pid vyhodene
+  1. g_curr_event_name vyhodene  //done
+  2. g_curr_subject_pid vyhodene  //done
   3. g_fout pridane
   4. g_writing pridane
   5. u_int32_t --> uintptr_t
-  6. b->want = 2*sizeof(u_int32_t) --> sizeof(uintptr_t) + sizeof(unsigned int)
-  7. u_int32_t * --> unsigned int *
-  8. b->want...
-  9. odkomentovane komentare
-  10. u_int16_t --> uint16_t
-  11. pmask, bmask
+  6. b->want = 2*sizeof(u_int32_t) --> sizeof(uintptr_t) + sizeof(unsigned int) //done
+  7. u_int32_t * --> unsigned int * //done
+  8. b->want... //done
+  9. odkomentovane komentare  //done
+  10. u_int16_t --> uint16_t  //done
+  11. pmask, bmask //done
   12. int * --> uintptr_t *
-  13. MEDUSA_COMM_FETCH_ERROR
-./mcp/conf_lang.c: unsigned long --> uintptr_t
-./language/alu.c:
-  1. signed long --> int32_t
-  2. signed long long --> int64_t
+  13. MEDUSA_COMM_FETCH_ERROR  //done
+./mcp/conf_lang.c: unsigned long --> uintptr_t //done
+./language/alu.c: //done
+  1. signed long --> int32_t //done
+  2. signed long long --> int64_t //done
 ./language/alu2.c:
-  1. pridana kniznica stdio.h
-  2. zmenene konstanty:
-     a) LEN_ALIGN
-     b) LEN_MAX
-  3. odkomentovany komentar instrukcie r_sto
-./language/constant.c: u_int32_t --> uintptr_t
+  1. pridana kniznica stdio.h //done
+  2. zmenene konstanty: //done
+     a) LEN_ALIGN //done
+     b) LEN_MAX   //done
+  3. odkomentovany komentar instrukcie r_sto //done
+./language/constant.c: u_int32_t --> uintptr_t  //done
 ./language/cmds.c:
-  1. u_int32_t --> uintptr_t
-  2. t =(struct tree_s*)(*((uint_32_t*)(r.data))) --> *(struct tree_s**)r.data
-  3. unsigned lond --> uintptr_t
+  1. u_int32_t --> uintptr_t //done
+  2. t =(struct tree_s*)(*((uint_32_t*)(r.data))) --> *(struct tree_s**)r.data //done
+  3. unsigned lond --> uintptr_t //done
 ./language/conf_lang.c:
   1. unsigned long --> uintptr_t
   2. konstanta 4 --> sizeof(uintptr_t)
