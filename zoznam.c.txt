@@ -11,13 +11,13 @@
   3. g_fout pridane // pozret ale nefungovalo
   4. g_writing pridane // pozret ale nefungovalo
   5. u_int32_t --> uintptr_t //done
-  6. b->want = 2*sizeof(u_int32_t) --> sizeof(uintptr_t) + sizeof(unsigned int) //done
+  6. b->want = 2*sizeof(u_int32_t) --> sizeof(uintptr_t) + sizeof(unsigned int) //done 
   7. u_int32_t * --> unsigned int * //done
   8. b->want... //done
   9. odkomentovane komentare  //done
   10. u_int16_t --> uint16_t  //done
   11. pmask, bmask //done
-  12. int * --> uintptr_t * // pozret nato
+  12. int * --> uintptr_t * // done
   13. MEDUSA_COMM_FETCH_ERROR  //done
 ./mcp/conf_lang.c: unsigned long --> uintptr_t //done
 ./language/alu.c: //done
@@ -42,7 +42,7 @@
   pridany #include <stdint.h> //done
 ./language/execute_stack.c: u_int32_t --> uintptr_t //done
 ./language/execute.c: 
-  1. 4 --> sizeof (void*) 
+  1. 4 --> sizeof (void*) //done
   2. u_int32_t --> uintptr_t //done
   3. zapnute komentare // done
 ./language/lex.c: unsigned long --> uintptr_t //done
@@ -54,15 +54,15 @@
 ./rbac/save.c: pridane kniznice string.h a stdlib.h //done
 ./init.c:
   1. pridana kniznica string.h //done
-  2. pridana deklaracia _rbac_init
-  3. odkomentovane komentare
+  2. pridana deklaracia _rbac_init //done
+  3. odkomentovane komentare //done
   4. void * --> int // done
   5. sched_param schedpar zakomentovane (unused) //done
   6. vyhodene pretypovanie int na void* //done
 ./comm.c
   1. odkomentovane komentare //done 
   2. pridana podpora emulacie komunikacie (subor) //done
-./rbacadm.c: uprav podla jana
+./rbacadm.c: uprav podla jana //done
 ./force/elf.c: R_386 --> R_X86_64
 ./force/force.c: 
   1. u_int32_t --> uintptr_t

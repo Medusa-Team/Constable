@@ -1,5 +1,5 @@
 ./comm.h: u_int32_t --> uintptr_t //done
-./Mlibc/mlibc.h: kukni
+./Mlibc/mlibc.h: kukni //done
 ./hash.h: u_int32_t --> uintptr_t //done
 ./tree.h: prehodene argumenty vo funkcii tree_print_inode !!! //done
 ./object.h: 

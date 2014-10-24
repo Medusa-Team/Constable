@@ -225,7 +225,7 @@ static int mcp_r_greeting( struct comm_buffer_s *b )
 		case 0x00000000:
 			comm_error("comm %s: does not support greeting ;-(",b->comm->name);
 			b->comm->flags=0;
-			b->want=sizeof(uintptr_t) + sizeof(unsigned int);
+			b->want=sizeof(uintptr_t) +sizeof(unsigned int);
 			b->completed=mcp_r_head;
 			return(0);
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -304,7 +304,7 @@ static int mcp_r_head( struct comm_buffer_s *b )
 		b->completed=mcp_r_query;
 		return(0);
 	}
-	else switch( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->buf))[1]) )
+	else switch( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->buf+sizeof(uintptr_t)))[0]) )
 	{
 	case MEDUSA_COMM_CLASSDEF:
 		b->want = b->len + sizeof(struct medusa_comm_class_s)+sizeof(struct medusa_comm_attribute_s);
@@ -330,8 +330,7 @@ static int mcp_r_head( struct comm_buffer_s *b )
 		b->completed=mcp_r_update_answer;
 		break;
 	default:
-		comm_error("comm %s: Communication protocol error! (%d)",b->comm->name,((unsigned int*)(b->buf))[1]);
-		return(-1);
+		comm_error("comm %s: Communication protocol error! (%d)",b->comm->name,((unsigned int*)(b->buf+sizeof(uintptr_t)))[0]);
 	}
 	return(0);
 }
@@ -340,15 +339,15 @@ static int mcp_r_query( struct comm_buffer_s *b )
 {
 	get_event_context(b->comm, &(b->context), b->event, b->buf );
 	b->ehh_list=EHH_VS_ALLOW;
-//printf("ZZZ kim rychla %d\n",b->comm->state);
+printf("ZZZ kim rychla %d\n",b->comm->state);
 //fflush(stdout);
 	if( b->comm->state==0 )
 	{	
-//printf("ZZZ net slunicko\n");
+printf("ZZZ net slunicko\n");
 //fflush(stdout);
 		if( comm_conn_init(b->comm)<0 )
 			return(-1);
-//printf("ZZZ dan slanina\n");
+printf("ZZZ dan slanina\n");
 //fflush(stdout);
 		if( function_init!=NULL )
 		{ struct comm_buffer_s *p;
@@ -377,17 +376,17 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
 { struct comm_buffer_s *r;
   int i;
 	/* TODO: only if changed */
-//printf("ZZZ: answer\n");
+printf("ZZZ: answer\n");
 	if( b->context.result >=0 && b->context.subject.class!=NULL )
 	{	if( b->do_phase==0 )
 			b->do_phase=1000;
-//printf("ZZZ: snazim sa updatnut\n");
+printf("ZZZ: snazim sa updatnut\n");
 		i=c->update_object(c,b->do_phase-1000,&(b->context.subject),b);
 		if( i>0 )
 		{	b->do_phase=i+1000;
 			return(i);
 		}
-//printf("ZZZ: updatnute\n");
+printf("ZZZ: updatnute\n");
 	}
 else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
 	if( (r=comm_buf_get(3*sizeof(uintptr_t),c))==NULL )
@@ -476,19 +475,19 @@ static int mcp_write( struct comm_s *c )
 { int r;
   struct comm_buffer_s *b;
 
-//printf("ZZZ mcp_write 1\n");
+printf("ZZZ mcp_write 1\n");
 	if( (b=c->output.first)==NULL )
 		return(0);
-//printf("ZZZ mcp_write 2\n");
+printf("ZZZ mcp_write 2\n");
 	if( b->open_counter != c->open_counter )
 	{	b=comm_buf_from_queue(&(c->output));
 		b->free(b);
 		return(0);
 	}
-//printf("ZZZ mcp_write 3\n");
+printf("ZZZ mcp_write 3\n");
 	if( b->want < b->len )
 	{	r=write(c->fd,b->pbuf+b->want,b->len-b->want);
-//printf("ZZZ mcp_write 4 r=%d\n",r);
+printf("ZZZ mcp_write 4 r=%d\n",r);
 		if( r<=0 )
 		{	comm_error("medusa comm %s: Write error",c->name);
 			return(-1);
@@ -536,7 +535,7 @@ static int mcp_close( struct comm_s *c )
 static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake )
 { static uintptr_t id=2;
   struct comm_buffer_s *r;
-//printf("ZZZZ mcp_fetch_object 1\n");
+printf("ZZZZ mcp_fetch_object 1\n");
 	if( cont==3 )
 	{
 		if( debug_do_out!=NULL )
@@ -545,18 +544,18 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
 		}
 		return(wake->user_data);	/* done */
 	}
-//printf("ZZZZ mcp_fetch_object 2\n");
+printf("ZZZZ mcp_fetch_object 2\n");
 	wake->user_data = -1;
 	if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
 	{	comm_buf_to_queue(&(c->wait_for_answer.last->to_wake),wake);
 		return(2);
 	}
-//printf("ZZZZ mcp_fetch_object 3\n");
+printf("ZZZZ mcp_fetch_object 3\n");
 	if( (r=comm_buf_get(3*sizeof(uintptr_t),c))==NULL )
 	{	fatal("Can't alloc buffer for fetch!");
 		return(-1);
 	}
-//printf("ZZZZ mcp_fetch_object 4\n");
+printf("ZZZZ mcp_fetch_object 4\n");
 	r->user1=(void*)o;
 	r->user2=(void*)(&(wake->user_data));
 	((uintptr_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_FETCH_REQUEST);
@@ -567,13 +566,13 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
 	r->completed=mcp_fetch_object_write;
 	comm_buf_to_queue(&(r->to_wake),wake);
 	comm_buf_to_queue(&(c->output),r);
-//printf("ZZZZ mcp_fetch_object 5\n");
+printf("ZZZZ mcp_fetch_object 5\n");
 	return(3);
 }
 
 static int mcp_fetch_object_write( struct comm_buffer_s *b )
 {
-//printf("ZZZZ mcp_fetch_object_write\n");
+printf("ZZZZ mcp_fetch_object_write\n");
 	object_set_byte_order((struct object_s *)(b->user1),b->comm->flags);
 	b->len=((struct object_s *)(b->user1))->class->m.size;
 	b->pbuf=((struct object_s *)(b->user1))->data;
@@ -585,7 +584,7 @@ static int mcp_fetch_object_write( struct comm_buffer_s *b )
 
 static int mcp_fetch_object_wait( struct comm_buffer_s *b )
 {
-//printf("ZZZZ mcp_fetch_object_wait\n");
+printf("ZZZZ mcp_fetch_object_wait\n");
 	comm_buf_to_queue(&(b->comm->wait_for_answer),b);
 	return(0);
 }
@@ -709,7 +708,7 @@ static int mcp_update_object_write( struct comm_buffer_s *b )
 
 static int mcp_update_object_wait( struct comm_buffer_s *b )
 {
-//printf("ZZZZ mcp_update_object_wait\n");
+printf("ZZZZ mcp_update_object_wait\n");
 	comm_buf_to_queue(&(b->comm->wait_for_answer),b);
 	return(0);
 }

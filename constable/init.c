@@ -32,6 +32,7 @@ int execute_init( int n );
 int cmds_init( void );
 int force_init( void );
 int mcp_init( char *filename );
+int _rbac_init( void ); 
 
 int language_do( void );
 
@@ -116,7 +117,7 @@ int init_all( char *filename )
 		return(-1);
 	if( language_do()<0 )
 		return(-1);
-//printf("ZZZ: All initialized\n");
+printf("ZZZ: All initialized\n");
 
 	for(m=active_modules;m!=NULL;m=m->next)
 	{	if( m->init_rules )

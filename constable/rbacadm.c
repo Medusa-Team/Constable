@@ -31,6 +31,7 @@ int main( int argc, char *argv[] )
 		s3=argv[4];
 	strcpy(buf,"Not supported by the kernel");
 	// mY rbac_adm(op,s1,s2,s3,buf);
+	syscall(__NR_rbac_adm, op, s1, s2, s3, buf);
 	printf("Result: %s\n",buf);
 	return(0);
 }
