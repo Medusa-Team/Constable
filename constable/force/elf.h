@@ -6,44 +6,10 @@
  * $Id: elf.h,v 1.2 2002/10/23 10:25:43 marek Exp $
  */
 
-#ifndef _ELF_H
-#define _ELF_H
+#ifndef __ELF_H_
+#define __ELF_H_
 
-#ifdef linux
-#include <linux/elf.h>
-#else
-#include <machine/elf.h>
-#endif
-
-/*
- *
- * start section appended by mY
- * taken from /usr/include/elf.h
- *
- */
-
-/* Intel 80386 specific definitions.  */
-
-/* i386 relocs.  */
-
-#define R_386_NONE	   0		/* No reloc */
-#define R_386_32	   1		/* Direct 32 bit  */
-#define R_386_PC32	   2		/* PC relative 32 bit */
-#define R_386_GOT32	   3		/* 32 bit GOT entry */
-#define R_386_PLT32	   4		/* 32 bit PLT address */
-#define R_386_COPY	   5		/* Copy symbol at runtime */
-#define R_386_GLOB_DAT	   6		/* Create GOT entry */
-#define R_386_JMP_SLOT	   7		/* Create PLT entry */
-#define R_386_RELATIVE	   8		/* Adjust by program base */
-#define R_386_GOTOFF	   9		/* 32 bit offset to GOT */
-#define R_386_GOTPC	   10		/* 32 bit PC relative offset to GOT */
-
-/*
- *
- * end section appended by mY
- *
- */
-
+#include <elf.h>
 
 /* errors */
 #define	E_NOTELF	-1

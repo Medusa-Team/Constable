@@ -11,7 +11,7 @@
 #include <errno.h>
 
 #define __NR_rbac_adm              250
-// mY static inline _syscall5(int,rbac_adm,char *,op,char *,s1,char *,s2,char *,s3,char *,out)
+//static inline _syscall5(int,rbac_adm,char *,op,char *,s1,char *,s2,char *,s3,char *,out)
 
 int main( int argc, char *argv[] )
 { char *op="";
@@ -30,7 +30,7 @@ int main( int argc, char *argv[] )
 	if( argc>4 )
 		s3=argv[4];
 	strcpy(buf,"Not supported by the kernel");
-	// mY rbac_adm(op,s1,s2,s3,buf);
+	//rbac_adm(op,s1,s2,s3,buf);
 	syscall(__NR_rbac_adm, op, s1, s2, s3, buf);
 	printf("Result: %s\n",buf);
 	return(0);

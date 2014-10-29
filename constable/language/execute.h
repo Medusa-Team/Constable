@@ -67,7 +67,7 @@ void r_imm( struct register_s *r );
 void r_sto( struct register_s *v, struct register_s *d );
 void r_resize( struct register_s *v, int size );
 
-//mY int strnlen( char *s, int n );
+//int strnlen( char *s, int n ); 
 
 void r_neg( struct register_s *v );
 void r_not( struct register_s *v );

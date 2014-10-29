@@ -238,7 +238,8 @@ p_stab_t t_e_type[] = {
 };
 p_stab_t t_e_machine[] = {
 	S(EM_NONE), S(EM_M32), S(EM_SPARC), S(EM_386),
-	S(EM_68K), S(EM_88K), S(EM_486), S(EM_860),
+	S(EM_68K), S(EM_88K), S(EM_X86_64), S(EM_860),
+	//S(EM_68K), S(EM_88K), S(EM_486), S(EM_860),
 	S(EM_MIPS), /* S(EM_MIPS_RS4_BE), */
 #ifdef	EM_SPARC64
 	S(EM_SPARC64),
@@ -362,13 +363,20 @@ p_stab_t t_stt[] = {
    }
  */
 p_stab_t t_r_type[] = {
-	S(R_386_NONE), S(R_386_32), S(R_386_PC32), S(R_386_GOT32),
-	S(R_386_PLT32), S(R_386_COPY), S(R_386_GLOB_DAT),
-	    S(R_386_JMP_SLOT),
-	S(R_386_RELATIVE), S(R_386_GOTOFF), S(R_386_GOTPC),
-#ifdef R_386_NUM
-	S(R_386_NUM),
+	S(R_X86_64_NONE), S(R_X86_64_32), S(R_X86_64_PC32), S(R_X86_64_GOT32),
+	S(R_X86_64_PLT32), S(R_X86_64_COPY), S(R_X86_64_GLOB_DAT),
+	    S(R_X86_64_JUMP_SLOT),
+	S(R_X86_64_RELATIVE), S(R_X86_64_GOTOFF64), S(R_X86_64_GOTPC64),
+#ifdef R_X86_64_NUM
+	S(R_X86_64_NUM),
 #endif
+//	S(R_386_NONE), S(R_386_32), S(R_386_PC32), S(R_386_GOT32),
+//	S(R_386_PLT32), S(R_386_COPY), S(R_386_GLOB_DAT),
+//	    S(R_386_JMP_SLOT),
+//	S(R_386_RELATIVE), S(R_386_GOTOFF), S(R_386_GOTPC),
+//#ifdef R_386_NUM
+//	S(R_386_NUM),
+//#endif
 	SE
 };
 /*

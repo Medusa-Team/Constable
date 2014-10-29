@@ -53,7 +53,7 @@ static void data_flush( compiler_class_t *c )
 	}
 }
 
-static void data_out( compiler_class_t *c, sym_t sym, unsigned long data )
+static void data_out( compiler_class_t *c, sym_t sym, uintptr_t data )
 { struct to_out_s to;
 	data_flush(c);
 	if( dfifo_n(c->data)>0 )

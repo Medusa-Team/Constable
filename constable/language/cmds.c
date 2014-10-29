@@ -80,7 +80,6 @@ static BUILDIN_FUNC(cmd_nameof)
 
 static BUILDIN_FUNC(cmd_str2path)
 {
-	uintptr_t *tmp; // mY
   struct register_s r;
   struct tree_s *t;
 	ret->attr=&(execute_attr_int);
@@ -95,9 +94,7 @@ static BUILDIN_FUNC(cmd_str2path)
 		return(-1);
 	}
 	ret->attr=&(execute_attr_pointer);
-	// mY (struct tree_s*)(*((uintptr_t*)(ret->data)))=t;
-	tmp = (uintptr_t*)ret->data;
-	*tmp = t;
+	*(struct tree_s**)ret->data=t;
 	return(0);
 }
 
@@ -231,7 +228,7 @@ static BUILDIN_FUNC(cmd_primaryspace)
 	{	runtime("primaryspace: 2nd argument must be path");
 		return(-1);
 	}
-	t=(*(struct tree_s**)r.data);
+	t=*(struct tree_s**)r.data;
 	if( getarg(e,&r) )
 	{	runtime("primaryspace: too many arguments");
 		return(-1);
@@ -250,18 +247,6 @@ static BUILDIN_FUNC(cmd_primaryspace)
 	return(0);
 }
 
-/* mY start cmd_log */
-/*
-static BUILDIN_FUNC(cmd_log)
-{
-  	struct register_s r;
-	if( getarg(e,&r) )
-		runtime("log: %s",r.data);
-	return(0);
-}
-*/
-/* mY end cmd_log */
-
 /* enter(process,@"kam") */
 static BUILDIN_FUNC(cmd_enter)
 { 
@@ -278,7 +263,7 @@ static BUILDIN_FUNC(cmd_enter)
 	{	runtime("enter: 2nd argument must be path");
 		return(-1);
 	}
-	t=(*(struct tree_s**)r.data);
+	t=*(struct tree_s**)r.data;
 	if( getarg(e,&r) )
 	{	runtime("enter: too many arguments");
 		return(-1);
@@ -308,7 +293,6 @@ int cmds_init( void )
 	lex_addkeyword("spaces",Tbuildin,(uintptr_t)cmd_spaces);
 	lex_addkeyword("primaryspace",Tbuildin,(uintptr_t)cmd_primaryspace);
 	lex_addkeyword("enter",Tbuildin,(uintptr_t)cmd_enter);
-//mY	lex_addkeyword("log",Tbuildin,(uintptr_t)cmd_log);
 //	lex_addkeyword("log",Tbuildin,(uintptr_t)cmd_log);
 	lex_addkeyword("strshl",Tbuildin,(uintptr_t)cmd_strshl);
 	lex_addkeyword("strcut",Tbuildin,(uintptr_t)cmd_strcut);

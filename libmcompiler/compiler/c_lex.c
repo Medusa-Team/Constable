@@ -130,10 +130,10 @@ lextab_t clex_rules_aposbs[]={
 	{NULL,END,0}	};
 
 
-void clex_gen_lex_ident( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
-void clex_gen_lex_numb( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
-void clex_gen_lex_string( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
-void clex_gen_lex_apos( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want );
+void clex_gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
+void clex_gen_lex_numb( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
+void clex_gen_lex_string( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
+void clex_gen_lex_apos( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want );
 
 lexstattab_t clex_states[]={
 	{LSC_start,clex_operators,clex_rules_start,NULL,NULL},
@@ -147,10 +147,10 @@ lexstattab_t clex_states[]={
 	{LSC_aposbs,NULL,clex_rules_aposbs,NULL,clex_gen_lex_apos},
 	{LSC_comment,clex_comment_op,clex_rules_comm,NULL,NULL},
 	{LSC_comment_line,NULL,clex_rules_comml,NULL,NULL},
-	{END}
+	{END,NULL,NULL,NULL,NULL}
 			};
 
-void clex_gen_lex_ident( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+void clex_gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 { val_t *v;
 	if( (v=malloc(sizeof(val_t)+len+1))==NULL )
 	{	*sym=eNOMEM;
@@ -161,7 +161,7 @@ void clex_gen_lex_ident( char *buf, int len, sym_t *sym, unsigned long *data, sy
 	strncpy(v->value,buf,len);
 	v->value[len]=0;
 	*sym=CL_ID;
-	*data=(unsigned long)v;
+	*data=(uintptr_t)v;
 }
 
 double m_pow( float base , int exp )
@@ -175,7 +175,7 @@ double m_pow( float base , int exp )
 
 static void parse_float( char **buf, double *f )
 { double d;
-  int sign=1;
+  //int sign=1; 
   int exp=0;
 	if( **buf=='.' )
 	{	(*buf)++;
@@ -189,9 +189,9 @@ static void parse_float( char **buf, double *f )
 	if( tolower(**buf)=='e' )
 	{	(*buf)++;
 		if( **buf=='+' )
-		{ sign=1; (*buf)++; }
+		{/* sign=1; */(*buf)++; }
 		else if( **buf=='-' )
-		{ sign=-1; (*buf)++; }
+		{ /* sign=-1;*/ (*buf)++; }
 		while( **buf>='0' && **buf<='9' )
 		{	exp*=10; exp+=**buf-'0';
 			(*buf)++;
@@ -202,7 +202,7 @@ static void parse_float( char **buf, double *f )
 	return;
 }
 
-void clex_gen_lex_numb( char *buf, int blen, sym_t *sym, unsigned long *data, sym_t want )
+void clex_gen_lex_numb( char *buf, int blen, sym_t *sym, uintptr_t *data, sym_t want )
 { val_t *v;
   int base=10;
   int n;
@@ -273,13 +273,13 @@ void clex_gen_lex_numb( char *buf, int blen, sym_t *sym, unsigned long *data, sy
 	else if( (typ&VT_typmask)==VT_double )
 		*((double *)(v->value))=f;
 	*sym=CL_VAL;
-	*data=(unsigned long)v;
+	*data=(uintptr_t)v;
 	return;
 Err:	*sym=eLEXERR;
 	return;
 }
 
-void clex_gen_lex_string( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+void clex_gen_lex_string( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 { val_t *v;
   int p;
   long l;
@@ -298,10 +298,10 @@ void clex_gen_lex_string( char *buf, int len, sym_t *sym, unsigned long *data, s
 	v->value[p]=0;
 	v->size=p;
 	*sym=CL_STR;
-	*data=(unsigned long)v;
+	*data=(uintptr_t)v;
 }
 
-void clex_gen_lex_apos( char *buf, int len, sym_t *sym, unsigned long *data, sym_t want )
+void clex_gen_lex_apos( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 { val_t *v;
   int p;
   long l;
@@ -325,6 +325,6 @@ void clex_gen_lex_apos( char *buf, int len, sym_t *sym, unsigned long *data, sym
 		return;
 	}
 	*sym=CL_CHAR;
-	*data=(unsigned long)v;
+	*data=(uintptr_t)v;
 }
 

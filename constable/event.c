@@ -322,7 +322,7 @@ static int do_handler( struct comm_buffer_s *cb )
 }
 
 static int do_event_list( struct comm_buffer_s *cb )
-{ //struct event_handler_s *h;
+{// struct event_handler_s *h; unused
   struct event_context_s *c;
   struct tree_s *t;
   int i;
@@ -519,7 +519,7 @@ int get_empty_context( struct event_context_s *c )
 	return(0);
 }
 
-void event_context_print( struct event_context_s *c, void(*out)(int arg, char *), int arg )
+void event_context_print( struct event_context_s *c, void(*out)(int arg, char *), int arg ) 
 {
 	if( c->operation.class==NULL || c->operation.class->comm==NULL )
 		out(arg,"[internal]: event ");

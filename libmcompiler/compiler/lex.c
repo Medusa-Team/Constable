@@ -6,6 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdlib.h>
 #include <mcompiler/lex.h>
 
 static lexstattab_t *find_end_of_tab( lexstattab_t *t )
@@ -116,7 +117,7 @@ static int test_char( char c, char *test )
         switch( l->c )				\
 	{	case 'a':     l->c='\a'; break;	\
 		case 'b':     l->c='\b'; break;	\
-		case 'e':     l->c='\e'; break;	\
+		case 'e':     l->c='\e'; break; \
 		case 'f':     l->c='\f'; break;	\
 		case 'n':     l->c='\n'; break;	\
 		case 'r':     l->c='\r'; break;	\

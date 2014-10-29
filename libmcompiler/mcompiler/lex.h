@@ -8,11 +8,12 @@
 #define _LEX_H
 
 #include <mcompiler/compiler.h>
+#include <stdint.h>
 
 typedef struct	{
 	char	*keyword;
 	sym_t	sym;		/* stav - vtedy sa neposiela lex. jed. */
-	unsigned long	data;
+	uintptr_t	data;
 		} lextab_t;
 
 typedef struct	{
@@ -24,7 +25,7 @@ typedef struct	{
 					/* 	0-tento */
 					/* data je podla define */
 	lextab_t	*keywords;	/* separated by separators */
-	void(*gen_lex)(char*,int,sym_t*,unsigned long*,sym_t);
+	void(*gen_lex)(char*,int,sym_t*,uintptr_t*,sym_t);
 		} lexstattab_t;
 #define	LEX_CONT	0x0000		/* pokracuj v nacitavani slova */
 #define	LEX_END		0x0001		/* slovo nacitane (znak nepridavaj)*/

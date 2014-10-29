@@ -132,7 +132,7 @@ int get_empty_context( struct event_context_s *c );
 
 extern struct event_handler_s *function_debug;
 
-void event_context_print( struct event_context_s *c, void(*out)(int arg, char *), int arg );
+void event_context_print( struct event_context_s *c, void(*out)(int arg, char *), int arg ); 
 
 #endif /* _EVENT_H */
 

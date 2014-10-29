@@ -34,6 +34,7 @@ struct object_s *alloc_var( char *name, struct medusa_attribute_s *attr, struct 
 		v->class=class;
 		v->data= (char*)(v+1);
 	}
+	//memset(v->data, 0, l); // Just for valgrind 
 	strncpy(v->attr.name,name,MEDUSA_ATTRNAME_MAX);
 	return(v);
 }

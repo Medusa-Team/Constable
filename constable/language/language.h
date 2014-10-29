@@ -9,8 +9,6 @@
 #ifndef _LANGUAGE_H
 #define _LANGUAGE_H
 
-#include <stdint.h>
-
 #include <mcompiler/compiler.h>
 #include <mcompiler/lex.h>
 

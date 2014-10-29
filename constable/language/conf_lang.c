@@ -6,8 +6,6 @@
  * $Id: conf_lang.c,v 1.9 2003/12/30 18:08:18 marek Exp $
  */
 
-#include <stdint.h>
-
 #include "language.h"
 #include "execute.h"
 #include "../constable.h"
@@ -167,7 +165,7 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
   int i=0;
   vs_t *v;
   	if( (s&0x0f00) == 0x0100 )
-	{ uintptr_t tmp; //aj toto som zmenil z unsigned long
+	{ unsigned long tmp;
 		tmp=c->l.data;
 //		c->special_out(c,(s&0x0fff)|O);
 		c->l.data= s;
@@ -202,7 +200,7 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
 				{	error("NULL path!");
 					break;
 				}
-				c->l.data=(uintptr_t)(create_path((char*)(c->l.data)));
+				c->l.data=(uintptr_t)create_path((char*)(c->l.data));
 				break;
 		case Pid2class:
 				if( c->l.data == 0 )
@@ -310,7 +308,7 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
 					break;
 				}
 				x=(uintptr_t)(malloc(sizeof(void *)));
-				*((void**)x)=0;//*((u_int32_t*)x)=0;
+				*((void**)x)=0;
 				if( lex_addkeyword(op_name,Tcallfunc,x)<0 )
 //					warning("Duplicit declaration of function %s",op_name);
 					;

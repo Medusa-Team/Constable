@@ -316,7 +316,7 @@ static struct tree_s *tree_get_rnth( struct tree_s *t, int n )
 	return(p);
 }
 
-static void tree_for_alt_i( struct tree_s *t, struct tree_s *p, int n, void(*func)(struct tree_s *t, int arg), int arg )
+static void tree_for_alt_i( struct tree_s *t, struct tree_s *p, int n, void(*func)(struct tree_s *t, void *arg), void *arg )
 { struct tree_s *r,*a;
 	if( n==0 )
 	{	func(t,arg);
@@ -345,7 +345,7 @@ static void tree_for_alt_i( struct tree_s *t, struct tree_s *p, int n, void(*fun
 	}
 }
 
-void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, int arg), int arg )
+void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, void *arg), void *arg )
 { int n;
   struct tree_s *t;
 	for(n=0,t=p->parent;t!=NULL;t=t->parent)
@@ -353,7 +353,7 @@ void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, int 
 	tree_for_alt_i(tree_get_rnth(p,n),p,n,func,arg);
 }
 
-static void tree_is_equal_i( struct tree_s *p, int arg )
+static void tree_is_equal_i( struct tree_s *p, void *arg )
 {
 	if( p==*((struct tree_s **)arg) )
 		*((struct tree_s **)arg)=NULL;
@@ -370,7 +370,7 @@ int tree_is_equal( struct tree_s *test, struct tree_s *p )
 	return(0);
 }
 
-static void tree_is_offspring_i( struct tree_s *ancestor, int arg )
+static void tree_is_offspring_i( struct tree_s *ancestor, void *arg )
 { struct tree_s *offspring;
 	offspring=*((struct tree_s **)arg);
 	while( offspring!=NULL )

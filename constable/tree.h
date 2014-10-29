@@ -56,7 +56,7 @@ struct tree_s *find_path( char *path );
 int tree_is_equal( struct tree_s *test, struct tree_s *p );
 int tree_is_offspring( struct tree_s *offspring, struct tree_s *ancestor );
 
-void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, int arg), int arg );
+void tree_for_alternatives( struct tree_s *p, void(*func)(struct tree_s *t, void *arg), void *arg );
 
 int tree_expand_alternatives( void );
 

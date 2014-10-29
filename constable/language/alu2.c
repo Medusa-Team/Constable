@@ -7,10 +7,10 @@
  */
 
 #include "execute.h"
-#include "stdio.h"
 #include "../constable.h"
 #include "../object.h"
 #include <sys/param.h>
+#include <stdio.h>
 
 struct object_s *r2o( struct register_s *r )
 { static struct object_s o={NULL,{0,0,0,""},0,NULL,NULL};
@@ -44,7 +44,7 @@ int r_int( struct register_s *r )
 }
 
 #define LEN_ALIGN(x)	(((x)+(sizeof(uintptr_t)-1))&(~(sizeof(uintptr_t)-1)))
-#define LEN_MAX			(MAX_REG_SIZE&(~(sizeof(uintptr_t)-1)))
+#define LEN_MAX		(MAX_REG_SIZE&(~(sizeof(uintptr_t)-1)))
 
 void r_imm( struct register_s *r )
 { int n;
@@ -67,14 +67,12 @@ void r_imm( struct register_s *r )
 	r->object=NULL;
 }
 
-/* mY
-int strnlen( char *s, int n )
-{ int i=0;
-	while( i<n && s[i]!=0 )
-		i++;
-	return(i);
-}
-*/
+//int strnlen( char *s, int n ) 
+//{ int i=0;
+//	while( i<n && s[i]!=0 )
+//		i++;
+//	return(i);
+//}
 
 void r_sto( struct register_s *v, struct register_s *d )
 { u_int8_t type,typed;

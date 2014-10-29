@@ -92,7 +92,7 @@ int class_add_handler( struct class_names_s *c, struct class_handler_s *handler 
 
 int class_comm_init( struct comm_s *comm );
 
-#define	PCINFO(object,ch,comm)	((uintptr_t*)((object)->data+(ch)->cinfo_offset[(comm)->conn]))
+#define	PCINFO(object,ch,comm)	((uintptr_t*)((object)->data+(ch)->cinfo_offset[(comm)->conn])) 
 #define	CINFO(object,ch,comm)	(*(PCINFO(object,ch,comm)))
 
 int object_get_val( struct object_s *o, struct medusa_attribute_s *a, void *buf, int maxlen );
@@ -126,8 +126,7 @@ int object_add_vs( struct object_s *o, int n, vs_t *vs );
 int object_is_invalid( struct object_s *o );
 int object_do_sethandler( struct object_s *o );
 
-
-void attr_print( struct medusa_attribute_s *a, void(*out)(int arg, char *), int arg );
+void attr_print( struct medusa_attribute_s *a, void(*out)(int arg, char *), int arg ); 
 void class_print( struct class_s *c, void(*out)(int arg, char *), int arg );
 void object_print( struct object_s *o, void(*out)(int arg, char *), int arg );
 

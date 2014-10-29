@@ -3,13 +3,12 @@
  * (c)2002 by Marek Zelem <marek@terminus.sk>
  * $Id: generic.c,v 1.3 2002/12/13 16:10:32 marek Exp $
  */
-#include <stdlib.h>
-#include <stdio.h>
 
 #include "constable.h"
 #include "generic.h"
 #include "comm.h"
-
+#include <stdlib.h>
+#include <stdio.h>
 
 struct medusa_attribute_s *execute_get_last_attr( void );
 char *execute_get_last_data( void );
@@ -28,9 +27,9 @@ struct tree_s *generic_get_tree_node( struct class_handler_s *h, struct comm_s *
  */
 int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )
 { 
-  struct tree_s *t;//,*p; --matus
+  struct tree_s *t; // ,*p; unused
   int a,inh;
-  uintptr_t *cinfo;
+  uintptr_t *cinfo; // changed from uintptr_t* to void**
 	/* musim get_tree_node robit sam, aby sa nezacyklilo */
   	cinfo=PCINFO(o,h,comm);
 printf("ZZZ: aaaaaaaaaaaaaaaaaaaaaaaaa cinfo=%p stack=%p\n",cinfo,&t);
@@ -46,7 +45,7 @@ printf("ZZZ: ccccccccccccccc2 %p\n",t->type);
 printf("ZZZ: riesim generic_set_subject pre %s\n",t->type->name);
 //fflush(stdout);
 	inh=0;
-	//p=t; --matus
+	// p=t; unused
 #ifdef USE_ALT
 	for(;t!=NULL;t=t->alt)
 	{
@@ -91,7 +90,7 @@ int generic_test_vs_tree( int acctype, struct event_context_s *c, struct tree_s 
 }
 
 int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
-{ uintptr_t *cinfo;
+{ uintptr_t *cinfo; 
   struct tree_s *t;
   char *n;
   int r;
@@ -109,7 +108,7 @@ printf("generic_hierarchy_handler_decide %s\n",ch->root->type->name);
 			t= (struct tree_s *)CINFO(&(c->object),ch,cb->comm);
 		if( t==NULL )
 			t=ch->root;
-		*cinfo=(uintptr_t)t;
+		*cinfo=(uintptr_t)t; 
 		object_do_sethandler(&(c->subject));
 	}
 printf("ZZZ: riesim generic_hierarchy_handler pre %s\n",t->type->name);
@@ -147,7 +146,7 @@ printf("%s\"\n",t->name);
 	{	object_get_vs(vse,AT_ENTER,&(c->subject));
 
 		if( vs_test(t->vs[AT_MEMBER],vse) ) /*!!! no_vs !!! */
-			*PU32_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=(uintptr_t)t;
+			*PU32_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=(uintptr_t)t; 
 		else
 		{	c->result=RESULT_DENY;
 printf("ZZZ: nevnaram sa, lebo nemam ENTER!\n");
@@ -155,14 +154,14 @@ printf("ZZZ: nevnaram sa, lebo nemam ENTER!\n");
 			return(0);
 		}
 	}
-	else	*PU32_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=(uintptr_t)t;
+	else	*PU32_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=(uintptr_t)t; 
 
 	c->result=RESULT_OK;
 	return(0);
 }
 
 int generic_hierarchy_handler_notify( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
-{ uintptr_t *cinfo;
+{ uintptr_t *cinfo; 
   struct class_handler_s *ch;
  
 	ch=((struct g_event_handler_s*)h)->class_handler;
@@ -212,7 +211,7 @@ int generic_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, str
 			perm=0;
 	}
 	if( perm )
-	{	CINFO(o,h,comm)=(uintptr_t)(node);
+	{	CINFO(o,h,comm)=(uintptr_t)node; 
 		object_do_sethandler(o);
 		return(1);
 	}

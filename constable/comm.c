@@ -19,9 +19,6 @@ static struct comm_s *last_comm=NULL;
 
 static int comm_temp_size=0;
 
-extern g_fout;
-extern g_writing;
-
 void *comm_new_array( int size )
 { void *v;
 	if( (v=malloc(comm_nr_connections*size))==NULL )
@@ -127,13 +124,11 @@ printf("ZZZ: do_event()=%d\n",r);
 		for(c=first_comm;c!=NULL;c=c->next)
 		{	if( c->fd>=0 )
 			{	
-				if ( (g_fout != -1) || (g_writing != 1) ) {
-					if( FD_ISSET(c->fd,&rd) )
-						if( c->read(c)<0 )
-						{	c->close(c);
-							continue;
-						}
-				}
+				if( FD_ISSET(c->fd,&rd) )
+					if( c->read(c)<0 )
+					{	c->close(c);
+						continue;
+					}
 				if( FD_ISSET(c->fd,&wr) )
 					if( c->write(c)<0 )
 					{	c->close(c);

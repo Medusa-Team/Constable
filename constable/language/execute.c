@@ -59,7 +59,7 @@ void obj_to_reg( struct register_s *r, struct object_s *o, char *attr )
 		*((uintptr_t*)(r->buf))=0;
 		return;
 	}
-	r->data= o->data;
+	r->data=o->data;
 	return;
 }
 
@@ -85,8 +85,8 @@ void R_pop( struct execute_s *e, struct register_s *r )
 		case LTS:
 //			r->attr=&execute_attr_str;
 			r->tmp_attr=execute_attr_str;
-			r->data=(char *)pop();
-			r->tmp_attr.length=strlen( (char *)(r->data) )+1;
+			r->data=(char*)pop();
+			r->tmp_attr.length=strlen( (r->data) )+1;
 			r->attr=&(r->tmp_attr);
 			return;
 		case LTP:
@@ -101,7 +101,7 @@ void R_pop( struct execute_s *e, struct register_s *r )
 			if( x==LTa )
 			{	r->attr=&(r->tmp_attr);
 				for(i=0;i<(sizeof(r->tmp_attr)+3)>>2;i++)
-					((uintptr_t*)(r->attr))[i]=pop();
+					((uint32_t*)(r->attr))[i]=pop();
 			}
 			else
 				r->attr=(struct medusa_attribute_s *)x;
@@ -115,7 +115,7 @@ void R_pop( struct execute_s *e, struct register_s *r )
 			r->data=r->buf;
 			n= (r->attr->length + 3) >> 2;
 			for(i=0;i<n;i++)
-				((uintptr_t*)(r->data))[i]=pop();
+				((uint32_t*)(r->data))[i]=pop();
 			return;
 	}
 }
@@ -131,7 +131,7 @@ void R_push( struct execute_s *e, struct register_s *r )
 		push( LTP );
 	}
 	else if( r->data!=r->buf && r->object!=NULL )
-	{	push( (uintptr_t)(r->object) );
+	{	push( (uintptr_t)r->object );
 		push( LTO );
 	}
 	else if( r->attr==&execute_attr_str && r->data!=r->buf )
@@ -142,7 +142,7 @@ void R_push( struct execute_s *e, struct register_s *r )
 	{	if( r->data==r->buf )
 		{	n= (r->attr->length + 3) >> 2;
 			for(n--;n>=0;n--)
-				push( ((uintptr_t*)(r->data))[n] );
+				push( ((uint32_t*)(r->data))[n] );
 			push( 0 );
 		}
 		else
@@ -151,7 +151,7 @@ void R_push( struct execute_s *e, struct register_s *r )
 			push((uintptr_t)(r->class));
 		if( r->attr==&(r->tmp_attr) )
 		{	for(n=((sizeof(r->tmp_attr)+3)>>2)-1;n>=0;n--)
-				push( ((uintptr_t*)(r->attr))[n] );
+				push( ((uint32_t*)(r->attr))[n] );
 			push( LTa );
 		}
 		else
@@ -278,7 +278,7 @@ static struct register_s r0,r1;
 
 char *execute_get_last_data( void )
 {
-	return(r0.data);
+	return (char*)(r0.data);
 }
 
 struct medusa_attribute_s *execute_get_last_attr( void )
@@ -301,7 +301,7 @@ for(;;)
 	cmd=*(e->p)++;
 #ifdef DEBUG_TRACE
 	x=*(e->p)++;
-	// snprintf(runtime_pos,sizeof(runtime_pos)-1,"%d:%d",((x>>16)&0x0000ffff),(x&0x0000ffff));
+	//snprintf(runtime_pos,sizeof(runtime_pos)-1,"%d:%d",((x>>16)&0x0000ffff),(x&0x0000ffff));
 	snprintf(runtime_pos,sizeof(runtime_pos)-1,"%p",(void*)x);
 	runtime_pos[sizeof(runtime_pos)-1]=0;
 //runtime("ZZZ %04x",cmd);
@@ -486,7 +486,7 @@ for(;;)
 			{	runtime("Name of class must be identifier or string");
 				push(0);
 			}
-			else if( (x=(uintptr_t)(get_class_by_name(r0.data)))==0 )
+			else if( (x=(uintptr_t)(get_class_by_name((char*)r0.data)))==0 )
 			{	runtime("Class '%s' does not exist",r0.data);
 				push(0);
 			}
@@ -498,7 +498,7 @@ for(;;)
 			{	runtime("Name of connection must be string");
 				break;
 			}
-			if( (e->comm=comm_find(r0.data))!=NULL )
+			if( (e->comm=comm_find((char*)r0.data))!=NULL )
 				break;
 	case oSCD:	e->comm=e->my_comm_buff->comm;
 			break;
@@ -547,7 +547,7 @@ for(;;)
 			break;
 	case oJSR:	x=*(e->p)++;
 			x=*((uintptr_t*)x);
-printf("%p JSR %x\n",(e->p)-2,x);
+printf("%p JSR %lx\n",(e->p)-2,x);
 			if( x==0 )
 			{	runtime("Call undefined function");
 				push(0);

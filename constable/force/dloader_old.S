@@ -22,31 +22,31 @@ RESERVED	= 0x1C
 	.align 4;
 dloader_old:
 	call   .dl0
-.dl0:	popl   %ebp
-	addl   $.fctab-.dl0,%ebp
-	movl   %ebp,START(%ebp)
-	movl   DREL_TAB(%ebp),%esi
-	addl   %ebp,%esi
-	movl   %esi,DREL_TAB(%ebp)
+.dl0:	pop    %ebp
+	add    $.fctab-.dl0,%ebp
+	mov    %ebp,START(%ebp)
+	mov    DREL_TAB(%ebp),%esi
+	add    %ebp,%esi
+	mov    %esi,DREL_TAB(%ebp)
 .dl_rel:
-	movl   (%esi),%edi
-	cmpl   $0xffffffff,%edi
+	mov    (%esi),%edi
+	cmp    $0xffffffffffffffff,%edi
 	je     .dl_relocated
-	addl   %ebp,%edi
-	addl   %ebp,(%edi)
-	addl   $0x4,%esi
+	add    %ebp,%edi
+	add    %ebp,(%edi)
+	add    $0x4,%esi
 	jmp    .dl_rel
 .dl_relocated:
-	movl   ARGV(%ebp),%eax
-	addl   %ebp,%eax
-	movl   %eax,ARGV(%ebp)
-	pushl  %eax
-	movl   ARGC(%ebp),%eax
-	pushl  %eax
-	movl   MAIN(%ebp),%eax
-	addl   %ebp,%eax
+	mov    ARGV(%ebp),%eax
+	add    %ebp,%eax
+	mov    %eax,ARGV(%ebp)
+	push   %eax
+	mov    ARGC(%ebp),%eax
+	push   %eax
+	mov    MAIN(%ebp),%eax
+	add    %ebp,%eax
 	call   *%eax
-	addl   $0x8,%esp
+	add    $0x8,%esp
 	ret
 .align 4
 .fctab:
