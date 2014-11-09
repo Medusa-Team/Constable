@@ -587,7 +587,7 @@ static int mcp_r_fetch_answer( struct comm_buffer_s *b )
         struct {
                 uintptr_t p1,p2;
         } * bmask = b->buf + sizeof(uint32_t) + sizeof(uintptr_t), *pmask;
-	int i;
+//	int i;
 
 	f=b->comm->wait_for_answer.first;
 	p=NULL;
@@ -635,7 +635,7 @@ static int mcp_r_fetch_answer_done( struct comm_buffer_s *b )
 { struct comm_buffer_s *p;
 	p=(struct comm_buffer_s *)(b->user1);
 	if( p!=NULL )
-	{	*((uintptr_t*)(p->user2))=0;	/* success */
+    {	*((uint32_t*)(p->user2))=0;	/* success */
 		p->free(p);
 	}
 	b->comm->buf=NULL;
@@ -709,13 +709,13 @@ printf("ZZZZ mcp_update_object_wait\n");
 static int mcp_r_update_answer( struct comm_buffer_s *b )
 { struct comm_buffer_s *f,*p;
 	struct {
-		uintptr_t p1,p2,user;
+        uintptr_t p1,p2,user;
 	} * bmask = b->buf + sizeof(uint32_t) + sizeof(uintptr_t), *pmask;
 
 	f=b->comm->wait_for_answer.first;
 	p=NULL;
 	do {	p=comm_buf_from_queue(&(b->comm->wait_for_answer));
-		pmask = p->buf + sizeof(uintptr_t);
+        pmask = p->buf + sizeof(uintptr_t);
 		if( byte_reorder_get_int32(b->comm->flags,*(uintptr_t*)p->buf)==MEDUSA_COMM_UPDATE_REQUEST
 		  && pmask->p1==bmask->p1 && pmask->p2==bmask->p2)
 			break;
@@ -725,8 +725,8 @@ static int mcp_r_update_answer( struct comm_buffer_s *b )
 
 	if( p!=NULL )
 	{
-		*((uintptr_t*)(p->user2))= // TODO uintptr_t ?? 
-			byte_reorder_get_int32(b->comm->flags,bmask->user);
+        *((uint32_t*)(p->user2))=
+            byte_reorder_get_int32(b->comm->flags,bmask->user);
 		p->free(p);
 	}
 	b->comm->buf=NULL;
