@@ -635,7 +635,7 @@ static int mcp_r_fetch_answer_done( struct comm_buffer_s *b )
 { struct comm_buffer_s *p;
 	p=(struct comm_buffer_s *)(b->user1);
 	if( p!=NULL )
-    {	*((uint32_t*)(p->user2))=0;	/* success */
+    {	*((uintptr_t*)(p->user2))=0;	/* success */
 		p->free(p);
 	}
 	b->comm->buf=NULL;
@@ -725,8 +725,8 @@ static int mcp_r_update_answer( struct comm_buffer_s *b )
 
 	if( p!=NULL )
 	{
-        *((uint32_t*)(p->user2))=
-            byte_reorder_get_int32(b->comm->flags,bmask->user);
+        *((uintptr_t*)(p->user2))=
+            byte_reorder_get_uintptr_t(b->comm->flags,bmask->user);
 		p->free(p);
 	}
 	b->comm->buf=NULL;

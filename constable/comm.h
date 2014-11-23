@@ -31,7 +31,7 @@ struct comm_buffer_s {
 
 	void			*user1;
 	void			*user2;
-	int			user_data;
+    intptr_t	    user_data; // Matus zmenil int na intptr_t
 
 	/* for do_event & execute ... */
 //	struct execute_s	*execute;
@@ -59,7 +59,7 @@ struct comm_s {
 	int		fd;
 	int		open_counter;
 	int		state;
-	int		flags;
+    int		flags;
 	struct hash_s	classes;
 	struct hash_s	events;
 	
