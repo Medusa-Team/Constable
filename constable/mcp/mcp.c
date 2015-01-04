@@ -385,7 +385,7 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
         printf("ZZZ: updatnute\n");
     }
     else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
-    if( (r=comm_buf_get(3*sizeof(int),c))==NULL )     // Zmenil Matus, asi to ma byt takto inac dava bludy v mallocu
+    if( (r=comm_buf_get(3*sizeof(uint32_t),c))==NULL )     // Zmenil Matus, asi to ma byt takto inac dava bludy v mallocu
     {	fatal("Can't alloc buffer for send answer!");
         return(-1);
     }

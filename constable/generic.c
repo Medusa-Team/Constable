@@ -29,7 +29,7 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
 { 
     struct tree_s *t; // ,*p; unused
     int a,inh;
-    int *cinfo; // changed from uintptr_t* to void** // corrected by Matus - should be int
+    uint32_t *cinfo; // changed from uintptr_t* to void** // corrected by Matus - should be uint32_t
     /* musim get_tree_node robit sam, aby sa nezacyklilo */
     cinfo=PCINFO(o,h,comm);
 
