@@ -22,21 +22,19 @@ struct comm_buffer_queue_s {
 
 struct comm_buffer_s {
 	struct comm_buffer_s	*next;
-	int			_n;	/* position in buffers[] */
-	int			size;
+    int			_n;	/* position in buffers[] */
+    int			size;
 	void(*free)(struct comm_buffer_s*);
 
 	struct comm_s		*comm;
-	int			open_counter;
-
-	void			*user1;
-	void			*user2;
-    intptr_t	    user_data; // Matus zmenil int na intptr_t
-
+    int			open_counter;
+    void			*user1;
+    void			*user2;
+    int	    user_data; // Matus mozno to ma byt intptr_t
 	/* for do_event & execute ... */
 //	struct execute_s	*execute;
-	int			do_phase;
-	int			ehh_list;
+    int			do_phase;
+    int			ehh_list;
 	struct event_hadler_hash_s *hh;
 	struct class_handler_s	*ch;
 	struct event_context_s	context;
@@ -44,9 +42,9 @@ struct comm_buffer_s {
 	struct event_handler_s	*handler;
 
 	struct comm_buffer_queue_s	to_wake;
-	int			len;		/* for comm */
-	int			want;		/* for comm */
-	int(*completed)(struct comm_buffer_s*);	/* for comm */
+    int			len;		/* for comm */
+    int			want;		/* for comm */
+    int(*completed)(struct comm_buffer_s*);	/* for comm */
 	void			*temp;
 	char			*pbuf;		/*  for read/write */
 	char			buf[0]; 	/* for comm */
@@ -54,11 +52,11 @@ struct comm_buffer_s {
 
 struct comm_s {
 	struct comm_s	*next;
-	int		conn;		/* connection number */
+    int		conn;		/* connection number */
 	char		name[64];
-	int		fd;
-	int		open_counter;
-	int		state;
+    int		fd;
+    int		open_counter;
+    int		state;
     int		flags;
 	struct hash_s	classes;
 	struct hash_s	events;
@@ -70,14 +68,14 @@ struct comm_s {
 	struct comm_buffer_s *buf;
 	struct comm_buffer_queue_s output;
 	struct comm_buffer_queue_s wait_for_answer;	/* fetch */
-	int(*read)(struct comm_s*);
-	int(*write)(struct comm_s*);
-	int(*close)(struct comm_s*);
-	int(*answer)(struct comm_s*,struct comm_buffer_s*,int);
-	int(*fetch_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);
-	int(*update_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);
+    int(*read)(struct comm_s*);
+    int(*write)(struct comm_s*);
+    int(*close)(struct comm_s*);
+    int(*answer)(struct comm_s*,struct comm_buffer_s*,int);
+    int(*fetch_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);
+    int(*update_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);
 
-	int(*conf_error)(struct comm_s *,const char *fmt,...);
+    int(*conf_error)(struct comm_s *,const char *fmt,...);
 	char		user_data[0];
 };
 

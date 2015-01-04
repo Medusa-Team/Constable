@@ -25,17 +25,17 @@ struct class_names_s;
 struct class_handler_s {
 	struct class_handler_s *next;	/* for class */
 	struct class_names_s	*classname;
-	int		*cinfo_offset;
-	int		comm_buf_temp_offset;
+    int		*cinfo_offset;
+    int		comm_buf_temp_offset;
 	int		flags;
 	struct tree_s	*root;
 	void		*user;	/* struct event_names_s * for generic */
-	int(*init_comm)(struct class_handler_s *,struct comm_s *);
-	int(*set_handler)(struct class_handler_s *,struct comm_s *,struct object_s *);
-	int(*get_vs)(struct class_handler_s *,struct comm_s *,struct object_s *,vs_t *,int);
+    int(*init_comm)(struct class_handler_s *,struct comm_s *);
+    int(*set_handler)(struct class_handler_s *,struct comm_s *,struct object_s *);
+    int(*get_vs)(struct class_handler_s *,struct comm_s *,struct object_s *,vs_t *,int);
 	struct tree_s *(*get_tree_node)(struct class_handler_s *,struct comm_s *,struct object_s *);
 	struct space_s *(*get_primary_space)(struct class_handler_s *,struct comm_s *,struct object_s *);
-	int(*enter_tree_node)(struct class_handler_s *,struct comm_s *,struct object_s *,struct tree_s *);
+    int(*enter_tree_node)(struct class_handler_s *,struct comm_s *,struct object_s *,struct tree_s *);
 };
 
 
@@ -92,7 +92,7 @@ int class_add_handler( struct class_names_s *c, struct class_handler_s *handler 
 
 int class_comm_init( struct comm_s *comm );
 
-#define	PCINFO(object,ch,comm)	((uintptr_t*)((object)->data+(ch)->cinfo_offset[(comm)->conn])) 
+#define	PCINFO(object,ch,comm)	((int*)((object)->data+(ch)->cinfo_offset[(comm)->conn])) // corrected by Matus - should be int
 #define	CINFO(object,ch,comm)	(*(PCINFO(object,ch,comm)))
 
 int object_get_val( struct object_s *o, struct medusa_attribute_s *a, void *buf, int maxlen );
@@ -104,7 +104,7 @@ void byte_reorder_attrs( int flags, struct medusa_attribute_s *a );
 void byte_reorder_class( int flags, struct medusa_class_s *c );
 void byte_reorder_acctype( int flags, struct medusa_acctype_s *a );
 
-#define byte_reorder_get_uintptr_t(flag,val) (val) //#	TODO distinguish 32 versus 64 bit swap!
+#define byte_reorder_get_uintptr_t(flag,val) ((uint32_t)val) //#	TODO distinguish 32 versus 64 bit swap!
 #define byte_reorder_put_uintptr_t(flag,val) (val) //#	TODO distinguish 32 versus 64 bit swap!
 #define byte_reorder_get_int64(flag,val) (val) //#	((flag)&OBJECT_FLAG_CHENDIAN?bswap_64(val):(val))
 #define byte_reorder_put_int64(flag,val) (val) //#	((flag)&OBJECT_FLAG_CHENDIAN?bswap_64(val):(val))

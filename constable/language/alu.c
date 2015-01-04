@@ -13,6 +13,7 @@
 #include "execute.h"
 #include "language.h"
 #include <sys/param.h>
+#include <inttypes.h>
 
 /* !!!!!!!!!!!!!!!!!!!!!! */
 typedef	int32_t		s_int32_t;
@@ -323,8 +324,8 @@ static void r_add_c##t2( struct register_s *v, struct register_s *d )	\
 		v->attr->length=MAX_REG_SIZE;			\
 }
 
-OPci(u,"%Lu")
-OPci(s,"%Ld")
+OPci(u,"%" PRIu64)
+OPci(s,"%" PRId64)
 
 static void r_add_cb( struct register_s *v, struct register_s *d )
 { int l,n,j;

@@ -29,11 +29,13 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
 { 
   struct tree_s *t; // ,*p; unused
   int a,inh;
-  uintptr_t *cinfo; // changed from uintptr_t* to void**
+  int *cinfo; // changed from uintptr_t* to void** // corrected by Matus - should be int
 	/* musim get_tree_node robit sam, aby sa nezacyklilo */
-  	cinfo=PCINFO(o,h,comm);
+  cinfo=PCINFO(o,h,comm);
+
 printf("ZZZ: aaaaaaaaaaaaaaaaaaaaaaaaa cinfo=%p stack=%p\n",cinfo,&t);
-	if( (t=(struct tree_s *)(*cinfo))==NULL )
+
+    if( (t=(struct tree_s *)(*cinfo))==NULL )
 	{
 		// nemozem lebo ak je neplatne, musi ostat neplatne
 		// t=(struct tree_s*)user;
