@@ -10,17 +10,17 @@
 
 void hash_add( struct hash_s *h, struct hash_ent_s *e, uintptr_t key )
 { int i;
-	i=hash_func(key);
-	e->next=h->table[i];
-	e->key=key;
-	h->table[i]=e;
+    i=hash_func(key);
+    e->next=h->table[i];
+    e->key=key;
+    h->table[i]=e;
 }
 
 struct hash_ent_s *hash_find( struct hash_s *h, uintptr_t key )
 { struct hash_ent_s *e;
-	for(e=h->table[hash_func(key)];e!=NULL;e=e->next)
-		if( e->key==key )
-			return(e);
-	return(NULL);
+    for(e=h->table[hash_func(key)];e!=NULL;e=e->next)
+        if( e->key==key )
+            return(e);
+    return(NULL);
 }
 

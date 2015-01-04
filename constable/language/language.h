@@ -14,126 +14,126 @@
 
 #define	_AS	0x80
 enum {
-	Tpp = T|0x100,		/* ++ */
-	Tmm,			/* -- */
-	TshiftL,		/* << */
-	TshiftR,		/* >> */
-	Tle,			/* <= */
-	Tge,			/* >= */
-	Teq,			/* == */
-	Tne,			/* != */
-	Tand,			/* && */
-	Txor,			/* ^^ */
-	Tor,			/* || */
+    Tpp = T|0x100,		/* ++ */
+    Tmm,			/* -- */
+    TshiftL,		/* << */
+    TshiftR,		/* >> */
+    Tle,			/* <= */
+    Tge,			/* >= */
+    Teq,			/* == */
+    Tne,			/* != */
+    Tand,			/* && */
+    Txor,			/* ^^ */
+    Tor,			/* || */
 
-	Tif,			/* if */
-	Telse,			/* else */
-	Twhile,			/* while */
-	Tdo,			/* do */
-	Tfor,			/* for */
-	Tbreak,			/* break */
-	Tcontinue,		/* continue */
-	Tswitch,		/* switch */
-	Tcase,			/* case */
-	Tdefault,		/* default */
-	Treturn,		/* return */
-	Tgoto,			/* goto */
+    Tif,			/* if */
+    Telse,			/* else */
+    Twhile,			/* while */
+    Tdo,			/* do */
+    Tfor,			/* for */
+    Tbreak,			/* break */
+    Tcontinue,		/* continue */
+    Tswitch,		/* switch */
+    Tcase,			/* case */
+    Tdefault,		/* default */
+    Treturn,		/* return */
+    Tgoto,			/* goto */
 
-	Tfunction,		/* function */
-	Tcallfunc,		/* callfunc */
-//	Tforce,			/* force */
-	Tfetch,			/* fetch */
-	Tupdate,		/* update */
-	Ttransparent,		/* transparent */
-	Tlocal,			/* local */
-	Talias,			/* alias */
-	Ttypeof,		/* typeof */
-	Tcommof,		/* commof */
+    Tfunction,		/* function */
+    Tcallfunc,		/* callfunc */
+    //	Tforce,			/* force */
+    Tfetch,			/* fetch */
+    Tupdate,		/* update */
+    Ttransparent,		/* transparent */
+    Tlocal,			/* local */
+    Talias,			/* alias */
+    Ttypeof,		/* typeof */
+    Tcommof,		/* commof */
 
-	Tbuildin,		/* buildin */
+    Tbuildin,		/* buildin */
 
-	/* conf. language */
-	Ttree,			/* tree */
-	Tprimary,		/* primary */
-	Tspace,			/* space */
-	Trecursive,		/* recursive */
-	Taccess,		/* <access type> */
-	Tehhlist,		/* <ehh_list> */
-//	Tobject,		/* object */
-	Tby,			/* by */
-	Tof,			/* of */
+    /* conf. language */
+    Ttree,			/* tree */
+    Tprimary,		/* primary */
+    Tspace,			/* space */
+    Trecursive,		/* recursive */
+    Taccess,		/* <access type> */
+    Tehhlist,		/* <ehh_list> */
+    //	Tobject,		/* object */
+    Tby,			/* by */
+    Tof,			/* of */
 
-	T_id,			/* <identifikator> */
-	T_str,
-	T_path,
-	T_num,
-	T_arg,
+    T_id,			/* <identifikator> */
+    T_str,
+    T_path,
+    T_num,
+    T_arg,
 };
 
 
 enum {
 #ifdef DEBUG_TRACE
-	oNOP = PO|0x100,
+    oNOP = PO|0x100,
 #else
-	oNOP = O|0x100,
+    oNOP = O|0x100,
 #endif
-	oLD0,
-	oLD1,
-	oLDI,
-	oLTI,
-	oLTS,
-	oLTP,
-	oSTO,
-	oSWP,
-	oDEL,
-	oDEn,
-	oIMM,
-	oLDC,
-	oLDV,
-	oLDS,
-	oATR,
-	oNEW,
-	oALI,
-	oVRL,
-	oVRT,
-	oTOF,
-	oCOF,
-	oS2C,
-	oSCS,
-	oSCD,
-	oARG,
-	oDUP,
-	oADD,	/* poradie oADD - oXOR sa nesmie zmenit! */
-	oSUB,
-	oMUL,
-	oDIV,
-	oMOD,
-	oSHL,
-	oSHR,
-	oLT,
-	oGT,
-	oLE,
-	oGE,
-	oEQ,
-	oNE,
-	oOR,
-	oAND,
-	oXOR,
-	oNOT,
-	oNEG,
+    oLD0,
+    oLD1,
+    oLDI,
+    oLTI,
+    oLTS,
+    oLTP,
+    oSTO,
+    oSWP,
+    oDEL,
+    oDEn,
+    oIMM,
+    oLDC,
+    oLDV,
+    oLDS,
+    oATR,
+    oNEW,
+    oALI,
+    oVRL,
+    oVRT,
+    oTOF,
+    oCOF,
+    oS2C,
+    oSCS,
+    oSCD,
+    oARG,
+    oDUP,
+    oADD,	/* poradie oADD - oXOR sa nesmie zmenit! */
+    oSUB,
+    oMUL,
+    oDIV,
+    oMOD,
+    oSHL,
+    oSHR,
+    oLT,
+    oGT,
+    oLE,
+    oGE,
+    oEQ,
+    oNE,
+    oOR,
+    oAND,
+    oXOR,
+    oNOT,
+    oNEG,
 
-	oJR,
-	oJIZ,
-	oJNZ,
-	oJSR,
-	oRET,
+    oJR,
+    oJIZ,
+    oJNZ,
+    oJSR,
+    oRET,
 
-	oBIN,	/* buildin */
-//	oFRC,	/* force */
-	oFET,	/* fetch */
-	oUPD,	/* update */
+    oBIN,	/* buildin */
+    //	oFRC,	/* force */
+    oFET,	/* fetch */
+    oUPD,	/* update */
 
-	oILL=O|0x0fff	/* illegal */
+    oILL=O|0x0fff	/* illegal */
 };
 
 #define	START	N|0x0a00

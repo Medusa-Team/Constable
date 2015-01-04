@@ -23,58 +23,58 @@ struct class_s;
 struct class_names_s;
 
 struct class_handler_s {
-	struct class_handler_s *next;	/* for class */
-	struct class_names_s	*classname;
+    struct class_handler_s *next;	/* for class */
+    struct class_names_s	*classname;
     int		*cinfo_offset;
     int		comm_buf_temp_offset;
-	int		flags;
-	struct tree_s	*root;
-	void		*user;	/* struct event_names_s * for generic */
+    int		flags;
+    struct tree_s	*root;
+    void		*user;	/* struct event_names_s * for generic */
     int(*init_comm)(struct class_handler_s *,struct comm_s *);
     int(*set_handler)(struct class_handler_s *,struct comm_s *,struct object_s *);
     int(*get_vs)(struct class_handler_s *,struct comm_s *,struct object_s *,vs_t *,int);
-	struct tree_s *(*get_tree_node)(struct class_handler_s *,struct comm_s *,struct object_s *);
-	struct space_s *(*get_primary_space)(struct class_handler_s *,struct comm_s *,struct object_s *);
+    struct tree_s *(*get_tree_node)(struct class_handler_s *,struct comm_s *,struct object_s *);
+    struct space_s *(*get_primary_space)(struct class_handler_s *,struct comm_s *,struct object_s *);
     int(*enter_tree_node)(struct class_handler_s *,struct comm_s *,struct object_s *,struct tree_s *);
 };
 
 
 struct class_s {
-	struct hash_ent_s		hashent;
-	u_int16_t			cinfo_offset;
-	u_int16_t			cinfo_size;	/* v 32 bit slovach */
-	uintptr_t			cinfo_mask;
-	struct class_names_s		*classname;
-	struct comm_s			*comm;
-	u_int16_t			name_offset;
-	u_int16_t			name_size;	/* v bajtoch */
-	u_int16_t			event_offset;
-	u_int16_t			event_size;	/* v bajtoch */
-	struct medusa_attribute_s	*vs_attr[NR_ACCESS_TYPES];
-	struct {
-			u_int16_t	event_offset;
-			u_int16_t	event_size;	/* v bajtoch */
-			u_int16_t	cinfo_offset;
-			u_int16_t	cinfo_size;	/* v 32 bit slovach */
-			uintptr_t	cinfo_mask;
-	}				subject;
-	struct medusa_class_s		m;
-	struct medusa_attribute_s	attr[0];
+    struct hash_ent_s		hashent;
+    u_int16_t			cinfo_offset;
+    u_int16_t			cinfo_size;	/* v 32 bit slovach */
+    uintptr_t			cinfo_mask;
+    struct class_names_s		*classname;
+    struct comm_s			*comm;
+    u_int16_t			name_offset;
+    u_int16_t			name_size;	/* v bajtoch */
+    u_int16_t			event_offset;
+    u_int16_t			event_size;	/* v bajtoch */
+    struct medusa_attribute_s	*vs_attr[NR_ACCESS_TYPES];
+    struct {
+        u_int16_t	event_offset;
+        u_int16_t	event_size;	/* v bajtoch */
+        u_int16_t	cinfo_offset;
+        u_int16_t	cinfo_size;	/* v 32 bit slovach */
+        uintptr_t	cinfo_mask;
+    }				subject;
+    struct medusa_class_s		m;
+    struct medusa_attribute_s	attr[0];
 };
 
 struct class_names_s {
-	struct class_names_s	*next;
-	char			*name;
-	struct class_s		**classes;
-	struct class_handler_s	*class_handler;
+    struct class_names_s	*next;
+    char			*name;
+    struct class_s		**classes;
+    struct class_handler_s	*class_handler;
 };
 
 struct object_s {
-	struct object_s *next;
-	struct medusa_attribute_s attr;
-	int	flags;
-	struct class_s	*class;
-	char	*data;
+    struct object_s *next;
+    struct medusa_attribute_s attr;
+    int	flags;
+    struct class_s	*class;
+    char	*data;
 };
 
 #define OBJECT_FLAG_LOCAL	0x01

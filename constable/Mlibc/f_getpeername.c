@@ -15,7 +15,7 @@
  * host on the remote side of opened socket. This can be used to
  * add some kind of network filter to the applications, which are
  * opened to the world. Value is returned via setup() syscall.
- * 
+ *
  * For example, your application accepts the network connections
  * on port 12345 and you want to restrict it, if connection
  * came from an unknown host.
@@ -57,38 +57,38 @@
  *       on syscall {
  *               if (action == 0) {
  *                       if (trace2 == 0 && trace1 == 0x0201A8C0) {
-				 // ERRNO is not set
+                 // ERRNO is not set
  *                               // and the address matches
  *                               log "Granting access to the " pid;
  *                       } else {
  *                               log "Unauthorised access from IP " trace1;
  *                               force "f_exit"; // or do something less harmful
  *                       }
- *               }               
+ *               }
  *       }
  */
 
 /* Uncomment this, if the application have tty at the standard output fd */
 /* #define FD1_IS_TTY */
- 
+
 void main(int argc, int *argv)
 {
-	struct sockaddr_in addr;
-	int addrlen = sizeof(addr);
+    struct sockaddr_in addr;
+    int addrlen = sizeof(addr);
 
-	unsigned long socketcall_args[6];
+    unsigned long socketcall_args[6];
 
-	if (argc != 1) {
+    if (argc != 1) {
 #ifdef FD1_IS_TTY
-		printf("GETPEERNAME: requires file descriptor\n");
+        printf("GETPEERNAME: requires file descriptor\n");
 #endif
-		return;
-	}
-	socketcall_args[0] = (unsigned long)(argv[0]);
-	socketcall_args[1] = (unsigned long)(&addr);
-	socketcall_args[2] = (unsigned long)(&addrlen);
-	if (socketcall(SYS_GETPEERNAME, socketcall_args) == 0)
-		setup((int)(addr.sin_addr.s_addr), 0, 0, 0);
-	else
-		setup(0, errno, 0, 0);
+        return;
+    }
+    socketcall_args[0] = (unsigned long)(argv[0]);
+    socketcall_args[1] = (unsigned long)(&addr);
+    socketcall_args[2] = (unsigned long)(&addrlen);
+    if (socketcall(SYS_GETPEERNAME, socketcall_args) == 0)
+        setup((int)(addr.sin_addr.s_addr), 0, 0, 0);
+    else
+        setup(0, errno, 0, 0);
 }

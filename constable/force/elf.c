@@ -19,8 +19,8 @@
 #include <string.h>
 
 typedef struct {
-	char *name;
-	int num;
+    char *name;
+    int num;
 } p_stab_t;
 
 #define S(x)    {#x,x}
@@ -31,157 +31,157 @@ int elf_errno;
 
 elf_t *elf_open(const char *filename)
 {
-	elf_t *e;
-	elf_errno = E_OTHER;
-	if ((e = malloc(sizeof(elf_t))) == NULL)
-		return NULL;
-	if ((e->fd = open(filename, O_RDONLY)) < 0) {
-		free(e);
-		return NULL;
-	}
-	if (read(e->fd, &(e->head), sizeof(Elf32_Ehdr)) !=
-	    sizeof(Elf32_Ehdr)) {
-		free(e);
-		return NULL;
-	}
-	if (e->head.e_ident[EI_MAG0] != ELFMAG0
-	    || e->head.e_ident[EI_MAG1] != ELFMAG1
-	    || e->head.e_ident[EI_MAG2] != ELFMAG2
-	    || e->head.e_ident[EI_MAG3] != ELFMAG3
-	    || e->head.e_ehsize != sizeof(Elf32_Ehdr)) {
-		free(e);
-		elf_errno = E_NOTELF;
-		return NULL;
-	}
-	e->st_len = 0;
-	e->st = NULL;
-	if (e->head.e_shoff && e->head.e_shentsize == sizeof(Elf32_Shdr)) {
-		e->st_len = e->head.e_shnum;
-		if ((e->st = malloc(sizeof(Elf32_Shdr) * e->st_len)) ==
-		    NULL) {
-			free(e);
-			return NULL;
-		}
-		if (lseek(e->fd, e->head.e_shoff, SEEK_SET) < 0) {
-			free(e->st);
-			free(e);
-			return NULL;
-		}
-		if (read(e->fd, e->st, sizeof(Elf32_Shdr) * e->st_len)
-		    != sizeof(Elf32_Shdr) * e->st_len) {
-			free(e->st);
-			free(e);
-			return NULL;
-		}
-	}
-	elf_errno = 0;
-	return e;
+    elf_t *e;
+    elf_errno = E_OTHER;
+    if ((e = malloc(sizeof(elf_t))) == NULL)
+        return NULL;
+    if ((e->fd = open(filename, O_RDONLY)) < 0) {
+        free(e);
+        return NULL;
+    }
+    if (read(e->fd, &(e->head), sizeof(Elf32_Ehdr)) !=
+            sizeof(Elf32_Ehdr)) {
+        free(e);
+        return NULL;
+    }
+    if (e->head.e_ident[EI_MAG0] != ELFMAG0
+            || e->head.e_ident[EI_MAG1] != ELFMAG1
+            || e->head.e_ident[EI_MAG2] != ELFMAG2
+            || e->head.e_ident[EI_MAG3] != ELFMAG3
+            || e->head.e_ehsize != sizeof(Elf32_Ehdr)) {
+        free(e);
+        elf_errno = E_NOTELF;
+        return NULL;
+    }
+    e->st_len = 0;
+    e->st = NULL;
+    if (e->head.e_shoff && e->head.e_shentsize == sizeof(Elf32_Shdr)) {
+        e->st_len = e->head.e_shnum;
+        if ((e->st = malloc(sizeof(Elf32_Shdr) * e->st_len)) ==
+                NULL) {
+            free(e);
+            return NULL;
+        }
+        if (lseek(e->fd, e->head.e_shoff, SEEK_SET) < 0) {
+            free(e->st);
+            free(e);
+            return NULL;
+        }
+        if (read(e->fd, e->st, sizeof(Elf32_Shdr) * e->st_len)
+                != sizeof(Elf32_Shdr) * e->st_len) {
+            free(e->st);
+            free(e);
+            return NULL;
+        }
+    }
+    elf_errno = 0;
+    return e;
 }
 
 int elf_close(elf_t * elf)
 {
-	if (elf == NULL)
-		return 0;
-	if (elf->fd >= 0)
-		close(elf->fd);
-	if (elf->st != NULL)
-		free(elf->st);
-	free(elf);
-	return 0;
+    if (elf == NULL)
+        return 0;
+    if (elf->fd >= 0)
+        close(elf->fd);
+    if (elf->st != NULL)
+        free(elf->st);
+    free(elf);
+    return 0;
 }
 
 int elf_test(elf_t * elf)
 {
-	if (elf->head.e_ident[EI_CLASS] != ELFCLASS32)
-		return E_BADMACHINE;
-	if (elf->head.e_ident[EI_DATA] != ELFDATA2LSB)
-		return E_BADMACHINE;
-	if (elf->head.e_ident[EI_VERSION] != EV_CURRENT)
-		return E_BADVERSION;
-	if (elf->head.e_machine != EM_386)
-		return E_BADMACHINE;
-	if (elf->head.e_version != EV_CURRENT)
-		return E_BADVERSION;
-	return 0;
+    if (elf->head.e_ident[EI_CLASS] != ELFCLASS32)
+        return E_BADMACHINE;
+    if (elf->head.e_ident[EI_DATA] != ELFDATA2LSB)
+        return E_BADMACHINE;
+    if (elf->head.e_ident[EI_VERSION] != EV_CURRENT)
+        return E_BADVERSION;
+    if (elf->head.e_machine != EM_386)
+        return E_BADMACHINE;
+    if (elf->head.e_version != EV_CURRENT)
+        return E_BADVERSION;
+    return 0;
 }
 
 void *elf_read_section(elf_t * elf, int section)
 {
-	char *buf;
-	long len;
-	elf_errno = E_BADSECTION;
-	if (elf->st == NULL || section >= elf->st_len)
-		return NULL;
-	if (elf->st[section].sh_type == SHT_NULL
-	    || elf->st[section].sh_type == SHT_NOBITS)
-		return NULL;
-	elf_errno = E_OTHER;
-	if (lseek(elf->fd, elf->st[section].sh_offset, SEEK_SET) < 0)
-		return NULL;
-	len = elf->st[section].sh_size;
-	if ((buf = malloc(len)) == NULL)
-		return NULL;
-	if (read(elf->fd, buf, len) != len) {
-		free(buf);
-		return NULL;
-	}
-	elf_errno = 0;
-	return buf;
+    char *buf;
+    long len;
+    elf_errno = E_BADSECTION;
+    if (elf->st == NULL || section >= elf->st_len)
+        return NULL;
+    if (elf->st[section].sh_type == SHT_NULL
+            || elf->st[section].sh_type == SHT_NOBITS)
+        return NULL;
+    elf_errno = E_OTHER;
+    if (lseek(elf->fd, elf->st[section].sh_offset, SEEK_SET) < 0)
+        return NULL;
+    len = elf->st[section].sh_size;
+    if ((buf = malloc(len)) == NULL)
+        return NULL;
+    if (read(elf->fd, buf, len) != len) {
+        free(buf);
+        return NULL;
+    }
+    elf_errno = 0;
+    return buf;
 }
 
 void *elf_map_section(elf_t * elf, int section, elfmap_t * map, int prot)
 {
-	char *buf;
-	long l, lp;
-	long page;
-	long offp, off;
-	page = getpagesize();
-	elf_errno = E_BADSECTION;
-	if (elf->st == NULL || section >= elf->st_len)
-		return NULL;
-	if (elf->st[section].sh_type == SHT_NULL)
-//          || elf->st[section].sh_type==SHT_NOBITS )
-		return NULL;
-	elf_errno = E_OTHER;
-	off = elf->st[section].sh_offset;
-	if (elf->st[section].sh_type == SHT_NOBITS)
-		off = 0;
-	offp = ((off) / page) * page;
-	off -= offp;
-	l = elf->st[section].sh_size;
-	lp = (((l + off) + page - 1) / page) * page;
-	if (elf->st[section].sh_type != SHT_NOBITS)
-		buf = mmap(NULL, lp, prot, MAP_PRIVATE, elf->fd, offp);
-	else {
-		buf = mmap(NULL, lp, prot, MAP_PRIVATE | MAP_ANON, -1, 0);
-		if (buf != NULL && buf != (char *) (-1))
-			memset(buf, 0, lp);
-	}
-	if (buf == (char *) (-1)) {
-//              printf("mmap (section=%d) error: %s (len=%ld off=%ld)\n",
-		//                      section,strerror(errno),lp,offp);
-		return NULL;
-	}
-	if (buf == NULL)
-		return NULL;
-	if (map != NULL) {
-		map->map_addr = buf;
-		map->map_len = lp;
-		map->base = buf + off;
-		map->len = l;
-	}
-	elf_errno = 0;
-	return buf + off;
+    char *buf;
+    long l, lp;
+    long page;
+    long offp, off;
+    page = getpagesize();
+    elf_errno = E_BADSECTION;
+    if (elf->st == NULL || section >= elf->st_len)
+        return NULL;
+    if (elf->st[section].sh_type == SHT_NULL)
+        //          || elf->st[section].sh_type==SHT_NOBITS )
+        return NULL;
+    elf_errno = E_OTHER;
+    off = elf->st[section].sh_offset;
+    if (elf->st[section].sh_type == SHT_NOBITS)
+        off = 0;
+    offp = ((off) / page) * page;
+    off -= offp;
+    l = elf->st[section].sh_size;
+    lp = (((l + off) + page - 1) / page) * page;
+    if (elf->st[section].sh_type != SHT_NOBITS)
+        buf = mmap(NULL, lp, prot, MAP_PRIVATE, elf->fd, offp);
+    else {
+        buf = mmap(NULL, lp, prot, MAP_PRIVATE | MAP_ANON, -1, 0);
+        if (buf != NULL && buf != (char *) (-1))
+            memset(buf, 0, lp);
+    }
+    if (buf == (char *) (-1)) {
+        //              printf("mmap (section=%d) error: %s (len=%ld off=%ld)\n",
+        //                      section,strerror(errno),lp,offp);
+        return NULL;
+    }
+    if (buf == NULL)
+        return NULL;
+    if (map != NULL) {
+        map->map_addr = buf;
+        map->map_len = lp;
+        map->base = buf + off;
+        map->len = l;
+    }
+    elf_errno = 0;
+    return buf + off;
 }
 int elf_unmap(elfmap_t * map)
 {
-	int r;
-	if (map->map_addr == NULL)
-		return 0;
-	r = munmap(map->map_addr, map->map_len);
-	map->map_addr = NULL;
-	map->map_len = 0;
-	return r;
+    int r;
+    if (map->map_addr == NULL)
+        return 0;
+    r = munmap(map->map_addr, map->map_len);
+    map->map_addr = NULL;
+    map->map_len = 0;
+    return r;
 }
 
 /*
@@ -233,40 +233,40 @@ int elf_unmap(elfmap_t * map)
 /* printouts */
 
 p_stab_t t_e_type[] = {
-	S(ET_NONE), S(ET_REL), S(ET_EXEC), S(ET_DYN),
-	S(ET_CORE), SE
+    S(ET_NONE), S(ET_REL), S(ET_EXEC), S(ET_DYN),
+    S(ET_CORE), SE
 };
 p_stab_t t_e_machine[] = {
-	S(EM_NONE), S(EM_M32), S(EM_SPARC), S(EM_386),
-	S(EM_68K), S(EM_88K), S(EM_X86_64), S(EM_860),
-	//S(EM_68K), S(EM_88K), S(EM_486), S(EM_860),
-	S(EM_MIPS), /* S(EM_MIPS_RS4_BE), */
-#ifdef	EM_SPARC64
-	S(EM_SPARC64),
-#endif
-	S(EM_PARISC),
-#ifdef EM_SPARC32PLUS
-	S(EM_SPARC32PLUS),
-#endif
-	S(EM_PPC), S(EM_ALPHA),
-	SE
+    S(EM_NONE), S(EM_M32), S(EM_SPARC), S(EM_386),
+    S(EM_68K), S(EM_88K), S(EM_X86_64), S(EM_860),
+    //S(EM_68K), S(EM_88K), S(EM_486), S(EM_860),
+    S(EM_MIPS), /* S(EM_MIPS_RS4_BE), */
+    #ifdef	EM_SPARC64
+    S(EM_SPARC64),
+    #endif
+    S(EM_PARISC),
+    #ifdef EM_SPARC32PLUS
+    S(EM_SPARC32PLUS),
+    #endif
+    S(EM_PPC), S(EM_ALPHA),
+    SE
 };
 
 p_stab_t t_shn[] = {
-	S(SHN_ABS), S(SHN_COMMON),
-	SE
+    S(SHN_ABS), S(SHN_COMMON),
+    SE
 };
 p_stab_t t_sh_type[] = {
-	S(SHT_NULL), S(SHT_PROGBITS), S(SHT_SYMTAB), S(SHT_STRTAB),
-	S(SHT_RELA), S(SHT_HASH), S(SHT_DYNAMIC), S(SHT_NOTE),
-	S(SHT_NOBITS), S(SHT_REL), S(SHT_SHLIB), S(SHT_DYNSYM),
-#ifdef SHT_NUM
-	S(SHT_NUM),
-#endif
-	SE
+    S(SHT_NULL), S(SHT_PROGBITS), S(SHT_SYMTAB), S(SHT_STRTAB),
+    S(SHT_RELA), S(SHT_HASH), S(SHT_DYNAMIC), S(SHT_NOTE),
+    S(SHT_NOBITS), S(SHT_REL), S(SHT_SHLIB), S(SHT_DYNSYM),
+    #ifdef SHT_NUM
+    S(SHT_NUM),
+    #endif
+    SE
 };
 p_stab_t t_sh_flags[] = {
-	S(SHF_WRITE), S(SHF_ALLOC), S(SHF_EXECINSTR), SE
+    S(SHF_WRITE), S(SHF_ALLOC), S(SHF_EXECINSTR), SE
 };
 /*
    int elf_print_elfhead( elf_t *elf )
@@ -314,11 +314,11 @@ p_stab_t t_sh_flags[] = {
    }
  */
 p_stab_t t_stb[] = {
-	S(STB_LOCAL), S(STB_GLOBAL), S(STB_WEAK), SE
+    S(STB_LOCAL), S(STB_GLOBAL), S(STB_WEAK), SE
 };
 p_stab_t t_stt[] = {
-	S(STT_NOTYPE), S(STT_OBJECT), S(STT_FUNC), S(STT_SECTION),
-	S(STT_FILE), SE
+    S(STT_NOTYPE), S(STT_OBJECT), S(STT_FUNC), S(STT_SECTION),
+    S(STT_FILE), SE
 };
 /*
    int elf_print_symbols( elf_t *elf )
@@ -363,21 +363,21 @@ p_stab_t t_stt[] = {
    }
  */
 p_stab_t t_r_type[] = {
-	S(R_X86_64_NONE), S(R_X86_64_32), S(R_X86_64_PC32), S(R_X86_64_GOT32),
-	S(R_X86_64_PLT32), S(R_X86_64_COPY), S(R_X86_64_GLOB_DAT),
-	    S(R_X86_64_JUMP_SLOT),
-	S(R_X86_64_RELATIVE), S(R_X86_64_GOTOFF64), S(R_X86_64_GOTPC64),
-#ifdef R_X86_64_NUM
-	S(R_X86_64_NUM),
-#endif
-//	S(R_386_NONE), S(R_386_32), S(R_386_PC32), S(R_386_GOT32),
-//	S(R_386_PLT32), S(R_386_COPY), S(R_386_GLOB_DAT),
-//	    S(R_386_JMP_SLOT),
-//	S(R_386_RELATIVE), S(R_386_GOTOFF), S(R_386_GOTPC),
-//#ifdef R_386_NUM
-//	S(R_386_NUM),
-//#endif
-	SE
+    S(R_X86_64_NONE), S(R_X86_64_32), S(R_X86_64_PC32), S(R_X86_64_GOT32),
+    S(R_X86_64_PLT32), S(R_X86_64_COPY), S(R_X86_64_GLOB_DAT),
+    S(R_X86_64_JUMP_SLOT),
+    S(R_X86_64_RELATIVE), S(R_X86_64_GOTOFF64), S(R_X86_64_GOTPC64),
+    #ifdef R_X86_64_NUM
+    S(R_X86_64_NUM),
+    #endif
+    //	S(R_386_NONE), S(R_386_32), S(R_386_PC32), S(R_386_GOT32),
+    //	S(R_386_PLT32), S(R_386_COPY), S(R_386_GLOB_DAT),
+    //	    S(R_386_JMP_SLOT),
+    //	S(R_386_RELATIVE), S(R_386_GOTOFF), S(R_386_GOTPC),
+    //#ifdef R_386_NUM
+    //	S(R_386_NUM),
+    //#endif
+    SE
 };
 /*
    int elf_print_reloc( elf_t *elf )

@@ -16,58 +16,58 @@ struct event_hadler_hash_s;
 struct class_handler_s;
 
 struct comm_buffer_queue_s {
-	struct comm_buffer_s	*first;
-	struct comm_buffer_s	*last;
+    struct comm_buffer_s	*first;
+    struct comm_buffer_s	*last;
 };
 
 struct comm_buffer_s {
-	struct comm_buffer_s	*next;
+    struct comm_buffer_s	*next;
     int			_n;	/* position in buffers[] */
     int			size;
-	void(*free)(struct comm_buffer_s*);
+    void(*free)(struct comm_buffer_s*);
 
-	struct comm_s		*comm;
+    struct comm_s		*comm;
     int			open_counter;
     void			*user1;
     void			*user2;
     int	    user_data; // Matus mozno to ma byt intptr_t
-	/* for do_event & execute ... */
-//	struct execute_s	*execute;
+    /* for do_event & execute ... */
+    //	struct execute_s	*execute;
     int			do_phase;
     int			ehh_list;
-	struct event_hadler_hash_s *hh;
-	struct class_handler_s	*ch;
-	struct event_context_s	context;
-	struct event_type_s	*event;
-	struct event_handler_s	*handler;
+    struct event_hadler_hash_s *hh;
+    struct class_handler_s	*ch;
+    struct event_context_s	context;
+    struct event_type_s	*event;
+    struct event_handler_s	*handler;
 
-	struct comm_buffer_queue_s	to_wake;
+    struct comm_buffer_queue_s	to_wake;
     int			len;		/* for comm */
     int			want;		/* for comm */
     int(*completed)(struct comm_buffer_s*);	/* for comm */
-	void			*temp;
-	char			*pbuf;		/*  for read/write */
-	char			buf[0]; 	/* for comm */
+    void			*temp;
+    char			*pbuf;		/*  for read/write */
+    char			buf[0]; 	/* for comm */
 };
 
 struct comm_s {
-	struct comm_s	*next;
+    struct comm_s	*next;
     int		conn;		/* connection number */
-	char		name[64];
+    char		name[64];
     int		fd;
     int		open_counter;
     int		state;
     int		flags;
-	struct hash_s	classes;
-	struct hash_s	events;
-	
-	/* for do_event & execute ... */
-	struct execute_s	*execute;
-	
-	/* for read/write/... */
-	struct comm_buffer_s *buf;
-	struct comm_buffer_queue_s output;
-	struct comm_buffer_queue_s wait_for_answer;	/* fetch */
+    struct hash_s	classes;
+    struct hash_s	events;
+
+    /* for do_event & execute ... */
+    struct execute_s	*execute;
+
+    /* for read/write/... */
+    struct comm_buffer_s *buf;
+    struct comm_buffer_queue_s output;
+    struct comm_buffer_queue_s wait_for_answer;	/* fetch */
     int(*read)(struct comm_s*);
     int(*write)(struct comm_s*);
     int(*close)(struct comm_s*);
@@ -76,7 +76,7 @@ struct comm_s {
     int(*update_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);
 
     int(*conf_error)(struct comm_s *,const char *fmt,...);
-	char		user_data[0];
+    char		user_data[0];
 };
 
 #define	comm_user_data(c)	((void *)(&((c)->user_data[0])))

@@ -44,10 +44,10 @@
 #define MEDUSA_COMM_UPDATE_ANSWER	0x0a	/* k->c */
 
 struct medusa_comm_attribute_s {
-	u_int16_t offset;			/* offset of attribute in object */
-	u_int16_t length;			/* bytes consumed by data */
-	u_int8_t type;				/* data type (MED_COMM_TYPE_xxx) */
-	char name[MEDUSA_COMM_ATTRNAME_MAX];	/* string: attribute name */
+    u_int16_t offset;			/* offset of attribute in object */
+    u_int16_t length;			/* bytes consumed by data */
+    u_int8_t type;				/* data type (MED_COMM_TYPE_xxx) */
+    char name[MEDUSA_COMM_ATTRNAME_MAX];	/* string: attribute name */
 };
 
 #define	MED_COMM_TYPE_END		0x00	/* end of attribute list */
@@ -60,18 +60,18 @@ struct medusa_comm_attribute_s {
 #define	MED_COMM_TYPE_PRIMARY_KEY	0x40	/* this attribute is used to lookup object */
 
 struct medusa_comm_class_s {
-	uintptr_t	classid;	/* (1,2,...): unique identifier of this class */
-	u_int16_t	size;		/* size of object */
-	char		name[MEDUSA_COMM_CLASSNAME_MAX];
+    uintptr_t	classid;	/* (1,2,...): unique identifier of this class */
+    u_int16_t	size;		/* size of object */
+    char		name[MEDUSA_COMM_CLASSNAME_MAX];
 };
 
 struct medusa_comm_acctype_s {
-	uintptr_t	opid;
-	u_int16_t	size;
-	u_int16_t	actbit;	/* 0x8000 - means subject */
-	uintptr_t	op_class[2];
-	char		name[MEDUSA_COMM_OPNAME_MAX];
-	char		op_name[2][MEDUSA_COMM_ATTRNAME_MAX];
+    uintptr_t	opid;
+    u_int16_t	size;
+    u_int16_t	actbit;	/* 0x8000 - means subject */
+    uintptr_t	op_class[2];
+    char		name[MEDUSA_COMM_OPNAME_MAX];
+    char		op_name[2][MEDUSA_COMM_ATTRNAME_MAX];
 };
 
 /* for Constable internal use */

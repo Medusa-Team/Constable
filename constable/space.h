@@ -14,9 +14,9 @@
 extern struct space_s *global_spaces;
 
 typedef struct ltree_s {
-	struct ltree_s	*prev;
-	void		*path_or_space;
-	int		type;
+    struct ltree_s	*prev;
+    void		*path_or_space;
+    int		type;
 } ltree_t;
 #define	LTREE_EXCLUDE	0x01
 #define	LTREE_T_MASK	0x02
@@ -27,21 +27,21 @@ typedef struct ltree_s {
 #define	LTREE_RECURSIVE	0x80
 
 typedef struct levent_s {
-	struct levent_s		*prev;
-	struct event_handler_s	*handler;
-	struct space_s		*subject;
-	struct space_s		*object;
+    struct levent_s		*prev;
+    struct event_handler_s	*handler;
+    struct space_s		*subject;
+    struct space_s		*object;
 } levent_t;
 
 struct space_s {
-	struct space_s	*next;
-	struct vs_s	*my_vs;
-	vs_t		vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];
-	levent_t	*levent;
-	ltree_t		*ltree;
-	ltree_t		*ltree_exclude;
-	int		primary;
-	char		name[0];
+    struct space_s	*next;
+    struct vs_s	*my_vs;
+    vs_t		vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];
+    levent_t	*levent;
+    ltree_t		*ltree;
+    ltree_t		*ltree_exclude;
+    int		primary;
+    char		name[0];
 };
 
 struct space_s *space_create( char *name, int primary );

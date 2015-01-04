@@ -15,32 +15,32 @@ struct tree_s;
 struct space_s;
 
 struct tree_type_s {
-	char	*name;
-	int	size;		/* size of node */
-	struct class_handler_s *class_handler;
-	int(*init)(struct tree_s*);
-	struct tree_type_s *child_type;
+    char	*name;
+    int	size;		/* size of node */
+    struct class_handler_s *class_handler;
+    int(*init)(struct tree_s*);
+    struct tree_type_s *child_type;
 };
 
 struct tree_event_s {
-	event_mask_t	event[2];
+    event_mask_t	event[2];
 };
 
 struct tree_s {
-	struct tree_s	*parent;
-	struct tree_s	*child;		/* normalny potomkovia */
-	struct tree_s	*reg;		/* potomkovia s regexpami */
-	struct tree_s	*next;
-	struct tree_s	*alt;		/* alternative */
-	struct tree_type_s *type;
-	char		*name;
-	void		*extra;		/* precompiled regexp... */
-	struct space_s	*primary_space;
-	struct tree_event_s	*events;
-	vs_t	vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];
-	vs_t	no_vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];
-	struct event_hadler_hash_s	*subject_handlers[EHH_LISTS];
-	struct event_hadler_hash_s	*object_handlers[EHH_LISTS];
+    struct tree_s	*parent;
+    struct tree_s	*child;		/* normalny potomkovia */
+    struct tree_s	*reg;		/* potomkovia s regexpami */
+    struct tree_s	*next;
+    struct tree_s	*alt;		/* alternative */
+    struct tree_type_s *type;
+    char		*name;
+    void		*extra;		/* precompiled regexp... */
+    struct space_s	*primary_space;
+    struct tree_event_s	*events;
+    vs_t	vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];
+    vs_t	no_vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];
+    struct event_hadler_hash_s	*subject_handlers[EHH_LISTS];
+    struct event_hadler_hash_s	*object_handlers[EHH_LISTS];
 };
 
 typedef struct tree_type_s tree_type_t;

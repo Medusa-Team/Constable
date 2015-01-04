@@ -8,13 +8,13 @@
 #define _INIT_H
 
 struct module_s {
-	struct module_s *next;
-	char name[64];
-	char *filename;
-	int(*create_comm)( struct module_s * );
-	int(*init_comm)( struct module_s * );
-	int(*init_namespace)( struct module_s * );
-	int(*init_rules)( struct module_s * );
+    struct module_s *next;
+    char name[64];
+    char *filename;
+    int(*create_comm)( struct module_s * );
+    int(*init_comm)( struct module_s * );
+    int(*init_namespace)( struct module_s * );
+    int(*init_rules)( struct module_s * );
 };
 
 int add_module( struct module_s *module );
