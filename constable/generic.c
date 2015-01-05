@@ -92,7 +92,7 @@ int generic_test_vs_tree( int acctype, struct event_context_s *c, struct tree_s 
 }
 
 int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
-{ uintptr_t *cinfo; 
+{ uint32_t *cinfo;
     struct tree_s *t;
     char *n;
     int r;
@@ -110,7 +110,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
             t= (struct tree_s *)CINFO(&(c->object),ch,cb->comm);
         if( t==NULL )
             t=ch->root;
-        *cinfo=(uintptr_t)t;
+        *cinfo=(uint32_t)t;
         object_do_sethandler(&(c->subject));
     }
     printf("ZZZ: riesim generic_hierarchy_handler pre %s\n",t->type->name);
@@ -163,7 +163,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
 }
 
 int generic_hierarchy_handler_notify( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
-{ uintptr_t *cinfo; 
+{ uint32_t *cinfo;
     struct class_handler_s *ch;
 
     ch=((struct g_event_handler_s*)h)->class_handler;
