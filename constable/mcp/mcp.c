@@ -385,7 +385,7 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
         printf("ZZZ: updatnute\n");
     }
     else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
-    if( (r=comm_buf_get(3*sizeof(uint32_t),c))==NULL )     // Zmenil Matus, asi to ma byt takto inac dava bludy v mallocu
+    if( (r=comm_buf_get(3*sizeof(uint32_t),c))==NULL )     //( povodne uintptr_t )Asi to ma byt takto inac dava bludy v mallocu - prepisuje hodnotu user_data, by Matus
     {	fatal("Can't alloc buffer for send answer!");
         return(-1);
     }
@@ -634,7 +634,7 @@ static int mcp_r_fetch_answer_done( struct comm_buffer_s *b )
 { struct comm_buffer_s *p;
     p=(struct comm_buffer_s *)(b->user1);
     if( p!=NULL )
-    {	*((uint32_t*)(p->user2))=0;	/* success */
+    {	*((uint32_t*)(p->user2))=0;	/* success */ // Zmenene uintptr_t z na uint32_t - prepisovanie do_phase, by Matus
         p->free(p);
     }
     b->comm->buf=NULL;
@@ -724,7 +724,7 @@ static int mcp_r_update_answer( struct comm_buffer_s *b )
     if( p!=NULL )
     {
         *((uint32_t*)(p->user2))=
-                byte_reorder_get_uintptr_t(b->comm->flags,bmask->user);
+                byte_reorder_get_uintptr_t(b->comm->flags,bmask->user);   // Zmenene uintptr_t z na uint32_t - prepisovanie do_phase, by Matus
         p->free(p);
     }
     b->comm->buf=NULL;

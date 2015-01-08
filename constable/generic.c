@@ -29,7 +29,7 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
 { 
     struct tree_s *t; // ,*p; unused
     int a,inh;
-    uint32_t *cinfo; // changed from uintptr_t* to void** // corrected by Matus - should be uint32_t
+    uint32_t *cinfo; // changed from uintptr_t* to void** // should be uint32_t instead uintptr_t, by Matus
     /* musim get_tree_node robit sam, aby sa nezacyklilo */
     cinfo=PCINFO(o,h,comm);
 
@@ -92,7 +92,7 @@ int generic_test_vs_tree( int acctype, struct event_context_s *c, struct tree_s 
 }
 
 int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
-{ uint32_t *cinfo;
+{ uint32_t *cinfo;  // should be uint32_t instead uintptr_t, by Matus
     struct tree_s *t;
     char *n;
     int r;
@@ -110,7 +110,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
             t= (struct tree_s *)CINFO(&(c->object),ch,cb->comm);
         if( t==NULL )
             t=ch->root;
-        *cinfo=(uint32_t)t;
+        *cinfo=(uint32_t)t; // should be uint32_t instead uintptr_t, by Matus
         object_do_sethandler(&(c->subject));
     }
     printf("ZZZ: riesim generic_hierarchy_handler pre %s\n",t->type->name);
@@ -163,7 +163,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
 }
 
 int generic_hierarchy_handler_notify( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
-{ uint32_t *cinfo;
+{ uint32_t *cinfo;  // should be uint32_t instead uintptr_t, by Matus
     struct class_handler_s *ch;
 
     ch=((struct g_event_handler_s*)h)->class_handler;

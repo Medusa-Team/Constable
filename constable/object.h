@@ -92,7 +92,7 @@ int class_add_handler( struct class_names_s *c, struct class_handler_s *handler 
 
 int class_comm_init( struct comm_s *comm );
 
-#define	PCINFO(object,ch,comm)	((uint32_t*)((object)->data+(ch)->cinfo_offset[(comm)->conn])) // corrected by Matus - should be uint32_t
+#define	PCINFO(object,ch,comm)	((uint32_t*)((object)->data+(ch)->cinfo_offset[(comm)->conn])) // should be uint32_t instead uintptr_t, by Matus
 #define	CINFO(object,ch,comm)	(*(PCINFO(object,ch,comm)))
 
 int object_get_val( struct object_s *o, struct medusa_attribute_s *a, void *buf, int maxlen );
