@@ -19,6 +19,9 @@
  * facts about them.
  */
 
+typedef uint64_t MCPptr_t; // medusa common protocol pointer type this is here because we wanna have one protocol for all architectures JK March 2015
+typedef uint64_t Mptr_t; // medusa pointer if you want to run effectivly medusa you should use something like coid* :) for debuggin purposes you should use mcptr_t :) JK March 2015
+
 /* version of this communication protocol */
 #define MEDUSA_COMM_VERSION	1
 
@@ -60,16 +63,16 @@ struct medusa_comm_attribute_s {
 #define	MED_COMM_TYPE_PRIMARY_KEY	0x40	/* this attribute is used to lookup object */
 
 struct medusa_comm_class_s {
-    uintptr_t	classid;	/* (1,2,...): unique identifier of this class */
+    MCPptr_t	classid;	/* (1,2,...): unique identifier of this class */
     u_int16_t	size;		/* size of object */
     char		name[MEDUSA_COMM_CLASSNAME_MAX];
 };
 
 struct medusa_comm_acctype_s {
-    uintptr_t	opid;
+    MCPptr_t	opid;
     u_int16_t	size;
     u_int16_t	actbit;	/* 0x8000 - means subject */
-    uintptr_t	op_class[2];
+    MCPptr_t	op_class[2];
     char		name[MEDUSA_COMM_OPNAME_MAX];
     char		op_name[2][MEDUSA_COMM_ATTRNAME_MAX];
 };
