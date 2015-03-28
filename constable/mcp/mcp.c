@@ -370,6 +370,13 @@ static int mcp_r_query( struct comm_buffer_s *b )
 
 static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
 { struct comm_buffer_s *r;
+    #pragma pack(push)
+    #pragma pack(1)
+    struct out_struct {
+        MCPptr_t ans, id;
+        uint16_t res;
+    } * out;
+    #pragma pack(pop)
     int i;
     /* TODO: only if changed */
     printf("ZZZ: answer\n");
@@ -385,12 +392,13 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
         printf("ZZZ: updatnute\n");
     }
     else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
-    if( (r=comm_buf_get(3*sizeof(uint32_t),c))==NULL )     //( povodne uintptr_t )Asi to ma byt takto inac dava bludy v mallocu - prepisuje hodnotu user_data, by Matus
+    if( (r=comm_buf_get(sizeof(*out),c))==NULL )     //( povodne uintptr_t )Asi to ma byt takto inac dava bludy v mallocu - prepisuje hodnotu user_data, by Matus
     {	fatal("Can't alloc buffer for send answer!");
         return(-1);
     }
-    ((MCPptr_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_AUTHANSWER);
-    ((MCPptr_t*)(r->buf))[1]= ((uint32_t*)(b->buf+sizeof(MCPptr_t)))[0];
+    out = (void*)&r->buf;
+    out->ans= byte_reorder_put_int32(c->flags,MEDUSA_COMM_AUTHANSWER);
+    out->id = ((uint32_t*)(b->buf+sizeof(MCPptr_t)))[0];
 #ifdef TRANSLATE_RESULT
     switch( b->context.result )
     {	case RESULT_ALLOW:
@@ -417,10 +425,10 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
             byte_reorder_put_int16(c->flags,
                                    *((uint16_t*)(r->buf+2*sizeof(MCPptr_t))));
 #else
-    *((uint16_t*)(r->buf+2*sizeof(MCPptr_t))) =
+    out->res =
             byte_reorder_put_int16(c->flags,b->context.result);
 #endif
-    r->len=2*sizeof(MCPptr_t)+sizeof(uint16_t);
+    r->len=sizeof(*out);
     r->want=0;
     r->completed=NULL;
     comm_buf_to_queue(&(c->output),r);
@@ -585,13 +593,16 @@ static int mcp_fetch_object_wait( struct comm_buffer_s *b )
 
 static int mcp_r_fetch_answer( struct comm_buffer_s *b )
 { struct comm_buffer_s *f,*p;
+    #pragma pack(push)
+    #pragma pack(1)
     struct {
         MCPptr_t p1,p2;
-    } * bmask = b->buf + sizeof(uint32_t) + sizeof(MCPptr_t), *pmask;
+    } * bmask = (void*)( b->buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
+    #pragma pack(pop)
     f=b->comm->wait_for_answer.first;
     p=NULL;
     do {	p=comm_buf_from_queue(&(b->comm->wait_for_answer));
-        pmask = p->buf + sizeof(MCPptr_t);
+        pmask = (void*)(p->buf + sizeof(MCPptr_t));
         if( byte_reorder_get_int32(b->comm->flags,((MCPptr_t*)(p->buf))[0])==MEDUSA_COMM_FETCH_REQUEST
                 && pmask->p1==bmask->p1
                 && pmask->p2==bmask->p2
@@ -707,13 +718,16 @@ static int mcp_update_object_wait( struct comm_buffer_s *b )
 
 static int mcp_r_update_answer( struct comm_buffer_s *b )
 { struct comm_buffer_s *f,*p;
+    #pragma pack(push)
+    #pragma pack(1)
     struct {
         MCPptr_t p1,p2,user;
-    } * bmask = b->buf + sizeof(uint32_t) + sizeof(MCPptr_t), *pmask;
+    } * bmask = (void*)(b->buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
+    #pragma pack(pop)
     f=b->comm->wait_for_answer.first;
     p=NULL;
     do {	p=comm_buf_from_queue(&(b->comm->wait_for_answer));
-        pmask = p->buf + sizeof(MCPptr_t);
+        pmask = (void*) (p->buf + sizeof(MCPptr_t));
         if( byte_reorder_get_int32(b->comm->flags,*(MCPptr_t*)p->buf)==MEDUSA_COMM_UPDATE_REQUEST
                 && pmask->p1==bmask->p1 && pmask->p2==bmask->p2)
             break;

@@ -92,7 +92,7 @@ static void comm_buf_free( struct comm_buffer_s *b )
 
 static struct comm_buffer_s *malloc_buf( int size )
 { struct comm_buffer_s *b;
-    if( (b=malloc(sizeof(struct comm_buffer_s)+size))==NULL )
+    if( (b=calloc(1,sizeof(struct comm_buffer_s)+size))==NULL )
     {	fatal(Out_of_memory);
         return(NULL);
     }

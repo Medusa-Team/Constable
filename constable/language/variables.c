@@ -17,7 +17,7 @@ struct object_s *alloc_var( char *name, struct medusa_attribute_s *attr, struct 
     if( class==NULL )
         l=attr->length;
     else	l=class->m.size;
-    if( (v=malloc(sizeof(struct object_s)+l))==NULL )
+    if( (v=calloc(1,sizeof(struct object_s)+l))==NULL )
         return(NULL);
     v->next=NULL;
     v->flags=OBJECT_FLAG_LOCAL;

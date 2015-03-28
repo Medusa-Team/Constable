@@ -312,7 +312,7 @@ int generic_init( char *name, struct event_handler_s *subhandler, struct event_n
     ch->flags=flags;
     ch->user=(void*)event;
 
-    if( (type=malloc(sizeof(struct tree_type_s)+sizeof(name)+1))==NULL )
+    if( (type=malloc(sizeof(struct tree_type_s)+strlen(name)+1))==NULL ) // !sizeof but strlen!!!
     {	init_error(Out_of_memory);
         free(ch->cinfo_offset);
         free(ch);

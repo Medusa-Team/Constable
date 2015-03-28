@@ -29,7 +29,7 @@ int vs_init( void );
 int language_init( char *filename );
 int execute_init( int n );
 int cmds_init( void );
-int force_init( void );
+//int force_init( void );
 int mcp_init( char *filename );
 int _rbac_init( void ); 
 
@@ -92,8 +92,8 @@ int init_all( char *filename )
         return(-1);
     if( cmds_init()<0 )
         return(-1);
-    if( force_init()<0 )
-        return(-1);
+//    if( force_init()<0 )
+//        return(-1);
 
     for(m=active_modules;m!=NULL;m=m->next)
     {	if( m->init_comm )
