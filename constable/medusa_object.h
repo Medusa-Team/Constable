@@ -9,6 +9,7 @@
 
 //#include <medusa/l3/arch.h>
 #include <stdint.h>
+#pragma pack(push, 1)
 
 /*
  * the following constants and structures cover the standard
@@ -100,5 +101,6 @@ struct medusa_comm_acctype_s {
 #define	MED_ATTR_STRING(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_STRING)
 #define	MED_ATTR_BITMAP(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_BITMAP)
 /* end of Constable internal */
+#pragma pack(pop)
 
 #endif

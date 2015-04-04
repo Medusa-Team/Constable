@@ -392,7 +392,7 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
         printf("ZZZ: updatnute\n");
     }
     else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
-    if( (r=comm_buf_get(sizeof(*out),c))==NULL )     //( povodne uintptr_t )Asi to ma byt takto inac dava bludy v mallocu - prepisuje hodnotu user_data, by Matus
+    if( (r=comm_buf_get(sizeof(*out),c))==NULL )     //( povodne uintptr_t )Asi to ma byt takto inac dava bludy v mallocu - prepisuje hodnotu user_data, by Matus // I am sure not :) JK bludy v mallocu su kvoli buffer overflowu co bol vyssie :)
     {	fatal("Can't alloc buffer for send answer!");
         return(-1);
     }
