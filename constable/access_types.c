@@ -7,6 +7,6 @@
 #include "access_types.h"
 
 char *access_names[NR_ACCESS_TYPES]={
-	"MEMBER","RECEIVE","SEND","SEE","CREATE","ERASE","ENTER","CONTROL"
+    "MEMBER","RECEIVE","SEND","SEE","CREATE","ERASE","ENTER","CONTROL"
 };
 

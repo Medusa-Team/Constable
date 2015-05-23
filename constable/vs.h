@@ -14,9 +14,9 @@
 typedef __u32	vs_t;
 
 struct vs_s {
-	struct vs_s	*next;
-	vs_t vs[MAX_VS_BITS/32];
-	char name[0];
+    struct vs_s	*next;
+    vs_t vs[MAX_VS_BITS/32];
+    char name[0];
 };
 
 int vs_init( void );

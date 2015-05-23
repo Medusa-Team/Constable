@@ -27,9 +27,9 @@ int generic_test_vs( int acctype, struct event_context_s *c );
 int generic_test_vs_tree( int acctype, struct event_context_s *c, struct tree_s *t );
 
 struct g_event_handler_s {
-	struct event_handler_s h;
-	struct event_handler_s *subhandler;
-	struct class_handler_s *class_handler;
+    struct event_handler_s h;
+    struct event_handler_s *subhandler;
+    struct class_handler_s *class_handler;
 };
 #define GFL_USE_VSE	0x01
 #define GFL_FROM_OBJECT	0x02

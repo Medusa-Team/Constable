@@ -12,7 +12,7 @@
  *
  * This forces the rewrite of file with zeros and 0xff's on unlink,
  * which prevents them from being recovered from the hard drive.
- * 
+ *
  *  1. Hook the corresponding action:
  *       for exec "/sbin/extra_critical_application" {
  *               flags = 0x1234; // mark the application
@@ -33,47 +33,47 @@
 
 void main(int argc, int *argv)
 {
-	int fd, size;
-	struct stat st;
-	char fillbuf[4096]; /* temporary data storage, from
-			       which we write to the file */
+    int fd, size;
+    struct stat st;
+    char fillbuf[4096]; /* temporary data storage, from
+                   which we write to the file */
 
-	int i;
+    int i;
 
-	if (argc != 1) /* we require one parameter - filename */
-		return;
+    if (argc != 1) /* we require one parameter - filename */
+        return;
 
-	/* open the given file */
-	fd = open((char *)(argv[0]), O_WRONLY | O_SYNC, 0);
-	if (fd == -1)
-		return;
+    /* open the given file */
+    fd = open((char *)(argv[0]), O_WRONLY | O_SYNC, 0);
+    if (fd == -1)
+        return;
 
-	/* get the file size */
-	if (fstat(fd, &st) == -1) { /* strange... */
-		close(fd);
-		return;
-	}
+    /* get the file size */
+    if (fstat(fd, &st) == -1) { /* strange... */
+        close(fd);
+        return;
+    }
 
-	/* prepare the fill-buffer */
-	for (i=0; i<sizeof(fillbuf); i++)
-		fillbuf[i] = '\0';
-	
-	/* rewrite the whole file */
-	for (size = st.st_size; size > 0; size -= sizeof(fillbuf))
-		write(fd, fillbuf, size > sizeof(fillbuf) ?
-					sizeof(fillbuf) : size);
-	
-	/* move to the beginning */
-	lseek(fd, 0, 0);
-	
-	/* prepare new fill-buffer */
-	for (i=0; i<sizeof(fillbuf); i++)
-		fillbuf[i] = '\xff';
+    /* prepare the fill-buffer */
+    for (i=0; i<sizeof(fillbuf); i++)
+        fillbuf[i] = '\0';
 
-	/* and rewrite it again */
-	for (size = st.st_size; size > 0; size -= sizeof(fillbuf))
-		write(fd, fillbuf, size > sizeof(fillbuf) ?
-					sizeof(fillbuf) : size);
-	close(fd);
+    /* rewrite the whole file */
+    for (size = st.st_size; size > 0; size -= sizeof(fillbuf))
+        write(fd, fillbuf, size > sizeof(fillbuf) ?
+                  sizeof(fillbuf) : size);
+
+    /* move to the beginning */
+    lseek(fd, 0, 0);
+
+    /* prepare new fill-buffer */
+    for (i=0; i<sizeof(fillbuf); i++)
+        fillbuf[i] = '\xff';
+
+    /* and rewrite it again */
+    for (size = st.st_size; size > 0; size -= sizeof(fillbuf))
+        write(fd, fillbuf, size > sizeof(fillbuf) ?
+                  sizeof(fillbuf) : size);
+    close(fd);
 }
 

@@ -87,3 +87,7 @@ GTAGS
 *.orig
 *~
 \#*#
+
+#remove executable
+constable/constable
+constable/rbacadm

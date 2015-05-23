@@ -8,7 +8,7 @@
 
 int main( void )
 {
-	printf("%d\n",'->'/*T(->)*/);
-	return(0);
+    printf("%d\n",'->'/*T(->)*/);
+    return(0);
 }
 

@@ -2,7 +2,8 @@
 # $Id: Makefile,v 1.2 2002/10/23 10:25:43 marek Exp $
 
 CC= gcc
-CCOPTS= -Wall -O2
+#CCOPTS= -Wall -O2
+CCOPTS= -Wall -ggdb
 LDOPTS=
 AS= as
 ASOPTS=

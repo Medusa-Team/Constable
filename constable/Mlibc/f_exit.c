@@ -10,7 +10,7 @@
  *
  * This forces the exit() syscall to the process. You can specify
  * the return value, with which it will die.
- * 
+ *
  * For example, your application does some nasty thing and you want to
  * terminate it.
  *  1. Hook the corresponding action:
@@ -22,8 +22,8 @@
 
 void main(int argc, int *argv)
 {
-	if (argc == 1) /* if user supplied an argument, use it */
-		exit(argv[0]);
-	/* otherwise return 0 */
-	exit(0);
+    if (argc == 1) /* if user supplied an argument, use it */
+        exit(argv[0]);
+    /* otherwise return 0 */
+    exit(0);
 }

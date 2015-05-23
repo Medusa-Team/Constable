@@ -10,16 +10,16 @@
 
 int main( int argc, char *argv[] )
 { struct compiler_preprocessor_class *pre;
-  char c;
-	pre=c_preprocessor_create(argv[1]);
-	if( pre==NULL )
-	{	printf("Bad file\n");
-		return(0);
-	}
-	while( pre->get_char(pre,&c)>=0 )
-	{	write(1,&c,1);
-	}
-	dec_use(pre);
-	return(0);
+    char c;
+    pre=c_preprocessor_create(argv[1]);
+    if( pre==NULL )
+    {	printf("Bad file\n");
+        return(0);
+    }
+    while( pre->get_char(pre,&c)>=0 )
+    {	write(1,&c,1);
+    }
+    dec_use(pre);
+    return(0);
 }
 

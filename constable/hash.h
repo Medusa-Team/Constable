@@ -10,12 +10,12 @@
 #include "types.h"
 
 struct hash_ent_s {
-	struct hash_ent_s *next;
-	uintptr_t	key;
+    struct hash_ent_s *next;
+    uintptr_t	key;
 };
 
 struct hash_s {
-	struct hash_ent_s *table[256];
+    struct hash_ent_s *table[256];
 };
 
 void hash_add( struct hash_s *h, struct hash_ent_s *e, uintptr_t key );

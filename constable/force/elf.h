@@ -22,21 +22,21 @@
 extern int elf_errno;
 
 typedef struct {
-	int fd;			/* filedes. of elf file */
-	Elf32_Ehdr head;
-	int st_len;		/* sections */
-	Elf32_Shdr *st;		/* section table */
+    int fd;			/* filedes. of elf file */
+    Elf32_Ehdr head;
+    int st_len;		/* sections */
+    Elf32_Shdr *st;		/* section table */
 } elf_t;
 
 typedef struct {
-	void *base;
-	long len;
-	void *map_addr;
-	long map_len;
+    void *base;
+    long len;
+    void *map_addr;
+    long map_len;
 } elfmap_t;
 
 #define elf_for_each_section(elf,sect)	\
-	for( (sect)=0 ; (elf)->st!=NULL && (sect)<((elf)->st_len) ; (sect)++ )
+    for( (sect)=0 ; (elf)->st!=NULL && (sect)<((elf)->st_len) ; (sect)++ )
 
 #define	elf_sect(elf,sect)	( ((elf)->st[sect]) )
 

@@ -10,26 +10,26 @@
 #include <sys/types.h>
 
 typedef struct _ll_t_ {	struct _ll_t_	*next;
-			struct _ll_t_	*prev;
-			int	type;
-			size_t	len;
-			char	data;
-		      }	ll_t;
+                        struct _ll_t_	*prev;
+                                            int	type;
+                                                                size_t	len;
+                                                                                    char	data;
+                      }	ll_t;
 
 typedef struct { char *buf;
-		 int len;
-		 int n;
-		 int size;
-		 int ml;
-	       }  ddata_t;
+                 int len;
+                              int n;
+                                           int size;
+                                                        int ml;
+               }  ddata_t;
 
 typedef struct { void *buf;
-		 int len;
-		 int n;
-		 int size;
-		 int ml;
-		 int pos;
-	       }  dfifo_t;
+                 int len;
+                              int n;
+                                           int size;
+                                                        int ml;
+                                                                     int pos;
+               }  dfifo_t;
 
 
 #define ll_data(ll)	((void *)(&(((ll_t *)ll)->data)))
@@ -93,13 +93,13 @@ ddata_t *dfifo_to_ddata( dfifo_t *df );
 /* Dynamic *argv[] */
 
 typedef struct	{
-			char	**argv;
-			char	*buf;	/* if NULL then all agrs in each bufs */
-			int	alen;
-			int	an;
-			int	blen;
-			int	bn;
-		} darg_t;
+    char	**argv;
+    char	*buf;	/* if NULL then all agrs in each bufs */
+    int	alen;
+    int	an;
+    int	blen;
+    int	bn;
+} darg_t;
 
 #define	darg_argv(darg)		((darg)->argv)
 #define	darg_argc(darg)		((darg)->an)
@@ -141,19 +141,19 @@ darg_t *darg_linevar2argv( char *line, char*(*getvar)(void*,char*,int*), void *g
 
 struct dfield_dim_s;
 typedef struct	{
-	int	dimensions;
-	int	unit_size;
-	int(*del_func)(void*);
-	struct dfield_dim_s *f;
-		} dfield_t;
+    int	dimensions;
+    int	unit_size;
+    int(*del_func)(void*);
+    struct dfield_dim_s *f;
+} dfield_t;
 
 struct dfield_dim_s {
-	dfield_t *df;
-	struct dfield_dim_s **me;
-	int	dim;
-	int	n;
-	struct dfield_dim_s *r[0];
-		    };
+    dfield_t *df;
+    struct dfield_dim_s **me;
+    int	dim;
+    int	n;
+    struct dfield_dim_s *r[0];
+};
 
 dfield_t *dfield_create( int dim, int unit_size, int(*del_func)(void*) );
 int dfield_delete_dim( struct dfield_dim_s *r );

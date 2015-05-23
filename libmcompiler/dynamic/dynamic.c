@@ -8,9 +8,9 @@
 
 int lds_verlib(char *ver)
 {
-	if(ver!=NULL)
-		strcpy(ver,"Library of dynamic structures V1.3 (c)16.10.1999 by Marek Zelem");
-	return(0x0013);
+    if(ver!=NULL)
+        strcpy(ver,"Library of dynamic structures V1.3 (c)16.10.1999 by Marek Zelem");
+    return(0x0013);
 }
 
 /* --- historical ---- */

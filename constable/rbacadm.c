@@ -15,24 +15,24 @@
 
 int main( int argc, char *argv[] )
 { char *op="";
-  char *s1="",*s2="",*s3="";
-  char buf[1024];
+    char *s1="",*s2="",*s3="";
+    char buf[1024];
 
-	if( argc<2 )
-	{	printf("usage: %s <op> [<arg1> [<arg2> [<arg3>]]]\n",argv[0]);
-		return(0);
-	}
-	op=argv[1];
-	if( argc>2 )
-		s1=argv[2];
-	if( argc>3 )
-		s2=argv[3];
-	if( argc>4 )
-		s3=argv[4];
-	strcpy(buf,"Not supported by the kernel");
-	//rbac_adm(op,s1,s2,s3,buf);
-	syscall(__NR_rbac_adm, op, s1, s2, s3, buf);
-	printf("Result: %s\n",buf);
-	return(0);
+    if( argc<2 )
+    {	printf("usage: %s <op> [<arg1> [<arg2> [<arg3>]]]\n",argv[0]);
+        return(0);
+    }
+    op=argv[1];
+    if( argc>2 )
+        s1=argv[2];
+    if( argc>3 )
+        s2=argv[3];
+    if( argc>4 )
+        s3=argv[4];
+    strcpy(buf,"Not supported by the kernel");
+    //rbac_adm(op,s1,s2,s3,buf);
+    syscall(__NR_rbac_adm, op, s1, s2, s3, buf);
+    printf("Result: %s\n",buf);
+    return(0);
 }
 

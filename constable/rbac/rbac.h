@@ -1,6 +1,6 @@
 /**
  * @file rbac.h
- * @short 
+ * @short
  *
  * (c)2002 by Marek Zelem <marek@terminus.sk>
  * $Id: rbac.h,v 1.2 2002/10/23 10:25:43 marek Exp $
@@ -21,64 +21,64 @@ struct role_s;
 #define	USER_MAX_ROLES	32
 
 struct user_s {				/* U - users */
-	struct object_s object;
-	struct user_s *next;
-	struct user_assignment_s *ua;
-	struct role_s *roles[USER_MAX_ROLES];
-	int nr_roles;
-	uid_t uid;
-	vs_t vs[MAX_VS_BITS/32];
-//	uintptr_t cinfo;
-	struct tree_s *cinfo;
-	char name[32];
+    struct object_s object;
+    struct user_s *next;
+    struct user_assignment_s *ua;
+    struct role_s *roles[USER_MAX_ROLES];
+    int nr_roles;
+    uid_t uid;
+    vs_t vs[MAX_VS_BITS/32];
+    //	uintptr_t cinfo;
+    struct tree_s *cinfo;
+    char name[32];
 };
 
 struct perm_s {				/* P - permissions */
-//	struct object_s object;
-	int access;
-	char space[32];
-	vs_t vs[MAX_VS_BITS/32];
-//	uintptr_t cinfo;
-	struct tree_s *cinfo;
+    //	struct object_s object;
+    int access;
+    char space[32];
+    vs_t vs[MAX_VS_BITS/32];
+    //	uintptr_t cinfo;
+    struct tree_s *cinfo;
 };
 
 struct role_s {				/* R - roles */
-	struct object_s object;
-	struct role_s *next;
-	int flag;			/* for rbac_save */
-	struct user_assignment_s *ua;
-	struct permission_assignment_s *perm;
-	struct hierarchy_s *sup;
-	struct hierarchy_s *sub;
-	vs_t vs_sub[MAX_VS_BITS/32];		/* member for sup -> sub hier.*/
-	vs_t vs[NR_ACCESS_TYPES][MAX_VS_BITS/32]; /* PA - permission assignment */
-//	uintptr_t cinfo_sup;
-	struct tree_s *cinfo_sup;
-//	uintptr_t cinfo_sub;
-	struct tree_s *cinfo_sub;
-	char name[64];
+    struct object_s object;
+    struct role_s *next;
+    int flag;			/* for rbac_save */
+    struct user_assignment_s *ua;
+    struct permission_assignment_s *perm;
+    struct hierarchy_s *sup;
+    struct hierarchy_s *sub;
+    vs_t vs_sub[MAX_VS_BITS/32];		/* member for sup -> sub hier.*/
+    vs_t vs[NR_ACCESS_TYPES][MAX_VS_BITS/32]; /* PA - permission assignment */
+    //	uintptr_t cinfo_sup;
+    struct tree_s *cinfo_sup;
+    //	uintptr_t cinfo_sub;
+    struct tree_s *cinfo_sub;
+    char name[64];
 };
 
 
 struct user_assignment_s {		/* UA - user assignment */
-	struct user_assignment_s *next_user;
-	struct user_assignment_s *next_role;
-	struct user_s *user;
-	struct role_s *role;
+    struct user_assignment_s *next_user;
+    struct user_assignment_s *next_role;
+    struct user_s *user;
+    struct role_s *role;
 };
 
 struct permission_assignment_s {
-	struct permission_assignment_s *next;
-	int n;
-	int access[8];
-	struct space_s *space[8];
+    struct permission_assignment_s *next;
+    int n;
+    int access[8];
+    struct space_s *space[8];
 };
 
 struct hierarchy_s {			/* H - hierarchy */
-	struct hierarchy_s *next_sup;
-	struct hierarchy_s *next_sub;
-	struct role_s *sup_role;
-	struct role_s *sub_role;
+    struct hierarchy_s *next_sup;
+    struct hierarchy_s *next_sub;
+    struct role_s *sup_role;
+    struct role_s *sub_role;
 };
 
 
@@ -115,15 +115,15 @@ int rbac_role_add_perm( struct role_s *role, int which, struct space_s *t );
 int rbac_role_del_perm( struct role_s *role, int which, struct space_s *t );
 
 /* ?????????????????????????????????
-	      +- users --- <user> \\  --- <role>
-	      |
-	      +- roles --- <role> \\ --- <user>
-	      |
-	rbac -+- role --- <role> --- <role> ... 
-	      |
-	      +- ROLE --- <role> --- <role> ...
-	      |
-	      +- permission --- <space> --- [RECEIVE,SEND,SEE,CREATE,ERASE,ENTER,CONTROL]
+          +- users --- <user> \\  --- <role>
+          |
+          +- roles --- <role> \\ --- <user>
+          |
+    rbac -+- role --- <role> --- <role> ...
+          |
+          +- ROLE --- <role> --- <role> ...
+          |
+          +- permission --- <space> --- [RECEIVE,SEND,SEE,CREATE,ERASE,ENTER,CONTROL]
 
 
  rbac/role - rekurzivne clenstvo smerom k podrolam
@@ -131,19 +131,19 @@ int rbac_role_del_perm( struct role_s *role, int which, struct space_s *t );
  - schopnosti vzdy smerom k nadrolam.
  
 Pravo: priradene roli v konf subore:
-	dvojica: typ,space
-	typ: AT_RECEIVE AT_SEND AT_SEE AT_CREATE AT_ERASE AT_ENTER AT_CONTROL
+    dvojica: typ,space
+    typ: AT_RECEIVE AT_SEND AT_SEE AT_CREATE AT_ERASE AT_ENTER AT_CONTROL
 
-	AT_CONTROL rbac/user/<user>	- pravo priradovat pouzivatelovi role
-	AT_CONTROL rbac/role/<rola>	- pravo pridavat role pouzivatelov
-	AT_CONTROL rbac/role/<rola>	- pravo pridavat/uberat prava 
-	AT_CONTROL rbac/permission	- pravo pridavat/uberat prava 
+    AT_CONTROL rbac/user/<user>	- pravo priradovat pouzivatelovi role
+    AT_CONTROL rbac/role/<rola>	- pravo pridavat role pouzivatelov
+    AT_CONTROL rbac/role/<rola>	- pravo pridavat/uberat prava
+    AT_CONTROL rbac/permission	- pravo pridavat/uberat prava
 
-	AT_CREATE rbac/role		- pravo vytvarat role
-	AT_CREATE rbac/ROLE		- pravo vytvarat role
-	AT_CREATE rbac/role/<rola>/...	- pravo vytvarat podrole
-	AT_CREATE rbac/ROLE/<rola>/...	- pravo vytvarat nadrole
-	AT_ERASE - ako AT_CREATE ale rusit.
+    AT_CREATE rbac/role		- pravo vytvarat role
+    AT_CREATE rbac/ROLE		- pravo vytvarat role
+    AT_CREATE rbac/role/<rola>/...	- pravo vytvarat podrole
+    AT_CREATE rbac/ROLE/<rola>/...	- pravo vytvarat nadrole
+    AT_ERASE - ako AT_CREATE ale rusit.
  */
 
 int rbac_get_user_vs( vs_t *vs, struct user_s *user );

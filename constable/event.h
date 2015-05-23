@@ -32,14 +32,14 @@ struct event_hadler_hash_s;
 struct event_names_s;
 
 struct event_type_s {
-	struct hash_ent_s	hashent;
-	struct event_names_s	*evname;
-	struct class_s		*op[2];
-	struct class_s		*object; /* komu sa nastavuje sledovanie */
-	event_mask_t		mask[2];
-//	struct event_type_s	*alt;
-	struct medusa_acctype_s	m;
-	struct class_s		operation_class;
+    struct hash_ent_s	hashent;
+    struct event_names_s	*evname;
+    struct class_s		*op[2];
+    struct class_s		*object; /* komu sa nastavuje sledovanie */
+    event_mask_t		mask[2];
+    //	struct event_type_s	*alt;
+    struct medusa_acctype_s	m;
+    struct class_s		operation_class;
 };
 
 #define	EHH_VS_ALLOW		0
@@ -48,10 +48,10 @@ struct event_type_s {
 #define	EHH_NOTIFY_DENY		3
 #define	EHH_LISTS		4
 struct event_names_s {
-	struct event_names_s	*next;
-	char			*name;
-	struct event_type_s	**events;
-	struct event_hadler_hash_s	*handlers_hash[EHH_LISTS];
+    struct event_names_s	*next;
+    char			*name;
+    struct event_type_s	**events;
+    struct event_hadler_hash_s	*handlers_hash[EHH_LISTS];
 };
 
 int event_free_all_events( struct comm_s *comm );
@@ -69,29 +69,29 @@ struct tree_s;
 
 struct event_handler_s {
 #ifndef DEBUG_TRACE
-	char	op_name[MEDUSA_OPNAME_MAX];
+    char	op_name[MEDUSA_OPNAME_MAX];
 #else
-	char	op_name[MEDUSA_OPNAME_MAX+DT_POS_MAX];
+    char	op_name[MEDUSA_OPNAME_MAX+DT_POS_MAX];
 #endif
 
-	/* if handler returns
-		0 => completed  - result is valid
-		1 => to be continue immediately (move to end of queue)
-		>1 => to be continue later
-		<0 => error
-	*/
-	int(*handler)(struct comm_buffer_s *,struct event_handler_s *,struct event_context_s *);
-	struct object_s		*local_vars;
-	char			data[0];
+    /* if handler returns
+        0 => completed  - result is valid
+        1 => to be continue immediately (move to end of queue)
+        >1 => to be continue later
+        <0 => error
+    */
+    int(*handler)(struct comm_buffer_s *,struct event_handler_s *,struct event_context_s *);
+    struct object_s		*local_vars;
+    char			data[0];
 };
 #define	ALL_OBJ	((void*)1)
 
 struct event_hadler_hash_s {
-	struct event_hadler_hash_s	*next;
-	struct event_handler_s		*handler;
-	struct event_names_s		*evname;
-	vs_t				subject_vs[MAX_VS_BITS/32];
-	vs_t				object_vs[MAX_VS_BITS/32];
+    struct event_hadler_hash_s	*next;
+    struct event_handler_s		*handler;
+    struct event_names_s		*evname;
+    vs_t				subject_vs[MAX_VS_BITS/32];
+    vs_t				object_vs[MAX_VS_BITS/32];
 };
 
 struct event_hadler_hash_s *evhash_add( struct event_hadler_hash_s **hash, struct event_handler_s *handler, struct event_names_s *evname );
@@ -102,13 +102,13 @@ struct event_hadler_hash_s *evhash_add( struct event_hadler_hash_s **hash, struc
 int register_event_handler( struct event_handler_s *h, struct event_names_s *evname, struct event_hadler_hash_s **hash, vs_t *subject_vs, vs_t *object_vs );
 
 struct event_context_s {
-	struct object_s operation;
-	struct object_s subject;
-	struct object_s object;
-	int		result;
-	struct comm_buffer_s *cb;	/* ??? asi zbytocne ??? */
-	int		first;
-	struct object_s *local_vars;
+    struct object_s operation;
+    struct object_s subject;
+    struct object_s object;
+    int		result;
+    struct comm_buffer_s *cb;	/* ??? asi zbytocne ??? */
+    int		first;
+    struct object_s *local_vars;
 };
 
 #define	RESULT_UNKNOWN	-1

@@ -7,9 +7,9 @@
 
 #include <stdarg.h>
 #define _LOOSE_KERNEL_NAMES	/* new gcc needs this because stdarg.h now
-				   includes features.h which wouldn't allow
-				   declaration of some important types in the
-				   kernel includes */
+    includes features.h which wouldn't allow
+    declaration of some important types in the
+    kernel includes */
 #undef __GLIBC__
 #include <linux/types.h>
 #include <linux/unistd.h>
@@ -59,12 +59,12 @@
 typedef __sighandler_t(*sighandler_t) (int);
 
 struct mmap_arg_struct {
-	unsigned long addr;
-	unsigned long len;
-	unsigned long prot;
-	unsigned long flags;
-	unsigned long fd;
-	unsigned long offset;
+    unsigned long addr;
+    unsigned long len;
+    unsigned long prot;
+    unsigned long flags;
+    unsigned long fd;
+    unsigned long offset;
 };
 
 
@@ -99,8 +99,8 @@ int lchown(const char *path, uid_t owner, gid_t group);
 off_t lseek(int fildes, off_t offset, int whence);
 pid_t getpid(void);
 int mount(const char *specialfile, const char *dir,
-	  const char *filesystemtype, unsigned long rwflag,
-	  const void *data);
+          const char *filesystemtype, unsigned long rwflag,
+          const void *data);
 int umount(const char *dir);
 int setuid(uid_t uid);
 uid_t getuid(void);
@@ -138,7 +138,7 @@ pid_t getppid(void);
 pid_t getpgrp(void);
 pid_t setsid(void);
 int sigaction(int signum, const struct sigaction *act,
-	      struct sigaction *oldact);
+              struct sigaction *oldact);
 int sgetmask(void);
 int ssetmask(int newmask);
 int setreuid(uid_t ruid, uid_t euid);
@@ -154,7 +154,7 @@ int settimeofday(const struct timeval *tv, const struct timezone *tz);
 int getgroups(int size);
 int setgroups(size_t size, const gid_t * list);
 int select(int n, fd_set * readfds, fd_set * writefds, fd_set * exceptfds,
-	   struct timeval *timeout);
+           struct timeval *timeout);
 int symlink(const char *oldpath, const char *newpath);
 int readlink(const char *path, char *buf, size_t bufsiz);
 int uselib(const char *library);
@@ -174,7 +174,7 @@ int fstatfs(unsigned int fd, struct statfs *buf);
 int ioperm(unsigned long from, unsigned long num, int turn_on);
 int getitimer(int which, struct itimerval *value);
 int setitimer(int which, const struct itimerval *value,
-	      struct itimerval *ovalue);
+              struct itimerval *ovalue);
 int socketcall(int call, unsigned long *args);
 int syslog(int type, char *bufp, int len);
 int stat(const char *file_name, struct stat *buf);
@@ -210,11 +210,11 @@ int personality(unsigned long persona);
 int setfsuid(uid_t fsuid);
 int setfsgid(uid_t fsgid);
 int _llseek(unsigned int fd, unsigned long offset_high,
-	    unsigned long offset_low, loff_t * result, unsigned int
-	    whence);
+            unsigned long offset_low, loff_t * result, unsigned int
+            whence);
 int getdents(unsigned int fd, struct dirent *dirp, unsigned int count);
 int _newselect(int n, fd_set * readfds, fd_set * writefds,
-	       fd_set * exceptfds, struct timeval *timeout);
+               fd_set * exceptfds, struct timeval *timeout);
 int flock(int fd, int operation);
 int msync(const void *start, size_t length, int flags);
 int readv(int fd, const struct iovec *vector, int count);
@@ -227,38 +227,38 @@ int munlock(const void *addr, size_t len);
 int mlockall(int flags);
 int munlockall(void);
 /* int sched_setparam(pid_t  pid,  const  struct  sched_param
-		       *p);
+               *p);
 int sched_getparam(pid_t pid, struct sched_param *p);
 int sched_setscheduler(pid_t pid, int policy, const struct
-		       sched_param *p);
+               sched_param *p);
 int sched_getscheduler(pid_t pid);
 int sched_yield(void);
 int sched_get_priority_max(int policy);
 int sched_get_priority_min(int policy);
 int sched_rr_get_interval(pid_t pid, struct timespec *tp); */
 int nanosleep(const struct timespec *req, struct timespec
-	      *rem);
+              *rem);
 void *mremap(void *old_address, size_t old_size, size_t
-	     new_size, unsigned long flags);
+             new_size, unsigned long flags);
 int setresuid(uid_t ruid, uid_t euid, uid_t suid);
 int getresuid(uid_t * ruid, uid_t * euid, uid_t * suid);
 int vm86(unsigned long fn, struct vm86plus_struct *v86);
 int query_module(const char *name, int which,
-		 void *buf, size_t bufsize, size_t * ret);
+                 void *buf, size_t bufsize, size_t * ret);
 int poll(struct pollfd *ufds, unsigned int nfds, int timeout);
 //void nfsservctl(int   cmd,   struct   nfsctl_arg  *argp,  union nfsctl_res *resp);
 int setresgid(gid_t rgid, gid_t egid, gid_t sgid);
 int getresgid(gid_t * rgid, gid_t * egid, gid_t * sgid);
 int prctl(int option, unsigned long arg2, unsigned long
-	  arg3, unsigned long arg4, unsigned long arg5);
+          arg3, unsigned long arg4, unsigned long arg5);
 int rt_sigreturn(unsigned long __unused);
 int rt_sigaction(int sig, const struct sigaction *act,
-		 struct sigaction *oact, size_t sigsetsize);
+                 struct sigaction *oact, size_t sigsetsize);
 int rt_sigprocmask(int how, const sigset_t * set, sigset_t
-		   * oset, size_t sigsetsize);
+                   * oset, size_t sigsetsize);
 int rt_sigpending(sigset_t * set, size_t sigsetsize);
 int rt_sigtimedwait(const sigset_t * uthese, siginfo_t * uinfo,
-		    const struct timespec *uts, size_t sigsetsize);
+                    const struct timespec *uts, size_t sigsetsize);
 int rt_sigqueueinfo(int pid, int sig, siginfo_t * uinfo);
 int rt_sigsuspend(sigset_t * unewset, size_t sigsetsize);
 ssize_t pread(int fd, void *buf, size_t count, off_t offset);

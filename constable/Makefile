@@ -29,7 +29,7 @@ CP = cp
 OBJECTS = vs.o tree.o space.o class.o object.o object_endian.o event.o \
 	  comm.o comm_buf.o hash.o constable.o init.o generic.o \
 	  access_types.o
-MODULES = language mcp rbac force
+MODULES = language mcp rbac # force
 ADDON = Mlibc
 
 all:	constable rbacadm

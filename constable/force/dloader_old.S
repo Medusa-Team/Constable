@@ -24,7 +24,7 @@ dloader_old:
 	call   .dl0
 .dl0:	popq   %rbp
 	addq   $.fctab-.dl0,%rbp
-	movq   %rbp,START(%ebp)
+	movq   %rbp,START(%rbp)
 	movq   DREL_TAB(%rbp),%rsi
 	addq   %rbp,%rsi
 	movq   %rsi,DREL_TAB(%rbp)

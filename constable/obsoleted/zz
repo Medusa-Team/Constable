@@ -1,0 +1,805 @@
+comm demerzel: does not support greeting ;-(
+ZZZZZZ generic_init: idem riesit fs
+ZZZZZZZZZZZZZZ name=fs subhandler=0x4018ff7c event=0x40193fdc
+ZZZ: generic_init: registrujem event_handler
+ZZZZZZ generic_init: idem riesit domain
+ZZZZZZZZZZZZZZ name=domain subhandler=(nil) event=(nil)
+ZZZ: registrujem podla svetov
+ZZZ: registrujem pri objekte inetd
+ZZZ: registrujem pri objekte crond
+ZZZ: registrujem pri objekte atd
+ZZZ: registrujem pri objekte apmd
+ZZZ: registrujem pri objekte login
+ZZZ: registrujem podla svetov
+ZZZ: registrujem podla svetov
+ZZZ: registrujem podla svetov
+ZZZ: registrujem podla svetov
+ZZZ: registrujem podla svetov
+ZZZ: registrujem podla svetov
+ZZZ: registrujem pri objekte sync
+ZZZ: registrujem podla svetov
+ZZZ: bude dobre
+ZZZ event_from_medusa:
+ZZZ 0x0000
+class after_exec {
+}
+ZZZ event_from_medusa:
+	readonly bitmap	cap	(4: 4)
+ZZZ 0x0001
+class capable {
+	readonly bitmap	cap	(4: 4)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+	readonly bitmap	mode	(260: 4)
+ZZZ 0xc000
+class create {
+	readonly string	filename	(4: 256)
+	readonly bitmap	mode	(260: 4)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+ZZZ 0xc001
+class fexec {
+	readonly string	filename	(4: 256)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+ZZZ 0x0002
+class pexec {
+	readonly string	filename	(4: 256)
+}
+ZZZ event_from_medusa:
+	readonly unsigned	clone_flags	(4: 4)
+ZZZ 0x0002
+class fork {
+	readonly unsigned	clone_flags	(4: 4)
+}
+ZZZ event_from_medusa:
+ZZZ 0x0003
+class init {
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+	readonly string	newname	(260: 256)
+ZZZ 0xc002
+class link {
+	readonly string	filename	(4: 256)
+	readonly string	newname	(260: 256)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+ZZZ 0xc002
+class lookup {
+	readonly string	filename	(4: 256)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+	readonly bitmap	mode	(260: 4)
+ZZZ 0xc003
+class mkdir {
+	readonly string	filename	(4: 256)
+	readonly bitmap	mode	(260: 4)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+	readonly bitmap	dev	(260: 2)
+	readonly bitmap	mode	(264: 4)
+ZZZ 0xc003
+class mknod {
+	readonly string	filename	(4: 256)
+	readonly bitmap	dev	(260: 2)
+	readonly bitmap	mode	(264: 4)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+	readonly unsigned	valid	(260: 4)
+	bitmap	mode	(264: 2)
+	signed	uid	(268: 4)
+	signed	gid	(272: 4)
+	readonly unsigned	size	(276: 8)
+	unsigned	atime	(284: 4)
+	unsigned	mtime	(288: 4)
+	unsigned	ctime	(292: 4)
+	readonly bitmap	attr_flags	(296: 4)
+ZZZ 0xc004
+class notify_change {
+	readonly string	filename	(4: 256)
+	readonly unsigned	valid	(260: 4)
+	bitmap	mode	(264: 2)
+	signed	uid	(268: 4)
+	signed	gid	(272: 4)
+	readonly unsigned	size	(276: 8)
+	unsigned	atime	(284: 4)
+	unsigned	mtime	(288: 4)
+	unsigned	ctime	(292: 4)
+	readonly bitmap	attr_flags	(296: 4)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+	readonly unsigned	mask	(260: 4)
+ZZZ 0xc004
+class permission {
+	readonly string	filename	(4: 256)
+	readonly unsigned	mask	(260: 4)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+	readonly string	newname	(260: 256)
+ZZZ 0xc005
+class rename {
+	readonly string	filename	(4: 256)
+	readonly string	newname	(260: 256)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+ZZZ 0xc005
+class rmdir {
+	readonly string	filename	(4: 256)
+}
+ZZZ event_from_medusa:
+	readonly signed	signal_number	(4: 4)
+ZZZ 0x0004
+class kill {
+	readonly signed	signal_number	(4: 4)
+}
+ZZZ event_from_medusa:
+	readonly signed	uid	(4: 4)
+ZZZ 0x0004
+class setuid {
+	readonly signed	uid	(4: 4)
+}
+ZZZ event_from_medusa:
+	readonly bitmap	ecap	(260: 4)
+	readonly bitmap	icap	(264: 4)
+	readonly bitmap	pcap	(268: 4)
+	readonly signed	uid	(272: 4)
+	readonly signed	gid	(276: 4)
+ZZZ 0x0005
+class sexec {
+	readonly bitmap	ecap	(260: 4)
+	readonly bitmap	icap	(264: 4)
+	readonly bitmap	pcap	(268: 4)
+	readonly signed	uid	(272: 4)
+	readonly signed	gid	(276: 4)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+	readonly string	oldname	(260: 256)
+ZZZ 0xc006
+class symlink {
+	readonly string	filename	(4: 256)
+	readonly string	oldname	(260: 256)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+	readonly unsigned	length	(260: 8)
+ZZZ 0xc006
+class truncate {
+	readonly string	filename	(4: 256)
+	readonly unsigned	length	(260: 8)
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+ZZZ 0xc007
+class unlink {
+	readonly string	filename	(4: 256)
+}
+ZZZ event_from_medusa:
+ZZZ 0x0006
+class ptrace {
+}
+ZZZ event_from_medusa:
+	readonly unsigned	sysnr	(4: 4)
+	unsigned	arg1	(8: 4)
+	unsigned	arg2	(12: 4)
+	unsigned	arg3	(16: 4)
+	unsigned	arg4	(20: 4)
+	unsigned	arg5	(24: 4)
+	unsigned	arg6	(28: 4)
+	unsigned	arg7	(32: 4)
+ZZZ 0x0006
+class syscall {
+	readonly unsigned	sysnr	(4: 4)
+	unsigned	arg1	(8: 4)
+	unsigned	arg2	(12: 4)
+	unsigned	arg3	(16: 4)
+	unsigned	arg4	(20: 4)
+	unsigned	arg5	(24: 4)
+	unsigned	arg6	(28: 4)
+	unsigned	arg7	(32: 4)
+}
+ZZZ event_from_medusa:
+ZZZ 0xffff
+class getprocess {
+}
+ZZZ event_from_medusa:
+	readonly string	filename	(4: 256)
+ZZZ 0x4008
+class getfile {
+	readonly string	filename	(4: 256)
+}
+ZZZ: comm_conn_init demerzel
+generic init
+generic init
+Runtime error ["./medusa.conf:21" 24:17]: Can't fetch object
+Runtime error ["./medusa.conf:21" 25:18]: Call undefined function
+Runtime error ["./medusa.conf:21" 24:17]: Can't fetch object
+Runtime error ["./medusa.conf:21" 25:18]: Call undefined function
+Runtime error ["./medusa.conf:36" 37:24]: enter: Invalid path
+ZZZ: execute_handler: executin handler for func:_init
+ZZZ: do_event()=3
+ZZZ: do_event()=3
+ZZZ: execute_handler: executin handler for func:_init
+ZZZ: do_event()=3
+ZZZ: do_event()=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: b->context.result=3 b->context.subject.class=(nil)
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getprocess (0)subject=process object=NONE 
+eeeeeeeeee cb->hh=0x401ddfe8
+testujem handler 0x401ddfe8 [getprocess]
+HANDLER result=-1
+ZZZ: execute_handler: executin handler for getprocess
+ZZZ: riesim generic_set_subject pre domain
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getprocess (0)subject=process object=NONE 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "fs" -"socket:"-> ".*"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "fs" -"/"-> "fs"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "fs" -"proc"-> "proc"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "proc" -"kmsg"-> ".*"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+Runtime error ["./medusa.conf:36" 37:24]: enter: Invalid path
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getprocess (0)subject=process object=NONE 
+eeeeeeeeee cb->hh=0x401ddfe8
+testujem handler 0x401ddfe8 [getprocess]
+HANDLER result=-1
+ZZZ: execute_handler: executin handler for getprocess
+ZZZ: riesim generic_set_subject pre domain
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getprocess (0)subject=process object=NONE 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "fs" -"var"-> "var"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "var" -"log"-> ".*"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+Runtime error ["./medusa.conf:36" 37:24]: enter: Invalid path
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getprocess (0)subject=process object=NONE 
+eeeeeeeeee cb->hh=0x401ddfe8
+testujem handler 0x401ddfe8 [getprocess]
+HANDLER result=-1
+ZZZ: execute_handler: executin handler for getprocess
+ZZZ: riesim generic_set_subject pre domain
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getprocess (0)subject=process object=NONE 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "proc" -"loadavg"-> ".*"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "proc" -"loadavg"-> ".*"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+Runtime error ["./medusa.conf:36" 37:24]: enter: Invalid path
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getprocess (0)subject=process object=NONE 
+eeeeeeeeee cb->hh=0x401ddfe8
+testujem handler 0x401ddfe8 [getprocess]
+HANDLER result=-1
+ZZZ: execute_handler: executin handler for getprocess
+ZZZ: riesim generic_set_subject pre domain
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getprocess (0)subject=process object=NONE 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "fs" -"dev"-> "dev"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "dev" -"initctl"-> ".*"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "proc" -"loadavg"-> ".*"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a5fe8
+testujem handler 0x401a5fe8 [:fs]
+HANDLER result=-1
+generic_hierarchy_handler_decide fs
+ZZZ: riesim generic_set_subject pre fs
+ZZZ: execute_handler: executin handler for fs
+ZZZ: fs/ hladam podla "proc" -"loadavg"-> ".*"
+handler result=3
+ZZZ cb->ehh_list=2
+ZZZ: event: op=getfile (0)subject=file object=file 
+eeeeeeeeee cb->hh=0x401a7fe8
+testujem handler 0x401a7fe8 [.fs]
+HANDLER result=3
+generic_hierarchy_handler_notify fs
+generic_hierarchy_handler_notify --- c->result=3
+generic_hierarchy_handler_notify --- nastavujem
+ZZZ: riesim generic_set_subject pre fs
+handler result=3
+ZZZ: do_event()=0
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: do_event()=3
+ZZZ: answer
+ZZZ: snazim sa updatnut
+ZZZ: updatnute
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+ZZZ cb->ehh_list=0
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ cb->ehh_list=2
+ZZZ: event: op=lookup (0)subject=process object=file 
+eeeeeeeeee cb->hh=(nil)
+ZZZ: do_event()=-1
+ZZZ: answer
+ZZZ: b->context.result=-1 b->context.subject.class=0x40145c14
+ZZZ: do_event()=0
+medusa comm demerzel: Read error or EOF (0)
