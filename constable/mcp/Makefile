@@ -11,7 +11,7 @@ module.o:	$(OBJECTS)
 	$(LD) -r -o $@ $(OBJECTS)
 
 %.o:	%.c
-	$(CC) $(CFLAGS) -c $<
+	$(CC) $(CFLAGS) -ggdb -c $<
 
 clean:
 	rm -f *.o

@@ -547,7 +547,7 @@ for(;;)
 			break;
 	case oJSR:	x=*(e->p)++;
 			x=*((uintptr_t*)x);
-printf("%p JSR %llx\n",(e->p)-2,(MCPptr_t)x);
+printf("%p JSR %lx\n",(e->p)-2,x);
 			if( x==0 )
 			{	runtime("Call undefined function");
 				push(0);

@@ -144,7 +144,7 @@ static void out_destroy( struct compiler_out_class *this )
 struct compiler_out_class s_canf_lang_out={
     out_destroy,
     0,
-    (void*)canf_lang_out
+    canf_lang_out
 };
 
 void conf_lang_param_out( struct compiler_class *c, sym_t s )
@@ -162,7 +162,7 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
     static int path_type=0;
     struct event_names_s *event;
     uintptr_t x;
-   int i=0;
+    int i=0;
     vs_t *v;
     if( (s&0x0f00) == 0x0100 )
     { unsigned long tmp;

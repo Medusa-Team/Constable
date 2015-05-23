@@ -392,7 +392,7 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
         printf("ZZZ: updatnute\n");
     }
     else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
-    if( (r=comm_buf_get(sizeof(*out),c))==NULL )     //( povodne uintptr_t )Asi to ma byt takto inac dava bludy v mallocu - prepisuje hodnotu user_data, by Matus // I am sure not :) JK bludy v mallocu su kvoli buffer overflowu co bol vyssie :)
+    if( (r=comm_buf_get(sizeof(*out),c))==NULL )     //( povodne uintptr_t )Asi to ma byt takto inac dava bludy v mallocu - prepisuje hodnotu user_data, by Matus
     {	fatal("Can't alloc buffer for send answer!");
         return(-1);
     }
@@ -436,7 +436,7 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
 }
 
 static int mcp_r_classdef_attr( struct comm_buffer_s *b )
-{ struct class_s *cl;
+{    struct class_s *cl;
     if( ((struct medusa_comm_attribute_s *)(b->buf+b->len-sizeof(struct medusa_comm_attribute_s)))->type!=MED_TYPE_END )
     {	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
         return(0);
@@ -454,6 +454,13 @@ static int mcp_r_classdef_attr( struct comm_buffer_s *b )
 
 static int mcp_r_acctypedef_attr( struct comm_buffer_s *b )
 {
+    // mY start
+    int size_mcpptr = sizeof( MCPptr_t );
+    int size_int = sizeof( int );
+    int size_mas = sizeof( struct medusa_acctype_s );
+    struct medusa_acctype_s *mas = (struct medusa_acctype_s *) (b->buf+sizeof(MCPptr_t)+sizeof(unsigned int));
+    // mY end
+
     if( ((struct medusa_comm_attribute_s *)(b->buf+b->len-sizeof(struct medusa_comm_attribute_s)))->type!=MED_TYPE_END )
     {	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
         return(0);
@@ -738,7 +745,7 @@ static int mcp_r_update_answer( struct comm_buffer_s *b )
     if( p!=NULL )
     {
         *((uint32_t*)(p->user2))=
-                byte_reorder_get_uintptr_t(b->comm->flags,bmask->user);   // Zmenene uintptr_t z na uint32_t - prepisovanie do_phase, by Matus
+                byte_reorder_put_int32(b->comm->flags,bmask->user);   // Zmenene uintptr_t z na uint32_t - prepisovanie do_phase, by Matus
         p->free(p);
     }
     b->comm->buf=NULL;

@@ -9,7 +9,6 @@
 
 //#include <medusa/l3/arch.h>
 #include <stdint.h>
-#pragma pack(push, 1)
 
 /*
  * the following constants and structures cover the standard
@@ -47,12 +46,14 @@ typedef uint64_t Mptr_t; // medusa pointer if you want to run effectivly medusa 
 #define MEDUSA_COMM_UPDATE_REQUEST	0x8a	/* c->k */
 #define MEDUSA_COMM_UPDATE_ANSWER	0x0a	/* k->c */
 
+#pragma pack(push, 1)
 struct medusa_comm_attribute_s {
     u_int16_t offset;			/* offset of attribute in object */
     u_int16_t length;			/* bytes consumed by data */
     u_int8_t type;				/* data type (MED_COMM_TYPE_xxx) */
     char name[MEDUSA_COMM_ATTRNAME_MAX];	/* string: attribute name */
 };
+#pragma pack(pop)
 
 #define	MED_COMM_TYPE_END		0x00	/* end of attribute list */
 #define	MED_COMM_TYPE_UNSIGNED		0x01	/* unsigned integer attr */
@@ -63,12 +64,15 @@ struct medusa_comm_attribute_s {
 #define	MED_COMM_TYPE_READ_ONLY		0x80	/* this attribute is read-only */
 #define	MED_COMM_TYPE_PRIMARY_KEY	0x40	/* this attribute is used to lookup object */
 
+#pragma pack(push, 1)
 struct medusa_comm_class_s {
     MCPptr_t	classid;	/* (1,2,...): unique identifier of this class */
     u_int16_t	size;		/* size of object */
     char		name[MEDUSA_COMM_CLASSNAME_MAX];
 };
+#pragma pack(pop)
 
+#pragma pack(push, 1)
 struct medusa_comm_acctype_s {
     MCPptr_t	opid;
     u_int16_t	size;
@@ -77,6 +81,7 @@ struct medusa_comm_acctype_s {
     char		name[MEDUSA_COMM_OPNAME_MAX];
     char		op_name[2][MEDUSA_COMM_ATTRNAME_MAX];
 };
+#pragma pack(pop)
 
 /* for Constable internal use */
 #define	MEDUSA_ATTRNAME_MAX	MEDUSA_COMM_ATTRNAME_MAX
@@ -101,6 +106,5 @@ struct medusa_comm_acctype_s {
 #define	MED_ATTR_STRING(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_STRING)
 #define	MED_ATTR_BITMAP(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_BITMAP)
 /* end of Constable internal */
-#pragma pack(pop)
 
 #endif
