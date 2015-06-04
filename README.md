@@ -17,6 +17,6 @@ Usage
 -----
 run constable with parameter minimal/constable.conf that blocks all syscalls
 ```
-gem install github-markup
+constable minimal/constable.conf
 ```
 At this time, the only supported syscall in Medusa Voyager is symlink
