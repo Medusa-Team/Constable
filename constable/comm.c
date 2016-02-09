@@ -13,6 +13,8 @@
 #include "language/execute.h"
 #include "space.h"
 
+extern struct event_handler_s *function_init; // mY
+
 int comm_nr_connections=0;
 static struct comm_s *first_comm=NULL;
 static struct comm_s *last_comm=NULL;
@@ -95,16 +97,25 @@ int comm_do( void )
             if( b->do_phase<1000 )
                 r=do_event(b);
             else
-                r=b->comm->answer(b->comm,b,r);
-            printf("ZZZ: do_event()=%d\n",r);
+            { // mY : ak bola udalost vybavena, odosiela sa ANSWER
+              // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
+                if( b->handler == function_init ) // mY
+                    r = 0; // mY
+                else // mY
+                    r=b->comm->answer(b->comm,b,r);
+            } // mY
+            //printf("ZZZ: do_event()=%d\n",r);
             if( r==1 )
                 comm_buf_todo(b);
             else if( r<=0 )
-            {	if( b->do_phase<1000 )
-                {	b->do_phase=1000;
+            {	
+                if( b->do_phase<1000 )
+                {	
+                    b->do_phase=1000;
                     comm_buf_todo(b);
                 }
-                else	b->free(b);
+                else	
+                    b->free(b);
             }
         }
         FD_ZERO(&rd);
@@ -142,7 +153,7 @@ int comm_do( void )
 
 int comm_conn_init( struct comm_s *comm )
 {
-    printf("ZZZ: comm_conn_init %s\n",comm->name);
+    //printf("ZZZ: comm_conn_init %s\n",comm->name);
     /* default kobjects fo internal constable use */
     language_init_comm_datatypes(comm);
     /* initialize event_masks and classes */
