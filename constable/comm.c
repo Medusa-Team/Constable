@@ -13,6 +13,8 @@
 #include "language/execute.h"
 #include "space.h"
 
+extern struct event_handler_s *function_init; // mY
+
 int comm_nr_connections=0;
 static struct comm_s *first_comm=NULL;
 static struct comm_s *last_comm=NULL;
@@ -37,12 +39,12 @@ int comm_alloc_buf_temp( int size )
 static struct comm_buffer_s *comm_malloc_temps( struct comm_buffer_s * b )
 {
     if( b->pbuf == b->buf )
-    {	if( (b=comm_buf_resize(b,b->len+comm_temp_size))==NULL )
+    {   if( (b=comm_buf_resize(b,b->len+comm_temp_size))==NULL )
             return(NULL);
         b->temp=b->buf+b->len;
     }
     else
-    {	if( (b=comm_buf_resize(b,comm_temp_size))==NULL )
+    {   if( (b=comm_buf_resize(b,comm_temp_size))==NULL )
             return(NULL);
         b->temp=b->buf;
     }
@@ -57,13 +59,13 @@ struct comm_s *comm_new( char *name, int user_size )
     strncpy(c->name,name,sizeof(c->name)-1);
     c->fd= -1;
     if( (c->execute=execute_alloc_execute())==NULL )
-    {	free(c);
+    {   free(c);
         return(NULL);
     }
     c->conn=comm_nr_connections++;
     if( last_comm==NULL )
         first_comm=c;
-    else	last_comm->next=c;
+    else    last_comm->next=c;
     last_comm=c;
     return(c);
 }
@@ -88,30 +90,39 @@ int comm_do( void )
         while( (b=comm_buf_get_todo())!=NULL )
         {
             if( b->temp==NULL )
-            {	b=comm_malloc_temps(b);
+            {   b=comm_malloc_temps(b);
                 if( b==NULL )
                     return(-1);
             }
             if( b->do_phase<1000 )
                 r=do_event(b);
             else
-                r=b->comm->answer(b->comm,b,r);
-            printf("ZZZ: do_event()=%d\n",r);
+            { // mY : ak bola udalost vybavena, odosiela sa ANSWER
+              // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
+                if( b->handler == function_init ) // mY
+                    r = 0; // mY
+                else // mY
+                    r=b->comm->answer(b->comm,b,r);
+            } // mY
+            //printf("ZZZ: do_event()=%d\n",r);
             if( r==1 )
                 comm_buf_todo(b);
             else if( r<=0 )
-            {	if( b->do_phase<1000 )
-                {	b->do_phase=1000;
+            {   
+                if( b->do_phase<1000 )
+                {   
+                    b->do_phase=1000;
                     comm_buf_todo(b);
                 }
-                else	b->free(b);
+                else    
+                    b->free(b);
             }
         }
         FD_ZERO(&rd);
         FD_ZERO(&wr);
         for(c=first_comm;c!=NULL;c=c->next)
-        {	if( c->fd>=0 )
-            {	if( c->fd > max )
+        {   if( c->fd>=0 )
+            {   if( c->fd > max )
                     max=c->fd;
                 FD_SET(c->fd,&rd);
                 if( c->output.first )
@@ -122,16 +133,16 @@ int comm_do( void )
         if( r<=0 )
             continue;
         for(c=first_comm;c!=NULL;c=c->next)
-        {	if( c->fd>=0 )
+        {   if( c->fd>=0 )
             {
                 if( FD_ISSET(c->fd,&rd) )
                     if( c->read(c)<0 )
-                    {	c->close(c);
+                    {   c->close(c);
                         continue;
                     }
                 if( FD_ISSET(c->fd,&wr) )
                     if( c->write(c)<0 )
-                    {	c->close(c);
+                    {   c->close(c);
                         continue;
                     }
             }
@@ -142,7 +153,7 @@ int comm_do( void )
 
 int comm_conn_init( struct comm_s *comm )
 {
-    printf("ZZZ: comm_conn_init %s\n",comm->name);
+    //printf("ZZZ: comm_conn_init %s\n",comm->name);
     /* default kobjects fo internal constable use */
     language_init_comm_datatypes(comm);
     /* initialize event_masks and classes */
@@ -176,4 +187,3 @@ int comm_info( const char *fmt, ... )
     write(1,buf,strlen(buf));
     return(-1);
 }
-
