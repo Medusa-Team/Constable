@@ -108,15 +108,6 @@ int comm_do( void )
             if( r==1 )
                 comm_buf_todo(b);
             else if( r<=0 )
-<<<<<<< HEAD
-            {	
-                if( b->do_phase<1000 )
-                {	
-                    b->do_phase=1000;
-                    comm_buf_todo(b);
-                }
-                else	
-=======
             {   
                 if( b->do_phase<1000 )
                 {   
@@ -124,7 +115,6 @@ int comm_do( void )
                     comm_buf_todo(b);
                 }
                 else    
->>>>>>> 65ac13dcbab9f1853a424bc01efdaec8b0dd469a
                     b->free(b);
             }
         }
