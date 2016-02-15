@@ -397,9 +397,20 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
         return(-1);
     }
     out = (void*)&r->buf;
-    out->ans= byte_reorder_put_int32(c->flags,MEDUSA_COMM_AUTHANSWER);
+    // TODO TODO TODO: mY: 'ans' has 64 bits, NOT 32 !!!
+    out->ans= byte_reorder_put_int64(c->flags,MEDUSA_COMM_AUTHANSWER);
+    /* TODO TODO TODO: mY: 
+        'id' has 32 bits within an 'authrequest' cmd
+        but... big&little endians problem...
+        'id' is ignored by kernel, is always set to 0
+    */
+    out->id = 0;
     out->id = ((uint32_t*)(b->buf+sizeof(MCPptr_t)))[0];
 #ifdef TRANSLATE_RESULT
+    /* TODO TODO TODO: mY:
+        WHY access 'out->res' by 'r->buf'
+        see '#else' statement
+    */
     switch( b->context.result )
     {	case RESULT_ALLOW:
         *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))
@@ -409,10 +420,10 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
         *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))
                 = MED_NO;
         break;
-    case RESULT_SKIP
-    *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))
-    = MED_SKIP;
-    break;
+    case RESULT_SKIP:
+        *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))
+                = MED_SKIP;
+        break;
     case RESULT_OK:
         *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))
                 = MED_OK;
@@ -537,7 +548,7 @@ static int mcp_close( struct comm_s *c )
         b->free(b);
     while( (b=comm_buf_from_queue(&(c->wait_for_answer))) )
         b->free(b);
-    c->open_counter++;
+    c->open_counter--;
     return(0);
 }
 
