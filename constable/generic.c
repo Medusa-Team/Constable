@@ -29,11 +29,11 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
 { 
     struct tree_s *t; // ,*p; unused
     int a,inh;
-    uint64_t *cinfo; // 64-bit size because a pointer will be stored here
+    uintptr_t *cinfo; // 64-bit or 32-bit size because a pointer will be stored here
     /* musim get_tree_node robit sam, aby sa nezacyklilo */
     cinfo=PCINFO(o,h,comm);
 
-    printf("ZZZ: aaaaaaaaaaaaaaaaaaaaaaaaa cinfo=%p stack=%p\n",cinfo,&t);
+    //printf("ZZZ: aaaaaaaaaaaaaaaaaaaaaaaaa cinfo=%p stack=%p\n",cinfo,&t);
 
     if( (t=(struct tree_s *)(*cinfo))==NULL )
     {
@@ -42,17 +42,16 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
         // *cinfo=(uintptr_t)t;
         return(-1);
     }
-    printf("ZZZ: cccccccccccccccc %p\n",t);
-    printf("ZZZ: ccccccccccccccc2 %p\n",t->type);
-    printf("ZZZ: riesim generic_set_subject pre %s\n",t->type->name);
-    //fflush(stdout);
+    //printf("ZZZ: cccccccccccccccc %p\n",t);
+    //printf("ZZZ: ccccccccccccccc2 %p\n",t->type);
+    //printf("ZZZ: riesim generic_set_subject pre %s\n",t->type->name);
     inh=0;
-    // p=t; unused
 #ifdef USE_ALT
+    // p=t; unused
     for(;t!=NULL;t=t->alt)
     {
 #endif
-        printf("ZZZ: dddddddddddddddd\n");
+        //printf("ZZZ: dddddddddddddddd\n");
         for(a=0;a<NR_ACCESS_TYPES;a++)
         {	object_add_vs(o,a,t->vs[a]);
             /* !!!! no_vs !!!! */
@@ -65,7 +64,7 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
 #endif
     if( inh && h->user!=NULL && ((struct event_names_s*)(h->user))->events[comm->conn]->object==o->class )
         object_add_event(o,((struct event_names_s*)(h->user))->events[comm->conn]->mask);
-    printf("ZZZ: ffffffffffffffff\n");
+    //printf("ZZZ: ffffffffffffffff\n");
     return(0);
 }
 
@@ -92,7 +91,8 @@ int generic_test_vs_tree( int acctype, struct event_context_s *c, struct tree_s 
 }
 
 int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
-{ uint64_t *cinfo;  // 64-bit size because a pointer will be stored here
+{
+    uintptr_t *cinfo; // 64-bit or 32-bit size because a pointer will be stored here
     struct tree_s *t;
     char *n;
     int r;
@@ -101,7 +101,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     vs_t vse[MAX_VS_BITS/32];
 
     ch=((struct g_event_handler_s*)h)->class_handler;
-    printf("generic_hierarchy_handler_decide %s\n",ch->root->type->name);
+    //printf("generic_hierarchy_handler_decide %s\n",ch->root->type->name);
     cinfo=PCINFO(&(c->subject),ch,cb->comm);
 
     if( (t=(struct tree_s *)(*cinfo))==NULL )
@@ -110,7 +110,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
             t= (struct tree_s *)CINFO(&(c->object),ch,cb->comm);
         if( t==NULL )
             t=ch->root;
-        *cinfo=(uint64_t)t; // 64-bit size because a pointer will be stored here
+        *cinfo=(uintptr_t)t; // 64-bit or 32-bit size because a pointer will be stored here
         object_do_sethandler(&(c->subject));
     }
     printf("ZZZ: riesim generic_hierarchy_handler pre %s\n",t->type->name);
@@ -122,14 +122,14 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     if( (execute_get_last_attr()->type & 0x0f) != MED_TYPE_STRING )
         n="";
     else	n=execute_get_last_data();
-    printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,n);
+    //printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,n);
 
     if( (t=find_one(t,n))==NULL )
     {	c->result=RESULT_DENY;
-        *PU32_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=*cinfo;
+        *PUPTR_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=*cinfo;
         return(-1);
     }
-    printf("%s\"\n",t->name);
+    //printf("%s\"\n",t->name);
     //{ int ino;
     //  struct medusa_attribute_s *a;
     //   a=get_attribute(c->subject.class,"dev");
@@ -148,33 +148,33 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     {	object_get_vs(vse,AT_ENTER,&(c->subject));
 
         if( vs_test(t->vs[AT_MEMBER],vse) ) /*!!! no_vs !!! */
-            *PU32_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=(uintptr_t)t;
+            *PUPTR_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=(uintptr_t)t;
         else
         {	c->result=RESULT_DENY;
-            printf("ZZZ: nevnaram sa, lebo nemam ENTER!\n");
-            *PU32_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=*cinfo;
+            //printf("ZZZ: nevnaram sa, lebo nemam ENTER!\n");
+            *PUPTR_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=*cinfo;
             return(0);
         }
     }
-    else	*PU32_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=(uintptr_t)t;
+    else	*PUPTR_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=(uintptr_t)t;
 
     c->result=RESULT_OK;
     return(0);
 }
 
 int generic_hierarchy_handler_notify( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
-{ uint64_t *cinfo;  // 64-bit size because a pointer will be stored here
+{
+    uintptr_t *cinfo; // 64-bit or 32-bit size because a pointer will be stored here
     struct class_handler_s *ch;
 
     ch=((struct g_event_handler_s*)h)->class_handler;
-    printf("generic_hierarchy_handler_notify %s\n",ch->root->type->name);
+    //printf("generic_hierarchy_handler_notify %s\n",ch->root->type->name);
     cinfo=PCINFO(&(c->subject),ch,cb->comm);
 
-    printf("generic_hierarchy_handler_notify --- c->result=%d\n",c->result);
+    //printf("generic_hierarchy_handler_notify --- c->result=%d\n",c->result);
     //	if( c->result==RESULT_ALLOW || c->result==RESULT_OK )
     //	{
-    //printf("generic_hierarchy_handler_notify --- nastavujem\n");
-    *cinfo=*PU32_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset);
+    *cinfo=*PUPTR_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset);
     object_do_sethandler(&(c->subject));
     //	}
     return(0);
@@ -185,7 +185,7 @@ int generic_get_vs( struct class_handler_s *h, struct comm_s *comm, struct objec
 
     if( (t=h->get_tree_node(h,comm,o))==NULL )
         return(-1);
-    printf("ZZZ: riesim generic_get_vs pre %s\n",t->type->name);
+    //printf("ZZZ: riesim generic_get_vs pre %s\n",t->type->name);
     vs_add( t->vs[n] , vs );
     /*!!! no_vs !!! */
     return(0);
@@ -213,7 +213,8 @@ int generic_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, str
             perm=0;
     }
     if( perm )
-    {	CINFO(o,h,comm)=(uintptr_t)node;
+    {	
+        CINFO(o,h,comm)=(uintptr_t)node;
         object_do_sethandler(o);
         return(1);
     }
@@ -355,7 +356,7 @@ int generic_init( char *name, struct event_handler_s *subhandler, struct event_n
         eh->h.local_vars=NULL;
         eh->subhandler=subhandler;
         eh->class_handler=ch;
-        printf("ZZZ: generic_init: registrujem event_handler\n");
+        //printf("ZZZ: generic_init: registrujem event_handler\n");
         if( register_event_handler((struct event_handler_s*)eh,event,&(event->handlers_hash[EHH_VS_ALLOW]),ALL_OBJ,ALL_OBJ)<0 )
         {	free(eh);
             return(init_error("Can't register event handler for %s/",name));

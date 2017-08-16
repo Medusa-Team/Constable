@@ -115,24 +115,32 @@ struct class_s *add_class( struct comm_s *comm, struct medusa_class_s *mc, struc
 }
 
 /* vrati offset (u_int16_t), alebo -1 ak chyba */
+/*
+   cinfo v constablovi uchovava pointer
+   cinfo_size uchovava pocet u_int32_t-bitovych slov od cinfo_offset
+*/
 int class_alloc_object_cinfo( struct class_s *c )
 { int i;
-    for(i=0;i<c->cinfo_size && i<sizeof(c->cinfo_mask)*8;i++)
+    for(i=0;i<c->cinfo_size/(sizeof(uintptr_t)/sizeof(u_int32_t)) && i<sizeof(c->cinfo_mask)*8;i++)
     {	if( !(c->cinfo_mask & (1<<i)) )
         {	c->cinfo_mask|= 1<<i;
-            return(c->cinfo_offset+i*sizeof(u_int32_t));
+            return(c->cinfo_offset+i*sizeof(uintptr_t));
         }
     }
     return(-1);
 }
 
 /* vrati offset (u_int16_t), alebo -1 ak chyba */
+/*
+   cinfo v constablovi uchovava pointer
+   cinfo_size uchovava pocet u_int32_t-bitovych slov od cinfo_offset
+*/
 int class_alloc_subject_cinfo( struct class_s *c )
 { int i;
-    for(i=0;i<c->subject.cinfo_size && i<sizeof(c->subject.cinfo_mask)*8;i++)
+    for(i=0;i<c->subject.cinfo_size/(sizeof(uintptr_t)/sizeof(u_int32_t)) && i<sizeof(c->subject.cinfo_mask)*8;i++)
     {	if( !(c->subject.cinfo_mask & (1<<i)) )
         {	c->subject.cinfo_mask|= 1<<i;
-            return(c->subject.cinfo_offset+i*sizeof(u_int32_t));
+            return(c->subject.cinfo_offset+i*sizeof(uintptr_t));
         }
     }
     return(-1);

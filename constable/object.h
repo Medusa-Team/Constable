@@ -92,7 +92,7 @@ int class_add_handler( struct class_names_s *c, struct class_handler_s *handler 
 
 int class_comm_init( struct comm_s *comm );
 
-#define	PCINFO(object,ch,comm)	((uint64_t*)((object)->data+(ch)->cinfo_offset[(comm)->conn])) // 64-bit size because a pointer will be stored here
+#define	PCINFO(object,ch,comm)	((uintptr_t*)((object)->data+(ch)->cinfo_offset[(comm)->conn])) // 64-bit or 32-bit size because a pointer will be stored here
 #define	CINFO(object,ch,comm)	(*(PCINFO(object,ch,comm)))
 
 int object_get_val( struct object_s *o, struct medusa_attribute_s *a, void *buf, int maxlen );
@@ -104,8 +104,8 @@ void byte_reorder_attrs( int flags, struct medusa_attribute_s *a );
 void byte_reorder_class( int flags, struct medusa_class_s *c );
 void byte_reorder_acctype( int flags, struct medusa_acctype_s *a );
 
-#define byte_reorder_get_uintptr_t(flag,val) ((uint32_t)val) //#	TODO distinguish 32 versus 64 bit swap!
-#define byte_reorder_put_uintptr_t(flag,val) (val) //#	TODO distinguish 32 versus 64 bit swap!
+//#define byte_reorder_get_uintptr_t(flag,val) ((uint32_t)val) //#	TODO distinguish 32 versus 64 bit swap!
+//#define byte_reorder_put_uintptr_t(flag,val) (val) //#	TODO distinguish 32 versus 64 bit swap!
 #define byte_reorder_get_int64(flag,val) (val) //#	((flag)&OBJECT_FLAG_CHENDIAN?bswap_64(val):(val))
 #define byte_reorder_put_int64(flag,val) (val) //#	((flag)&OBJECT_FLAG_CHENDIAN?bswap_64(val):(val))
 #define byte_reorder_get_int32(flag,val) (val) //#	((flag)&OBJECT_FLAG_CHENDIAN?bswap_32(val):(val))
