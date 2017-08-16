@@ -446,14 +446,29 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
     return(0);
 }
 
+static void unify_bitmap_types(struct medusa_comm_attribute_s *a)
+{
+    while( a->type!=MED_COMM_TYPE_END ) {
+        switch (a->type) {
+        case MED_COMM_TYPE_BITMAP_8:
+        case MED_COMM_TYPE_BITMAP_16:
+        case MED_COMM_TYPE_BITMAP_32:
+            a->type = MED_COMM_TYPE_BITMAP;
+        }
+        a++;
+    }
+}
+
 static int mcp_r_classdef_attr( struct comm_buffer_s *b )
-{    struct class_s *cl;
+{
+    struct class_s *cl;
     if( ((struct medusa_comm_attribute_s *)(b->buf+b->len-sizeof(struct medusa_comm_attribute_s)))->type!=MED_TYPE_END )
     {	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
         return(0);
     }
     byte_reorder_class(b->comm->flags,(struct medusa_class_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)));
     byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s)));
+    unify_bitmap_types((struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s)));
     if( (cl=add_class(b->comm,
                       (struct medusa_class_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)),
                       (struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s))))==NULL )
@@ -465,19 +480,13 @@ static int mcp_r_classdef_attr( struct comm_buffer_s *b )
 
 static int mcp_r_acctypedef_attr( struct comm_buffer_s *b )
 {
-    // mY start
-    int size_mcpptr = sizeof( MCPptr_t );
-    int size_int = sizeof( int );
-    int size_mas = sizeof( struct medusa_acctype_s );
-    struct medusa_acctype_s *mas = (struct medusa_acctype_s *) (b->buf+sizeof(MCPptr_t)+sizeof(unsigned int));
-    // mY end
-
     if( ((struct medusa_comm_attribute_s *)(b->buf+b->len-sizeof(struct medusa_comm_attribute_s)))->type!=MED_TYPE_END )
     {	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
         return(0);
     }
     byte_reorder_acctype(b->comm->flags,(struct medusa_acctype_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)));
     byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)));
+    unify_bitmap_types((struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)));
     if( event_type_add(b->comm,(struct medusa_acctype_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)),
                        (struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)))<0 )
         comm_error("comm %s: Can't add acctype",b->comm->name);
