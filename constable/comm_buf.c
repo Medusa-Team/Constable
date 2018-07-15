@@ -114,8 +114,10 @@ struct comm_buffer_queue_s comm_todo;
 int comm_buf_to_queue( struct comm_buffer_queue_s *q, struct comm_buffer_s *b )
 {
     b->next=NULL;
-    if( q->last )
+    if( q->last ) {
         q->last->next=b;
+        q->last=b;
+    }
     else
         q->last=q->first=b;
     return(0);
