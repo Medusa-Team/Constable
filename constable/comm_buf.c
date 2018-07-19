@@ -30,6 +30,7 @@ struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
             b->do_phase=0;
             b->ehh_list=EHH_VS_ALLOW;
             b->context.cb=b;
+            b->handler=NULL;
             b->temp=NULL;
             return(b);
         }
