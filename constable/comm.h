@@ -16,12 +16,17 @@ struct event_hadler_hash_s;
 struct class_handler_s;
 
 struct comm_buffer_queue_s {
-    struct comm_buffer_s	*first;
-    struct comm_buffer_s	*last;
+    struct queue_item_s	*first;
+    struct queue_item_s	*last;
+};
+
+struct queue_item_s {
+    struct queue_item_s *next;
+    struct comm_buffer_s *buffer;
 };
 
 struct comm_buffer_s {
-    struct comm_buffer_s	*next;
+    struct comm_buffer_s	*next; /* Used only for the buffers free list */
     int			_n;	/* position in buffers[] */
     int			size;
     void(*free)(struct comm_buffer_s*);
@@ -89,6 +94,8 @@ extern int comm_nr_connections;
 extern struct comm_buffer_queue_s comm_todo;
 int comm_buf_to_queue( struct comm_buffer_queue_s *q, struct comm_buffer_s *b );
 struct comm_buffer_s *comm_buf_from_queue( struct comm_buffer_queue_s *q );
+struct comm_buffer_s *comm_buf_peek_first(struct comm_buffer_queue_s *q);
+struct comm_buffer_s *comm_buf_peek_last(struct comm_buffer_queue_s *q);
 
 #define	comm_buf_todo(b)	comm_buf_to_queue(&comm_todo,(b))
 #define	comm_buf_get_todo()	comm_buf_from_queue(&comm_todo)

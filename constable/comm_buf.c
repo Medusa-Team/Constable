@@ -10,6 +10,10 @@
 
 static struct comm_buffer_s *buffers[2];
 
+#define ITEM_FREE_LIST_CAPACITY 10
+static size_t ready_items = 0;
+static struct queue_item_s *item_free_list = NULL;
+
 #define	BN	(sizeof(buffers)/sizeof(buffers[0]))
 
 static struct comm_buffer_s *malloc_buf( int size );
@@ -109,26 +113,80 @@ static struct comm_buffer_s *malloc_buf( int size )
     return(b);
 }
 
+/**
+ * Returns new queue item. Allocates a new queue item only if the
+ * items_free_list is empty, otherwise returns queue item from the free list.
+ */
+static struct queue_item_s *new_item(struct comm_buffer_s *b)
+{
+    struct queue_item_s *item;
+    if (ready_items) {
+        item = item_free_list;
+        item_free_list = item->next;
+        ready_items--;
+    } else if ((item = (struct queue_item_s*)
+                malloc(sizeof(struct queue_item_s))) == NULL) {
+        fatal(Out_of_memory);
+        return NULL;
+    }
+    item->next = NULL;
+    item->buffer = b;
+    return item;
+}
+
+/**
+ * If capacity of items_free_list allows it, the queue item is placed on the
+ * free list for later use. Otherwise it gets deallocated.
+ */
+static void free_item(struct queue_item_s *item)
+{
+    if (ready_items < ITEM_FREE_LIST_CAPACITY) {
+        item->next = item_free_list;
+        item_free_list = item;
+        ready_items++;
+    } else
+        free(item);
+}
 
 struct comm_buffer_queue_s comm_todo;
 
 int comm_buf_to_queue( struct comm_buffer_queue_s *q, struct comm_buffer_s *b )
 {
-    b->next=NULL;
+    struct queue_item_s *item = new_item(b);
     if( q->last ) {
-        q->last->next=b;
-        q->last=b;
+        q->last->next=item;
+        q->last=item;
     }
     else
-        q->last=q->first=b;
+        q->last=q->first=item;
     return(0);
 }
 
 struct comm_buffer_s *comm_buf_from_queue( struct comm_buffer_queue_s *q )
-{ struct comm_buffer_s *b;
-    if( (b=q->first) && (q->first=b->next)==NULL )
+{
+    struct queue_item_s *item;
+    struct comm_buffer_s *b = NULL;
+    if( (item=q->first) && (q->first=item->next)==NULL )
         q->last=NULL;
+    if (item) {
+        b = item->buffer;
+        free_item(item);
+    }
     return(b);
+}
+
+inline struct comm_buffer_s *comm_buf_peek_first(struct comm_buffer_queue_s *q)
+{
+    if (q->first)
+        return q->first->buffer;
+    return NULL;
+}
+
+inline struct comm_buffer_s *comm_buf_peek_last(struct comm_buffer_queue_s *q)
+{
+    if (q->last)
+        return q->last->buffer;
+    return NULL;
 }
 
 int comm_buf_init( void )

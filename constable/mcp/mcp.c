@@ -505,7 +505,7 @@ static int mcp_write( struct comm_s *c )
 { int r;
     struct comm_buffer_s *b;
     printf("ZZZ mcp_write 1\n");
-    if( (b=c->output.first)==NULL )
+    if( (b=comm_buf_peek_first(&c->output))==NULL )
         return(0);
     printf("ZZZ mcp_write 2\n");
     if( b->open_counter != c->open_counter )
@@ -575,7 +575,8 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     printf("ZZZZ mcp_fetch_object 2\n");
     wake->user_data = -1;
     if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
-    {	comm_buf_to_queue(&(c->wait_for_answer.last->to_wake),wake);
+    {
+        comm_buf_to_queue(&(c->wait_for_answer.last->buffer->to_wake),wake);
         return(2);
     }
     printf("ZZZZ mcp_fetch_object 3\n");
@@ -625,7 +626,7 @@ static int mcp_r_fetch_answer( struct comm_buffer_s *b )
         MCPptr_t p1,p2;
     } * bmask = (void*)( b->buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
     #pragma pack(pop)
-    f=b->comm->wait_for_answer.first;
+    f=comm_buf_peek_first(&b->comm->wait_for_answer);
     p=NULL;
     do {	p=comm_buf_from_queue(&(b->comm->wait_for_answer));
         pmask = (void*)(p->buf + sizeof(MCPptr_t));
@@ -636,7 +637,7 @@ static int mcp_r_fetch_answer( struct comm_buffer_s *b )
             break;
         comm_buf_to_queue(&(b->comm->wait_for_answer),p);
         p=NULL;
-    } while( f != b->comm->wait_for_answer.first );
+    } while( f != b->comm->wait_for_answer.first->buffer );
 
     if( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->buf + sizeof(MCPptr_t)))[0])==MEDUSA_COMM_FETCH_ERROR )
     {	if( p!=NULL )
@@ -698,7 +699,7 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     wake->user_data = RESULT_UNKNOWN;  /* ma byt vzdy len MED_ERR !!! */
 #endif
     if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
-    {	comm_buf_to_queue(&(c->wait_for_answer.last->to_wake),wake);
+    {	comm_buf_to_queue(&(c->wait_for_answer.last->buffer->to_wake),wake);
         return(2);
     }
     if( (r=comm_buf_get(3*sizeof(MCPptr_t) + ((struct object_s *)((void*)o))->class->m.size,c))==NULL )
@@ -742,7 +743,7 @@ static int mcp_r_update_answer( struct comm_buffer_s *b )
         MCPptr_t p1,p2,user;
     } * bmask = (void*)(b->buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
     #pragma pack(pop)
-    f=b->comm->wait_for_answer.first;
+    f=comm_buf_peek_first(&b->comm->wait_for_answer);
     p=NULL;
     do {	p=comm_buf_from_queue(&(b->comm->wait_for_answer));
         pmask = (void*) (p->buf + sizeof(MCPptr_t));
@@ -751,7 +752,7 @@ static int mcp_r_update_answer( struct comm_buffer_s *b )
             break;
         comm_buf_to_queue(&(b->comm->wait_for_answer),p);
         p=NULL;
-    } while( f != b->comm->wait_for_answer.first );
+    } while( f != b->comm->wait_for_answer.first->buffer );
 
     if( p!=NULL )
     {
