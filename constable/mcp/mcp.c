@@ -40,7 +40,6 @@ static int mcp_write( struct comm_s *c );
 static int mcp_nowrite( struct comm_s *c );
 static int mcp_close( struct comm_s *c );
 static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake );
-static int mcp_fetch_object_write( struct comm_buffer_s *b );
 static int mcp_fetch_object_wait( struct comm_buffer_s *b );
 static int mcp_r_fetch_answer( struct comm_buffer_s *b );
 static int mcp_r_fetch_answer_done( struct comm_buffer_s *b );
@@ -580,35 +579,25 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
         return(2);
     }
     printf("ZZZZ mcp_fetch_object 3\n");
-    if( (r=comm_buf_get(4*sizeof(MCPptr_t),c))==NULL )
+    if( (r=comm_buf_get(3*sizeof(MCPptr_t) + o->class->m.size,c))==NULL )
     {	fatal("Can't alloc buffer for fetch!");
         return(-1);
     }
     printf("ZZZZ mcp_fetch_object 4\n");
     r->user1=(void*)o;
+    object_set_byte_order(o,c->flags);
     r->user2=(void*)(&(wake->user_data));
     ((MCPptr_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_FETCH_REQUEST);
     ((MCPptr_t*)(r->buf))[1]= o->class->m.classid;
     ((MCPptr_t*)(r->buf))[2]= id++;
-    r->len=3*sizeof(MCPptr_t);
+    memcpy(((MCPptr_t*)(r->buf))+3, o->data, o->class->m.size);
+    r->len=3*sizeof(MCPptr_t) + o->class->m.size;
     r->want=0;
-    r->completed=mcp_fetch_object_write;
+    r->completed=mcp_fetch_object_wait;
     comm_buf_to_queue(&(r->to_wake),wake);
     comm_buf_to_queue(&(c->output),r);
     printf("ZZZZ mcp_fetch_object 5\n");
     return(3);
-}
-
-static int mcp_fetch_object_write( struct comm_buffer_s *b )
-{
-    printf("ZZZZ mcp_fetch_object_write\n");
-    object_set_byte_order((struct object_s *)(b->user1),b->comm->flags);
-    b->len=((struct object_s *)(b->user1))->class->m.size;
-    b->pbuf=((struct object_s *)(b->user1))->data;
-    b->want=0;
-    b->completed=mcp_fetch_object_wait;
-    comm_buf_to_queue(&(b->comm->output),b);
-    return(0);
 }
 
 static int mcp_fetch_object_wait( struct comm_buffer_s *b )
@@ -719,8 +708,8 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     ((MCPptr_t*)(r->buf))[2]= id++;
     memcpy(((MCPptr_t*)(r->buf))+3, o->data, o->class->m.size);
 
-    object_set_byte_order((struct object_s *)(r->user1),r->comm->flags);
-    r->len=3*sizeof(MCPptr_t) + ((struct object_s *)(r->user1))->class->m.size;
+    object_set_byte_order(o,r->comm->flags);
+    r->len=3*sizeof(MCPptr_t) + o->class->m.size;
     r->want=0;
     r->completed=mcp_update_object_wait;
     comm_buf_to_queue(&(r->to_wake),wake);
