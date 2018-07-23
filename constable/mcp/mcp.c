@@ -57,7 +57,7 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
     strncpy(c->operation.attr.name,t->m.name,MIN(MEDUSA_ATTRNAME_MAX,MEDUSA_OPNAME_MAX));
     c->operation.flags=comm->flags;
     c->operation.class=&(t->operation_class);
-    c->operation.data=(char*)(data)+sizeof(MCPptr_t)+sizeof(unsigned int);
+    c->operation.data=(char*)(data)+2*sizeof(MCPptr_t);
 
     c->subject.next=&(c->object);
     c->subject.attr.offset=c->subject.attr.length=0;
@@ -65,14 +65,14 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
     strncpy(c->subject.attr.name,t->m.op_name[0],MEDUSA_ATTRNAME_MAX);
     c->subject.flags=comm->flags;
     c->subject.class=t->op[0];
-    c->subject.data=(char*)(data)+sizeof(MCPptr_t)+sizeof(unsigned int)+(t->m.size);
+    c->subject.data=(char*)(data)+2*sizeof(MCPptr_t)+(t->m.size);
     c->object.next=NULL;
     c->object.attr.offset=c->object.attr.length=0;
     c->object.attr.type=MED_TYPE_END;
     strncpy(c->object.attr.name,t->m.op_name[1],MEDUSA_ATTRNAME_MAX);
     c->object.flags=comm->flags;
     c->object.class=t->op[1];
-    c->object.data=(char*)(data)+sizeof(MCPptr_t)+sizeof(unsigned int)+(t->m.size);
+    c->object.data=(char*)(data)+2*sizeof(MCPptr_t)+(t->m.size);
     if( c->subject.class!=NULL )
     {	c->object.data+= c->subject.class->m.size;
         c->subject.attr.length=c->subject.class->m.size;
@@ -289,7 +289,7 @@ static int mcp_r_head( struct comm_buffer_s *b )
         {	comm_error("comm %s: Unknown access type %p!",b->comm->name,x);
             return(-1);
         }
-        b->want= b->len + (b->event->m.size);
+        b->want= sizeof(uint32_t) + b->len + (b->event->m.size);
         if( b->event->op[0]!=NULL )
             b->want += b->event->op[0]->m.size;
         if( b->event->op[1]!=NULL )
@@ -407,7 +407,7 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
         'id' is ignored by kernel, is always set to 0
     */
     out->id = 0;
-    out->id = ((uint32_t*)(b->buf+sizeof(MCPptr_t)))[0];
+    out->id = ((MCPptr_t*)(b->buf+sizeof(MCPptr_t)))[0];
 #ifdef TRANSLATE_RESULT
     /* TODO TODO TODO: mY:
         WHY access 'out->res' by 'r->buf'
