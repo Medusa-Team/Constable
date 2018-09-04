@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "constable.h"
 
 char *retprintf( const char *fmt, ... )
@@ -32,8 +33,8 @@ int init_error( const char *fmt, ... )
 }
 
 #ifdef DEBUG_TRACE
-char runtime_file[64];
-char runtime_pos[12];
+pthread_key_t runtime_file_key;
+pthread_key_t runtime_pos_key;
 #endif
 int runtime( const char *fmt, ... )
 { va_list ap;
@@ -42,6 +43,10 @@ int runtime( const char *fmt, ... )
 #ifndef DEBUG_TRACE
     sprintf(buf,"Runtime error : ");
 #else
+    char *runtime_file;
+    char *runtime_pos;
+    runtime_file = (char*) pthread_getspecific(runtime_file_key);
+    runtime_pos = (char*) pthread_getspecific(runtime_pos_key);
     sprintf(buf,"Runtime error [\"%s\" %s]: ",runtime_file,runtime_pos);
 #endif
 

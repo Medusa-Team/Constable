@@ -293,8 +293,11 @@ static int execute_handler_do( struct execute_s *e )
   uintptr_t *cmd_p;
 
 #ifdef DEBUG_TRACE
-	strncpy(runtime_file,e->h->op_name+MEDUSA_OPNAME_MAX,sizeof(runtime_file));
-	runtime_file[sizeof(runtime_file)-1]=0;
+    char *runtime_file;
+    runtime_file = (char*) pthread_getspecific(runtime_file_key);
+	strncpy(runtime_file, e->h->op_name+MEDUSA_OPNAME_MAX, 
+            sizeof(RUNTIME_FILE_TYPE));
+	runtime_file[sizeof(RUNTIME_FILE_TYPE)-1]=0;
 #endif
 for(;;)
 {	cmd_p=e->p;
@@ -302,8 +305,9 @@ for(;;)
 #ifdef DEBUG_TRACE
 	x=*(e->p)++;
 	//snprintf(runtime_pos,sizeof(runtime_pos)-1,"%d:%d",((x>>16)&0x0000ffff),(x&0x0000ffff));
-	snprintf(runtime_pos,sizeof(runtime_pos)-1,"%p",(void*)x);
-	runtime_pos[sizeof(runtime_pos)-1]=0;
+    char *runtime_pos = (char*) pthread_getspecific(runtime_pos_key);
+	snprintf(runtime_pos,sizeof(RUNTIME_POS_TYPE)-1,"%p",(void*)x);
+	runtime_pos[sizeof(RUNTIME_POS_TYPE)-1]=0;
 //runtime("ZZZ %04x",cmd);
 #endif
 	switch( cmd )

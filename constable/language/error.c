@@ -10,13 +10,14 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <pthread.h>
 #include "../constable.h"
 #include "error.h"
 #include "language.h"
 
 extern compiler_class_t *global_compiler;
 
-char *errstr=NULL;
+pthread_key_t errstr_key;
 char *Out_of_memory="Out of memory";
 
 int error( const char *fmt, ... )

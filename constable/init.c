@@ -178,6 +178,23 @@ static void debug_fd_write( int arg, char *s )
     write(arg,s,strlen(s));
 }
 
+int tls_create(void)
+{
+    TLS_CREATE(&runtime_file_key, NULL);
+    TLS_CREATE(&runtime_pos_key, NULL);
+    TLS_CREATE(&errstr_key, NULL);
+    return 0;
+}
+
+int tls_alloc(void)
+{
+    void *data;
+    TLS_ALLOC(runtime_file_key, RUNTIME_FILE_TYPE);
+    TLS_ALLOC(runtime_pos_key, RUNTIME_POS_TYPE);
+    TLS_ALLOC(errstr_key, char**);
+    return 0;
+}
+
 int main( int argc, char *argv[] )
 { char *conf_name="/etc/constable.conf";
     //struct sched_param schedpar; unused
@@ -218,6 +235,12 @@ int main( int argc, char *argv[] )
         {	conf_name=argv[a];
         }
     }
+
+    if (tls_create())
+        return -1;
+
+    if (tls_alloc())
+        return -1;
 
     if( init_all(conf_name)<0 )
         return(-1);

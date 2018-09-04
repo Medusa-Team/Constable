@@ -31,8 +31,10 @@ int medusa_printlog(char *format, ...);
 char *retprintf( const char *fmt, ... );
 int init_error( const char *fmt, ... );
 #ifdef DEBUG_TRACE
-extern char runtime_file[64];
-extern char runtime_pos[12];
+#define RUNTIME_FILE_TYPE char[64]
+extern pthread_key_t runtime_file_key;
+#define RUNTIME_POS_TYPE char[12]
+extern pthread_key_t runtime_pos_key;
 #endif
 int runtime( const char *fmt, ... );
 int fatal( const char *fmt, ... );
