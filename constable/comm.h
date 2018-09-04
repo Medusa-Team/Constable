@@ -8,6 +8,7 @@
 #define	_COMM_H
 
 #include "event.h"
+#include <pthread.h>
 
 struct comm_s;
 struct comm_buffer_s;
@@ -58,6 +59,7 @@ struct comm_buffer_s {
 struct comm_s {
     struct comm_s	*next;
     int		conn;		/* connection number */
+    pthread_t   read_thread;    /* thread used for read operation */
     char		name[64];
     int		fd;
     int		open_counter;
@@ -92,13 +94,36 @@ struct comm_buffer_s *comm_buf_resize( struct comm_buffer_s *b, int size );
 extern int comm_nr_connections;
 
 extern struct comm_buffer_queue_s comm_todo;
+extern pthread_mutex_t comm_todo_lock;
 int comm_buf_to_queue( struct comm_buffer_queue_s *q, struct comm_buffer_s *b );
+inline int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q,
+                             struct comm_buffer_s *b,
+                             pthread_mutex_t *lock)
+{
+    int ret;
+    pthread_mutex_lock(lock);
+    ret = comm_buf_to_queue(q, b);
+    pthread_mutex_unlock(lock);
+    return ret;
+}
 struct comm_buffer_s *comm_buf_from_queue( struct comm_buffer_queue_s *q );
+inline struct comm_buffer_s *comm_buf_from_queue_locked(
+        struct comm_buffer_queue_s *q,
+        pthread_mutex_t *lock)
+{
+    struct comm_buffer_s *ret;
+    pthread_mutex_lock(lock);
+    ret = comm_buf_from_queue(q);
+    pthread_mutex_unlock(lock);
+    return ret;
+}
 struct comm_buffer_s *comm_buf_peek_first(struct comm_buffer_queue_s *q);
 struct comm_buffer_s *comm_buf_peek_last(struct comm_buffer_queue_s *q);
 
-#define	comm_buf_todo(b)	comm_buf_to_queue(&comm_todo,(b))
-#define	comm_buf_get_todo()	comm_buf_from_queue(&comm_todo)
+#define	comm_buf_todo(b)	comm_buf_to_queue_locked(&comm_todo,(b),    \
+                                                     &comm_todo_lock)
+#define	comm_buf_get_todo()	comm_buf_from_queue_locked(&comm_todo,      \
+                                                       &comm_todo_lock)
 
 void *comm_new_array( int size );
 int comm_alloc_buf_temp( int size );
@@ -113,6 +138,8 @@ int comm_buf_init( void );
 int comm_buf_init2( void );
 
 int comm_do( void );
+void* comm_worker(void*);
+void* read_loop(void*);
 
 int comm_error( const char *fmt, ... );
 int comm_info( const char *fmt, ... );

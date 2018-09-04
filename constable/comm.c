@@ -9,9 +9,22 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include "comm.h"
+extern int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q,
+                                    struct comm_buffer_s *b,
+                                    pthread_mutex_t *lock);
+extern struct comm_buffer_s *comm_buf_from_queue_locked(
+        struct comm_buffer_queue_s *q,
+        pthread_mutex_t *lock);
 #include "language/execute.h"
 #include "space.h"
+
+// TLS:
+#include "init.h"
+
+#define N_WORKER_THREADS 2
+static pthread_t comm_workers[N_WORKER_THREADS];
 
 extern struct event_handler_s *function_init; // mY
 
@@ -80,75 +93,94 @@ struct comm_s *comm_find( char *name )
 
 int comm_do( void )
 { struct comm_s *c;
-    struct comm_buffer_s *b;
-    fd_set rd,wr;
-    int max=0;
-    int r;
+    pthread_attr_t *attr = NULL;
 
-    for(;;)
-    {
-        while( (b=comm_buf_get_todo())!=NULL )
-        {
-            if( b->temp==NULL )
-            {   b=comm_malloc_temps(b);
-                if( b==NULL )
-                    return(-1);
-            }
-            if( b->do_phase<1000 )
-                r=do_event(b);
-            else
-            { // mY : ak bola udalost vybavena, odosiela sa ANSWER
-              // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
-                if( b->handler == function_init ) // mY
-                    r = 0; // mY
-                else // mY
-                    r=b->comm->answer(b->comm,b,r);
-            } // mY
-            //printf("ZZZ: do_event()=%d\n",r);
-            if( r==1 )
-                comm_buf_todo(b);
-            else if( r<=0 )
-            {   
-                if( b->do_phase<1000 )
-                {   
-                    b->do_phase=1000;
-                    comm_buf_todo(b);
-                }
-                else    
-                    b->free(b);
-            }
-        }
-        FD_ZERO(&rd);
-        FD_ZERO(&wr);
-        for(c=first_comm;c!=NULL;c=c->next)
-        {   if( c->fd>=0 )
-            {   if( c->fd > max )
-                    max=c->fd;
-                FD_SET(c->fd,&rd);
-                if( c->output.first )
-                    FD_SET(c->fd,&wr);
-            }
-        }
-        r=select(max+1,&rd,&wr,NULL,NULL);
-        if( r<=0 )
-            continue;
-        for(c=first_comm;c!=NULL;c=c->next)
-        {   if( c->fd>=0 )
-            {
-                if( FD_ISSET(c->fd,&rd) )
-                    if( c->read(c)<0 )
-                    {   c->close(c);
-                        continue;
-                    }
-                if( FD_ISSET(c->fd,&wr) )
-                    if( c->write(c)<0 )
-                    {   c->close(c);
-                        continue;
-                    }
+    if (pthread_attr_init(attr)) {
+        puts("Cannot initialize thread attribute");
+        return -1;
+    }
+    pthread_attr_setdetachstate(attr, PTHREAD_CREATE_DETACHED);
+
+    // CREATE READ THREADS FOR EACH COMMUNICATION INTERFACE
+    for (c = first_comm; c != NULL; c = c->next) {
+        if (c->fd>=0) {
+            if (pthread_create(&c->read_thread, NULL, read_loop, c)) {
+                puts("Cannot create read thread");
+                return -1;
             }
         }
     }
 
+    // CREATE WORKER THREADS
+    for (int i = 0; i < N_WORKER_THREADS; i++) {
+        if (pthread_create(comm_workers + i, attr, comm_worker, NULL)) {
+            puts("Cannot create read thread");
+            return -1;
+        }
+    }
+
+    // CALL JOIN
+    for (c = first_comm; c != NULL; c = c->next) {
+        if (c->fd>=0) {
+            if (pthread_join(c->read_thread, NULL)) {
+                puts("Error when joining read thread");
+                return -1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+void* comm_worker(void *arg)
+{
+    int r = 0;
+
+    if (tls_alloc())
+        return (void*) -1;
+
+    while (1) {
+        struct comm_buffer_s *b;
+        b = comm_buf_get_todo();
+        if(b->temp == NULL) {
+            b = comm_malloc_temps(b);
+            if( b==NULL )
+                return (void*) -1;
+        }
+        if(b->do_phase < 1000)
+            r=do_event(b);
+        else { // mY : ak bola udalost vybavena, odosiela sa ANSWER
+          // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
+            if( b->handler == function_init ) // mY
+                r = 0; // mY
+            else // mY
+                r=b->comm->answer(b->comm,b,r);
+        } // mY
+        //printf("ZZZ: do_event()=%d\n",r);
+        if(r == 1)
+            comm_buf_todo(b);
+        else if(r <= 0) {   
+            if( b->do_phase<1000 ) {   
+                b->do_phase=1000;
+                comm_buf_todo(b);
+            }
+            else    
+                b->free(b);
+        }
+    }
+
+    return 0;
+}
+
+void* read_loop(void *arg) {
+    struct comm_s *c = (struct comm_s*) arg;
+    while (1) {
+        if( c->read(c)<0 )
+        {   c->close(c);
+            break;
+        }
+    }
+    return (void*) -1;
 }
 
 int comm_conn_init( struct comm_s *comm )

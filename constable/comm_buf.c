@@ -7,6 +7,7 @@
 #include "comm.h"
 #include "constable.h"
 #include <stdlib.h>
+#include <pthread.h>
 
 static struct comm_buffer_s *buffers[2];
 
@@ -149,6 +150,7 @@ static void free_item(struct queue_item_s *item)
 }
 
 struct comm_buffer_queue_s comm_todo;
+pthread_mutex_t comm_todo_lock = PTHREAD_MUTEX_INITIALIZER;
 
 int comm_buf_to_queue( struct comm_buffer_queue_s *q, struct comm_buffer_s *b )
 {
