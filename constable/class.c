@@ -9,6 +9,7 @@
 #include "comm.h"
 
 #include <stdio.h>
+#include <pthread.h>
 
 static struct class_names_s *classes=NULL;
 
@@ -108,8 +109,11 @@ struct class_s *add_class( struct comm_s *comm, struct medusa_class_s *mc, struc
     p->classes[comm->conn]=c;
     hash_add(&(comm->classes),&(c->hashent),c->m.classid);
     if( debug_def_out!=NULL )
-    {	debug_def_out(debug_def_arg,"REGISTER ");
+    {	
+        pthread_mutex_lock(&debug_def_lock);
+        debug_def_out(debug_def_arg,"REGISTER ");
         class_print(c,debug_def_out,debug_def_arg);
+        pthread_mutex_unlock(&debug_def_lock);
     }
     return(c);
 }

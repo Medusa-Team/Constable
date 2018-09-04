@@ -11,6 +11,7 @@
 #include <sys/param.h>
 
 #include <stdio.h>
+#include <pthread.h>
 
 int event_mask_clear( event_mask_t *e )
 {
@@ -137,6 +138,7 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
 
     if( debug_def_out!=NULL )
     { char buf[16];
+        pthread_mutex_lock(&debug_def_lock);
         debug_def_out(debug_def_arg,"REGISTER [\"");
         debug_def_out(debug_def_arg,comm->name);
         debug_def_out(debug_def_arg,"\"] event ");
@@ -172,6 +174,7 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
         debug_def_out(debug_def_arg," {\n");
         attr_print(&(e->operation_class.attr[0]),debug_def_out,debug_def_arg);
         debug_def_out(debug_def_arg,"}\n");
+        pthread_mutex_unlock(&debug_def_lock);
     }
 
     if( (p=event_type_find_name(e->m.name))==NULL )
@@ -208,7 +211,8 @@ struct event_names_s *event_type_find_name( char *name )
 struct event_hadler_hash_s *evhash_add( struct event_hadler_hash_s **hash, struct event_handler_s *handler, struct event_names_s *evname )
 { struct event_hadler_hash_s *l;
     if( (l=malloc(sizeof(struct event_hadler_hash_s)))==NULL )
-    {	errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     for(;*hash!=NULL;hash=&((*hash)->next))
@@ -330,8 +334,11 @@ static int do_event_list( struct comm_buffer_s *cb )
     if( cb->event==NULL )
         return(do_handler(cb));
     c=&(cb->context);
-    if( debug_do_out!=NULL && cb->do_phase==0 )
+    if( debug_do_out!=NULL && cb->do_phase==0 ) {
+        pthread_mutex_lock(&debug_do_lock);
         event_context_print(c,debug_do_out,debug_do_arg);
+        pthread_mutex_unlock(&debug_do_lock);
+    }
 
 #if 0
     //printf("ZZZ cb->ehh_list=%d\n",cb->ehh_list);

@@ -13,12 +13,14 @@
 #include <sys/wait.h>
 #include <sched.h>
 #include <signal.h>
+#include <pthread.h>
 #include "event.h"
 #include "comm.h"
 #include "init.h"
 
 #include "space.h"
 #include "tree.h"
+#include "constable.h"
 
 #ifndef MEDUSA_INITNAME
 #define MEDUSA_INITNAME	"/sbin/init"
@@ -164,8 +166,10 @@ static int run_init( int argc, char *argv[] )
 }
 
 void(*debug_def_out)( int arg, char *str )=NULL; 
+pthread_mutex_t debug_def_lock = PTHREAD_MUTEX_INITIALIZER;
 int debug_def_arg=0;
 void(*debug_do_out)( int arg, char *str )=NULL; 
+pthread_mutex_t debug_do_lock = PTHREAD_MUTEX_INITIALIZER;
 int debug_do_arg=0;
 
 static void debug_fd_write( int arg, char *s )

@@ -335,18 +335,20 @@ static int mcp_r_query( struct comm_buffer_s *b )
     b->ehh_list=EHH_VS_ALLOW;
     printf("ZZZ kim rychla %d\n",b->comm->state);
     //fflush(stdout);
+    // THR LOCK COMM STATE
     if( b->comm->state==0 )
     {
         printf("ZZZ net slunicko\n");
         //fflush(stdout);
         if( comm_conn_init(b->comm)<0 )
-            return(-1);
+            return(-1); // THR UNLOCK COMM STATE
         printf("ZZZ dan slanina\n");
         //fflush(stdout);
         if( function_init!=NULL )
         { struct comm_buffer_s *p;
             if( (p=comm_buf_get(0,b->comm))==NULL )
             {	comm_error("Can't get comm buffer for _init");
+                // THR UNLOCK COMM STATE
                 return(-1);
             }
             get_empty_context(&(p->context));
@@ -357,10 +359,12 @@ static int mcp_r_query( struct comm_buffer_s *b )
             p->ehh_list=EHH_NOTIFY_ALLOW;
             comm_buf_todo(p);
             b->comm->state=1;
+            // THR UNLOCK COMM STATE
             return(0);
         }
         b->comm->state=1;
     }
+    // THR UNLOCK COMM STATE
     b->comm->buf=NULL;
     comm_buf_todo(b);
     return(0);
@@ -566,8 +570,11 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     if( cont==3 )
     {
         if( debug_do_out!=NULL )
-        {	debug_do_out(debug_do_arg,"fetch ");
+        {	
+            pthread_mutex_lock(&debug_do_lock);
+            debug_do_out(debug_do_arg,"fetch ");
             object_print(o,debug_do_out,debug_do_arg);
+            pthread_mutex_unlock(&debug_do_lock);
         }
         return(wake->user_data);	/* done */
     }
@@ -697,8 +704,11 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     }
 
     if( debug_do_out!=NULL )
-    {	debug_do_out(debug_do_arg,"update ");
+    {	
+        pthread_mutex_lock(&debug_do_lock);
+        debug_do_out(debug_do_arg,"update ");
         object_print(o,debug_do_out,debug_do_arg);
+        pthread_mutex_unlock(&debug_do_lock);
     }
 
     r->user1=(void*)o;

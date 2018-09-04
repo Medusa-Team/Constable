@@ -9,16 +9,22 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include "types.h"
 #include "language/error.h"
 
 //#define MAX(a,b)	((a)>(b)?(a):(b))
 //#define MIN(a,b)	((a)<(b)?(a):(b))
 
-extern void(*debug_def_out)( int arg, char *str ); 
-extern int debug_def_arg;
+// These functions and file descriptor are set in the main() function in init.c
+// debug output function when -D is used
+extern void(*debug_def_out)( int arg, char *str );
+extern pthread_mutex_t debug_def_lock;
+extern int debug_def_arg; // file descriptor for debug output
+// debug output function when -DD is used
 extern void(*debug_do_out)( int arg, char *str );
-extern int debug_do_arg;
+extern pthread_mutex_t debug_do_lock;
+extern int debug_do_arg; // file descriptor for debug output
 
 int medusa_printlog(char *format, ...);
 
