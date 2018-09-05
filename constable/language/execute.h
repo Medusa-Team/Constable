@@ -89,6 +89,7 @@ uintptr_t execute_pop( struct execute_s *e );
 uintptr_t execute_readstack( struct execute_s *e, int pos );
 uintptr_t *execute_stack_pointer( struct execute_s *e, int pos );
 int execute_init_stacks( int n );
+int execute_registers_init(void);
 
 #endif /* _EXECUTE_H */
 

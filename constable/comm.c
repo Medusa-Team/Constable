@@ -139,6 +139,9 @@ void* comm_worker(void *arg)
     if (tls_alloc())
         return (void*) -1;
 
+    if (execute_registers_init())
+        return (void*) -1;
+
     while (1) {
         struct comm_buffer_s *b;
         b = comm_buf_get_todo();
