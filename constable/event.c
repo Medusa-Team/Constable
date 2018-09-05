@@ -82,11 +82,12 @@ int event_mask_sub( event_mask_t *e, event_mask_t *f )
 }
 
 
-
+static pthread_mutex_t events_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct event_names_s *events;
 
 int event_free_all_events( struct comm_s *comm )
 { struct event_names_s *e;
+    pthread_mutex_lock(&events_lock);
     for(e=events;e!=NULL;e=e->next)
     {	if( e->events[comm->conn]!=NULL )
         {
@@ -94,6 +95,7 @@ int event_free_all_events( struct comm_s *comm )
             e->events[comm->conn]=NULL;
         }
     }
+    pthread_mutex_unlock(&events_lock);
     return(0);
 }
 
@@ -190,9 +192,13 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
 struct event_names_s *event_type_find_name( char *name )
 { struct event_names_s *e;
     int i;
+    pthread_mutex_lock(&events_lock);
     for(e=events;e!=NULL;e=e->next)
-        if( !strcmp(e->name,name) )
+        if( !strcmp(e->name,name) ) {
+            pthread_mutex_unlock(&events_lock);
             return( e );
+        }
+    pthread_mutex_unlock(&events_lock);
     if( (e=malloc(sizeof(struct event_names_s)+strlen(name)+1))==NULL )
         return(NULL);
     if( (e->events=(struct event_type_s**)(comm_new_array(sizeof(struct event_type_s*))))==NULL )
@@ -203,8 +209,10 @@ struct event_names_s *event_type_find_name( char *name )
         e->handlers_hash[i]=NULL;
     e->name=(char*)(e+1);
     strcpy(e->name,name);
+    pthread_mutex_lock(&events_lock);
     e->next=events;
     events=e;
+    pthread_mutex_unlock(&events_lock);
     return(e);
 }
 
