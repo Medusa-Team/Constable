@@ -9,10 +9,12 @@
 #include <stdlib.h>
 #include <pthread.h>
 
+static pthread_mutex_t buffers_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct comm_buffer_s *buffers[2];
 
 #define ITEM_FREE_LIST_CAPACITY 10
 static size_t ready_items = 0;
+static pthread_mutex_t item_free_list_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct queue_item_s *item_free_list = NULL;
 
 #define	BN	(sizeof(buffers)/sizeof(buffers[0]))
@@ -22,9 +24,11 @@ static struct comm_buffer_s *malloc_buf( int size );
 struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
 { int i;
     struct comm_buffer_s *b;
+    pthread_mutex_lock(&buffers_lock);
     for(i=0;i<BN;i++)
     {	if( (b=buffers[i]) && size<=b->size )
         {	buffers[i]=b->next;
+            pthread_mutex_unlock(&buffers_lock);
             b->len=0;
             b->want=0;
             b->pbuf=b->buf;
@@ -40,6 +44,7 @@ struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
             return(b);
         }
     }
+    pthread_mutex_unlock(&buffers_lock);
     b=malloc_buf(size);
     b->open_counter=comm->open_counter;
     b->comm=comm;
@@ -90,8 +95,11 @@ static void comm_buf_free( struct comm_buffer_s *b )
     while( (q=comm_buf_from_queue(&(b->to_wake)))!=NULL )
         comm_buf_todo(q);
     if( b->_n >= 0 )
-    {	b->next=buffers[b->_n];
+    {
+        pthread_mutex_lock(&buffers_lock);
+        b->next=buffers[b->_n];
         buffers[b->_n]=b;
+        pthread_mutex_unlock(&buffers_lock);
     }
     else	free(b);
 }
@@ -121,14 +129,19 @@ static struct comm_buffer_s *malloc_buf( int size )
 static struct queue_item_s *new_item(struct comm_buffer_s *b)
 {
     struct queue_item_s *item;
+    pthread_mutex_lock(&item_free_list_lock);
     if (ready_items) {
         item = item_free_list;
         item_free_list = item->next;
         ready_items--;
-    } else if ((item = (struct queue_item_s*)
+        pthread_mutex_unlock(&item_free_list_lock);
+    } else {
+        pthread_mutex_unlock(&item_free_list_lock);
+        if ((item = (struct queue_item_s*)
                 malloc(sizeof(struct queue_item_s))) == NULL) {
-        fatal(Out_of_memory);
-        return NULL;
+            fatal(Out_of_memory);
+            return NULL;
+        }
     }
     item->next = NULL;
     item->buffer = b;
@@ -141,12 +154,16 @@ static struct queue_item_s *new_item(struct comm_buffer_s *b)
  */
 static void free_item(struct queue_item_s *item)
 {
+    pthread_mutex_lock(&item_free_list_lock);
     if (ready_items < ITEM_FREE_LIST_CAPACITY) {
         item->next = item_free_list;
         item_free_list = item;
         ready_items++;
-    } else
+        pthread_mutex_unlock(&item_free_list_lock);
+    } else {
+        pthread_mutex_unlock(&item_free_list_lock);
         free(item);
+    }
 }
 
 struct comm_buffer_queue_s comm_todo;
@@ -193,6 +210,7 @@ inline struct comm_buffer_s *comm_buf_peek_last(struct comm_buffer_queue_s *q)
 
 int comm_buf_init( void )
 {
+    // No need to lock comm_todo or buffers, since this is just one thread
     comm_todo.first=comm_todo.last=NULL;
     buffers[0]=buffers[1]=NULL;
     return(0);
