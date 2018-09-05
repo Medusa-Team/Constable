@@ -66,8 +66,10 @@ static void rbac_out( struct compiler_out_class *o, sym_t s, unsigned long d )
     {	case TEND:
         return;
     case oROLEDEF:
-        if( (r=rbac_role_add((char *)d))==NULL )
-            error("%s",errstr);
+        if( (r=rbac_role_add((char *)d))==NULL ) {
+            char **errstr = (char**) pthread_getspecific(errstr_key);
+            error("%s",*errstr);
+        }
         break;
     case oACCESSTYPE:
         a=d;
@@ -77,8 +79,10 @@ static void rbac_out( struct compiler_out_class *o, sym_t s, unsigned long d )
         {	error("Undefined space '%s'",(char*)d);
             break;
         }
-        if( rbac_role_add_perm(r,a,t)<0 )
-            error("%s",errstr);
+        if( rbac_role_add_perm(r,a,t)<0 ) {
+            char **errstr = (char**) pthread_getspecific(errstr_key);
+            error("%s",*errstr);
+        }
         break;
     case oADDUSER:
         if( (u=rbac_user_find((char *)d))==NULL )

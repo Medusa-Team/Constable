@@ -186,8 +186,10 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
                 break;
         }
         space=space_create((char*)(c->l.data),i);
-        if( space==NULL )
-            error("space %s: %s",(char*)(c->l.data),errstr);
+        if( space==NULL ) {
+            char **errstr = (char**) pthread_getspecific(errstr_key);
+            error("space %s: %s",(char*)(c->l.data),*errstr);
+        }
         break;
     case Pnullpath:
         path=NULL;
@@ -227,8 +229,10 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
                 error("NULL path!");
             break;
         }
-        if( space_add_path(space,path_type,(struct tree_s*)(c->l.data))<0 )
-            error("path : %s",errstr);
+        if( space_add_path(space,path_type,(struct tree_s*)(c->l.data))<0 ) {
+            char **errstr = (char**) pthread_getspecific(errstr_key);
+            error("path : %s",*errstr);
+        }
         break;
     case Pfindspace:
         if( c->l.data == 0 )
@@ -389,7 +393,9 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
             break;
         }
         if( (v=space_get_vs(space2))==NULL )
-        {	error("%s",errstr);
+        {
+            char **errstr = (char**) pthread_getspecific(errstr_key);
+            error("%s",*errstr);
             break;
         }
         //printf("ZZZ Paddvs vs=0x%08x\n",*v);
@@ -405,7 +411,9 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
         break;
     case Psgvs:
         if( (c->l.data=(uintptr_t)(space_get_vs((struct space_s*)(c->l.data))))==0 )
-        {	error("%s",errstr);
+        {
+            char **errstr = (char**) pthread_getspecific(errstr_key);
+            error("%s",*errstr);
             break;
         }
         break;

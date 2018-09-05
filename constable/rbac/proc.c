@@ -14,6 +14,7 @@
 #include "../init.h"
 #include "../language/error.h"
 #include <stdlib.h>
+#include <pthread.h>
 
 struct proc_class_handler_s {
     struct class_handler_s ch;
@@ -110,7 +111,8 @@ static int rbac_proc_setuid_handler_notify( struct comm_buffer_s *cb, struct eve
 
 static int rbac_proc_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, struct tree_s *node )
 {
-    errstr="rbac objects cannot be moved";
+    char **errstr = (char**) pthread_getspecific(errstr_key);
+    *errstr=Out_of_memory;
     return(-1);
 }
 

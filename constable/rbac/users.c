@@ -10,6 +10,7 @@
 #include "../language/error.h"
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 struct user_s *rbac_users=NULL;
 
@@ -20,11 +21,13 @@ struct user_s * rbac_user_add( char *name, uid_t uid )
         if( (x=strcmp((*p)->name,name))>=0 )
             break;
     if( x==0 )
-    {	errstr="Redefinition of user";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     if( (n=malloc(sizeof(struct user_s)))==NULL )
-    {	errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     memset(n,0,sizeof(struct user_s));

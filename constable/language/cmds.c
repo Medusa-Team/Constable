@@ -238,7 +238,9 @@ static BUILDIN_FUNC(cmd_primaryspace)
         return(-1);
     }
     if( (space=t->type->class_handler->get_primary_space(t->type->class_handler,e->my_comm_buff->comm,o))==NULL )
-    {	if( errstr==NULL )
+    {
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        if( *errstr==NULL )
             return(0);
         runtime("primaryspace: %s",errstr);
         return(-1);
@@ -273,7 +275,9 @@ static BUILDIN_FUNC(cmd_enter)
         return(-1);
     }
     if( (i=t->type->class_handler->enter_tree_node(t->type->class_handler,e->my_comm_buff->comm,o,t))<0 )
-    {	runtime("enter: %s",errstr);
+    {
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        runtime("enter: %s",*errstr);
         i=0;
     }
     *((uintptr_t*)(ret->data))=(uintptr_t)(i);

@@ -399,8 +399,10 @@ static struct tree_type_s global_root_type={
         int l;
         for(l=0;l<EHH_LISTS;l++)
         {	for(h=from[l];h!=NULL;h=h->next)
-            {	if( (n=evhash_add(&(to[l]),h->handler,h->evname))==NULL )
-                    fatal("%s",errstr);
+            {	if( (n=evhash_add(&(to[l]),h->handler,h->evname))==NULL ) {
+                    char **errstr = (char**) pthread_getspecific(errstr_key);
+                    fatal("%s",*errstr);
+                }
                 vs_add(h->subject_vs,n->subject_vs);
                 vs_add(h->object_vs,n->object_vs);
             }

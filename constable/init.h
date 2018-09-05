@@ -15,6 +15,7 @@
 #define TLS_ALLOC(key, type)                            \
     if (!(data = malloc(sizeof(type))))                 \
         return -1;                                      \
+    *(char*)data = 0;                                   \
     if (pthread_setspecific(key, data))                 \
         return -1
 

@@ -261,6 +261,6 @@ int main( int argc, char *argv[] )
     if( kill_init )
         kill(1,SIGHUP);
     comm_do();
-    return(-1);
+    return(0);
 }
 

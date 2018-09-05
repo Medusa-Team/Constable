@@ -211,7 +211,8 @@ struct event_names_s *event_type_find_name( char *name )
 struct event_hadler_hash_s *evhash_add( struct event_hadler_hash_s **hash, struct event_handler_s *handler, struct event_names_s *evname )
 { struct event_hadler_hash_s *l;
     if( (l=malloc(sizeof(struct event_hadler_hash_s)))==NULL )
-    {	errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     for(;*hash!=NULL;hash=&((*hash)->next))
