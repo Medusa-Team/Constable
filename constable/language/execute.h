@@ -59,8 +59,7 @@ extern struct medusa_attribute_s execute_attr_int;
 extern struct medusa_attribute_s execute_attr_str;
 extern struct medusa_attribute_s execute_attr_pointer;
 
-struct object_s *r2o( struct register_s *r );
-struct object_s *r2o2( struct register_s *r );
+struct object_s *r2o(const struct register_s *r, struct object_s *o);
 
 int r_int( struct register_s *r );
 void r_imm( struct register_s *r );

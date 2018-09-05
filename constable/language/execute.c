@@ -333,7 +333,7 @@ for(;;)
 	case oLD1:	push(1);
 			push(LTI);
 			break;
-	case oDUP:	
+	case oDUP:
             r_pop(r0);
 			r_push(r0);
 			r_push(r0);
@@ -355,7 +355,7 @@ for(;;)
 			}
 			r_push(r1);
 			break;
-	case oIMM:	
+	case oIMM:
             r_pop(r0);
 			r_imm(r0);
 			r_push(r0);

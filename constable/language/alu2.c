@@ -12,31 +12,23 @@
 #include <sys/param.h>
 #include <stdio.h>
 
-struct object_s *r2o( struct register_s *r )
-{ static struct object_s o={NULL,{0,0,0,""},0,NULL,NULL};
+struct object_s *r2o(const struct register_s *r, struct object_s *o)
+{
     if( r->data==r->buf )
-        o.data= r->data - r->attr->offset;
-    else	o.data= r->data;
-    o.flags=r->flags;
-    o.class=r->class;
-    return(&o);
-}
-struct object_s *r2o2( struct register_s *r )
-{ static struct object_s o={NULL,{0,0,0,""},0,NULL,NULL};
-    if( r->data==r->buf )
-        o.data= r->data - r->attr->offset;
-    else	o.data= r->data;
-    o.flags=r->flags;
-    o.class=r->class;
-    return(&o);
+        o->data= r->data - r->attr->offset;
+    else	o->data= r->data;
+    o->flags=r->flags;
+    o->class=r->class;
+    return(o);
 }
 
 int r_int( struct register_s *r )
 { int d=0;
+    struct object_s o;
     switch( r->attr->type & 0x0f )
     {	case MED_TYPE_SIGNED:
     case MED_TYPE_UNSIGNED:
-        object_get_val(r2o(r),r->attr,&d,sizeof(d));
+        object_get_val(r2o(r, &o),r->attr,&d,sizeof(d));
         return(d);
     }
     //!!??!!	runtime("r_int from non integer");
@@ -59,7 +51,9 @@ void r_imm( struct register_s *r )
     {	memcpy(r->buf,r->data + r->attr->offset,n);
     }
     else
-    {	object_get_val(r2o(r),r->attr,r->buf,n);
+    {
+        struct object_s o;
+        object_get_val(r2o(r, &o),r->attr,r->buf,n);
         r->flags&=~OBJECT_FLAG_CHENDIAN;
     }
     r->data=r->buf;
@@ -77,6 +71,7 @@ void r_imm( struct register_s *r )
 void r_sto( struct register_s *v, struct register_s *d )
 { u_int8_t type,typed;
     struct medusa_attribute_s tmpa;
+    struct object_s o;
     if( v->data==v->buf )
     {	runtime("Invalid lvalue");
         //if( (d->attr->type & 0x0f)==MED_TYPE_STRING )
@@ -102,7 +97,9 @@ void r_sto( struct register_s *v, struct register_s *d )
         return;
     }
     if( type==MED_TYPE_END )
-    {	if( object_copy(r2o(v),r2o2(d))<0 )
+    {
+        struct object_s o2;
+        if( object_copy(r2o(v, &o),r2o(d, &o2))<0 )
             runtime("Class of object don't match");
         return;
     }
@@ -110,7 +107,7 @@ void r_sto( struct register_s *v, struct register_s *d )
     memcpy(&tmpa,v->attr,sizeof(tmpa));
     tmpa.type=type;
     //	object_set_val(r2o(v),&tmpa,d->data+d->attr->offset,d->attr->length);
-    object_set_val(r2o(v),&tmpa,d->data,d->attr->length);
+    object_set_val(r2o(v, &o),&tmpa,d->data,d->attr->length);
 }
 
 void r_resize( struct register_s *v, int size )

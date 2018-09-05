@@ -24,13 +24,14 @@ static BUILDIN_FUNC(cmd_constable_pid)
 static BUILDIN_FUNC(cmd_hex)
 { long long d;
     struct register_s r;
+    struct object_s o;
     ret->attr=&(execute_attr_str);
     ret->data[0]=0;
     if( !getarg(e,&r) || ((r.attr->type&0x0f)!=MED_TYPE_SIGNED && (r.attr->type&0x0f)!=MED_TYPE_UNSIGNED) )
     {	runtime("hex(): 1st argument must be signed or unsigned int");
         return(-1);
     }
-    object_get_val(r2o(&r),r.attr,&d,sizeof(d));
+    object_get_val(r2o(&r, &o),r.attr,&d,sizeof(d));
     sprintf(ret->data,"%llx",d);
     if( getarg(e,&r) )
     {	runtime("hex(): too many arguments");
@@ -102,6 +103,7 @@ static BUILDIN_FUNC(cmd_str2path)
 static BUILDIN_FUNC(cmd_spaces)
 { 
     struct register_s r;
+    struct object_s o;
     vs_t vs[MAX_VS_BITS/32];
 
     ret->attr=&(execute_attr_str);
@@ -111,7 +113,7 @@ static BUILDIN_FUNC(cmd_spaces)
     {	runtime("spaces: 1st argument must be bitmap");
         return(-1);
     }
-    object_get_val(r2o(&r),r.attr,vs,sizeof(vs));
+    object_get_val(r2o(&r, &o),r.attr,vs,sizeof(vs));
     if( getarg(e,&r) )
     {	runtime("spaces: too many arguments");
         return(-1);
