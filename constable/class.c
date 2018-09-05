@@ -11,13 +11,18 @@
 #include <stdio.h>
 #include <pthread.h>
 
+static pthread_mutex_t classes_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct class_names_s *classes=NULL;
 
 struct class_names_s *get_class_by_name( char *name )
 { struct class_names_s *c;
+    pthread_mutex_lock(&classes_lock);
     for(c=classes;c!=NULL;c=c->next)
-        if( !strncmp(c->name,name,MEDUSA_CLASSNAME_MAX) )
+        if( !strncmp(c->name,name,MEDUSA_CLASSNAME_MAX) ) {
+            pthread_mutex_unlock(&classes_lock);
             return( c );
+        }
+    pthread_mutex_unlock(&classes_lock);
     if( (c=malloc(sizeof(struct class_names_s)+strlen(name)+1))==NULL )
         return(NULL);
     if( (c->classes=(struct class_s**)(comm_new_array(sizeof(struct class_s*))))==NULL )
@@ -27,13 +32,16 @@ struct class_names_s *get_class_by_name( char *name )
     c->name=(char*)(c+1);
     strcpy(c->name,name);
     c->class_handler=NULL;
+    pthread_mutex_lock(&classes_lock);
     c->next=classes;
     classes=c;
+    pthread_mutex_unlock(&classes_lock);
     return(c);
 }
 
 int class_free_all_clases( struct comm_s *comm )
 { struct class_names_s *c;
+    pthread_mutex_lock(&classes_lock);
     for(c=classes;c!=NULL;c=c->next)
     {	if( c->classes[comm->conn]!=NULL )
         {
@@ -41,6 +49,7 @@ int class_free_all_clases( struct comm_s *comm )
             c->classes[comm->conn]=NULL;
         }
     }
+    pthread_mutex_unlock(&classes_lock);
     return(0);
 }
 
@@ -170,11 +179,15 @@ struct medusa_attribute_s *get_attribute( struct class_s *c, char *name )
 int class_comm_init( struct comm_s *comm )
 { struct class_names_s *c;
     struct class_handler_s *h;
+    pthread_mutex_lock(&classes_lock);
     for(c=classes;c!=NULL;c=c->next)
         for(h=c->class_handler;h!=NULL;h=h->next)
             if( h->init_comm )
-                if( h->init_comm(h,comm) < 0 )
+                if( h->init_comm(h,comm) < 0 ) {
+                    pthread_mutex_unlock(&classes_lock);
                     return(-1);
+                }
+    pthread_mutex_unlock(&classes_lock);
     return(0);
 }
 
