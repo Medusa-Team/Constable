@@ -63,10 +63,12 @@ static void rbac_save_role( FILE *f, struct role_s *r )
 
 static void rbac_save_roles( FILE *f )
 { struct role_s *r;
+    pthread_rwlock_wrlock(&rbac_roles_lock);
     for(r=rbac_roles;r!=NULL;r=r->next)
         r->flag=0;
     for(r=rbac_roles;r!=NULL;r=r->next)
         rbac_save_role(f,r);
+    pthread_rwlock_unlock(&rbac_roles_lock);
 }
 
 static void file_rotate( char *filename, int limit )
