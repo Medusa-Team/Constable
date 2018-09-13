@@ -93,13 +93,13 @@ struct comm_s *comm_find( char *name )
 
 int comm_do( void )
 { struct comm_s *c;
-    pthread_attr_t *attr = NULL;
+    pthread_attr_t attr;
 
-    if (pthread_attr_init(attr)) {
+    if (pthread_attr_init(&attr)) {
         puts("Cannot initialize thread attribute");
         return -1;
     }
-    pthread_attr_setdetachstate(attr, PTHREAD_CREATE_DETACHED);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
     // CREATE READ THREADS FOR EACH COMMUNICATION INTERFACE
     for (c = first_comm; c != NULL; c = c->next) {
@@ -113,7 +113,7 @@ int comm_do( void )
 
     // CREATE WORKER THREADS
     for (int i = 0; i < N_WORKER_THREADS; i++) {
-        if (pthread_create(comm_workers + i, attr, comm_worker, NULL)) {
+        if (pthread_create(comm_workers + i, &attr, comm_worker, NULL)) {
             puts("Cannot create read thread");
             return -1;
         }
