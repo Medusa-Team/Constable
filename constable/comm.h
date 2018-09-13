@@ -66,6 +66,7 @@ struct comm_s {
     char		name[64];
     int		fd;
     int		open_counter;
+    pthread_mutex_t state_lock;
     int		state;
     int		flags;
     struct hash_s	classes;

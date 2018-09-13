@@ -75,6 +75,7 @@ struct comm_s *comm_new( char *name, int user_size )
         return(NULL);
     }
     c->conn=comm_nr_connections++;
+    c->state_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     sem_init(&c->output_sem, 0, 0);
     c->wait_for_answer.lock =
         (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;

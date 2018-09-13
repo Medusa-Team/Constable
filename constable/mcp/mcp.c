@@ -333,22 +333,24 @@ static int mcp_r_query( struct comm_buffer_s *b )
 {
     get_event_context(b->comm, &(b->context), b->event, b->buf );
     b->ehh_list=EHH_VS_ALLOW;
+    pthread_mutex_lock(&b->comm->state_lock);
     printf("ZZZ kim rychla %d\n",b->comm->state);
     //fflush(stdout);
-    // THR LOCK COMM STATE
     if( b->comm->state==0 )
     {
         printf("ZZZ net slunicko\n");
         //fflush(stdout);
-        if( comm_conn_init(b->comm)<0 )
-            return(-1); // THR UNLOCK COMM STATE
+        if( comm_conn_init(b->comm)<0 ) {
+            pthread_mutex_unlock(&b->comm->state_lock);
+            return(-1);
+        }
         printf("ZZZ dan slanina\n");
         //fflush(stdout);
         if( function_init!=NULL )
         { struct comm_buffer_s *p;
             if( (p=comm_buf_get(0,b->comm))==NULL )
             {	comm_error("Can't get comm buffer for _init");
-                // THR UNLOCK COMM STATE
+                pthread_mutex_unlock(&b->comm->state_lock);
                 return(-1);
             }
             get_empty_context(&(p->context));
@@ -359,12 +361,12 @@ static int mcp_r_query( struct comm_buffer_s *b )
             p->ehh_list=EHH_NOTIFY_ALLOW;
             comm_buf_todo(p);
             b->comm->state=1;
-            // THR UNLOCK COMM STATE
+            pthread_mutex_unlock(&b->comm->state_lock);
             return(0);
         }
         b->comm->state=1;
     }
-    // THR UNLOCK COMM STATE
+    pthread_mutex_unlock(&b->comm->state_lock);
     b->comm->buf=NULL;
     comm_buf_todo(b);
     return(0);
