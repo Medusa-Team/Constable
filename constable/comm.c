@@ -10,13 +10,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include "comm.h"
 extern int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q,
-                                    struct comm_buffer_s *b,
-                                    pthread_mutex_t *lock);
+                                    struct comm_buffer_s *b);
 extern struct comm_buffer_s *comm_buf_from_queue_locked(
-        struct comm_buffer_queue_s *q,
-        pthread_mutex_t *lock);
+        struct comm_buffer_queue_s *q);
 #include "language/execute.h"
 #include "space.h"
 
@@ -76,6 +75,10 @@ struct comm_s *comm_new( char *name, int user_size )
         return(NULL);
     }
     c->conn=comm_nr_connections++;
+    sem_init(&c->output_sem, 0, 0);
+    c->wait_for_answer.lock =
+        (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    c->output.lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     if( last_comm==NULL )
         first_comm=c;
     else    last_comm->next=c;
@@ -101,10 +104,14 @@ int comm_do( void )
     }
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-    // CREATE READ THREADS FOR EACH COMMUNICATION INTERFACE
+    // CREATE READ AND WRITE THREADS FOR EACH COMMUNICATION INTERFACE
     for (c = first_comm; c != NULL; c = c->next) {
         if (c->fd>=0) {
             if (pthread_create(&c->read_thread, NULL, read_loop, c)) {
+                puts("Cannot create read thread");
+                return -1;
+            }
+            if (pthread_create(&c->write_thread, NULL, write_loop, c)) {
                 puts("Cannot create read thread");
                 return -1;
             }
@@ -124,6 +131,10 @@ int comm_do( void )
         if (c->fd>=0) {
             if (pthread_join(c->read_thread, NULL)) {
                 puts("Error when joining read thread");
+                return -1;
+            }
+            if (pthread_join(c->write_thread, NULL)) {
+                puts("Error when joining write thread");
                 return -1;
             }
         }
@@ -180,6 +191,17 @@ void* read_loop(void *arg) {
     while (1) {
         if( c->read(c)<0 )
         {   c->close(c);
+            break;
+        }
+    }
+    return (void*) -1;
+}
+
+void* write_loop(void *arg) {
+    struct comm_s *c = (struct comm_s*) arg;
+    while (1) {
+        if (c->write(c) < 0) {
+            c->close(c);
             break;
         }
     }

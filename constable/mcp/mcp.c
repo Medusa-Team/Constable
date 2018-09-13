@@ -444,7 +444,7 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
     r->len=sizeof(*out);
     r->want=0;
     r->completed=NULL;
-    comm_buf_to_queue(&(c->output),r);
+    comm_buf_output_enqueue(c, r);
     return(0);
 }
 
@@ -507,12 +507,10 @@ static int mcp_r_discard( struct comm_buffer_s *b )
 static int mcp_write( struct comm_s *c )
 { int r;
     struct comm_buffer_s *b;
-    printf("ZZZ mcp_write 1\n");
-    if( (b=comm_buf_peek_first(&c->output))==NULL )
-        return(0);
+    b = comm_buf_output_dequeue(c);
     printf("ZZZ mcp_write 2\n");
     if( b->open_counter != c->open_counter )
-    {	b=comm_buf_from_queue(&(c->output));
+    {
         b->free(b);
         return(0);
     }
@@ -525,10 +523,11 @@ static int mcp_write( struct comm_s *c )
             return(-1);
         }
         b->want+=r;
-        if( b->want < b->len )
+        if( b->want < b->len ) {
+            comm_buf_output_enqueue(c, b);
             return(0);
+        }
     }
-    b=comm_buf_from_queue(&(c->output));
     if( b->completed )
         r=b->completed(b);
     else
@@ -555,10 +554,14 @@ static int mcp_close( struct comm_s *c )
     {	c->buf->free(c->buf);
         c->buf=NULL;
     }
+    pthread_mutex_lock(&c->output.lock);
     while( (b=comm_buf_from_queue(&(c->output))) )
         b->free(b);
+    pthread_mutex_unlock(&c->output.lock);
+    pthread_mutex_lock(&c->wait_for_answer.lock);
     while( (b=comm_buf_from_queue(&(c->wait_for_answer))) )
         b->free(b);
+    pthread_mutex_unlock(&c->wait_for_answer.lock);
     c->open_counter--;
     return(0);
 }
@@ -602,7 +605,7 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     r->want=0;
     r->completed=mcp_fetch_object_wait;
     comm_buf_to_queue(&(r->to_wake),wake);
-    comm_buf_to_queue(&(c->output),r);
+    comm_buf_output_enqueue(c, r);
     printf("ZZZZ mcp_fetch_object 5\n");
     return(3);
 }
@@ -723,7 +726,7 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     r->want=0;
     r->completed=mcp_update_object_wait;
     comm_buf_to_queue(&(r->to_wake),wake);
-    comm_buf_to_queue(&(c->output),r);
+    comm_buf_output_enqueue(c, r);
     return(3);
 }
 

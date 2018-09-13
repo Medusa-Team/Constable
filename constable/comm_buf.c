@@ -8,6 +8,7 @@
 #include "constable.h"
 #include <stdlib.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 static pthread_mutex_t buffers_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct comm_buffer_s *buffers[2];
@@ -36,6 +37,7 @@ struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
             b->open_counter=comm->open_counter;
             b->completed=NULL;
             b->to_wake.first=b->to_wake.last=NULL;
+            b->to_wake.lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
             b->do_phase=0;
             b->ehh_list=EHH_VS_ALLOW;
             b->context.cb=b;
@@ -48,6 +50,7 @@ struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
     b=malloc_buf(size);
     b->open_counter=comm->open_counter;
     b->comm=comm;
+    b->to_wake.lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     b->do_phase=0;
     b->ehh_list=EHH_VS_ALLOW;
     b->context.cb=b;
@@ -166,8 +169,8 @@ static void free_item(struct queue_item_s *item)
     }
 }
 
-struct comm_buffer_queue_s comm_todo;
-pthread_mutex_t comm_todo_lock = PTHREAD_MUTEX_INITIALIZER;
+struct comm_buffer_queue_s comm_todo = {NULL, NULL, PTHREAD_MUTEX_INITIALIZER};
+sem_t comm_todo_sem;
 
 int comm_buf_to_queue( struct comm_buffer_queue_s *q, struct comm_buffer_s *b )
 {
@@ -213,7 +216,7 @@ int comm_buf_init( void )
     // No need to lock comm_todo or buffers, since this is just one thread
     comm_todo.first=comm_todo.last=NULL;
     buffers[0]=buffers[1]=NULL;
-    return(0);
+    return sem_init(&comm_todo_sem, 0, 0);
 }
 
 int comm_buf_init2( void )
