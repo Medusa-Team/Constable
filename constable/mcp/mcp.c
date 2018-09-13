@@ -618,25 +618,29 @@ static int mcp_fetch_object_wait( struct comm_buffer_s *b )
 }
 
 static int mcp_r_fetch_answer( struct comm_buffer_s *b )
-{ struct comm_buffer_s *f,*p;
+{ struct comm_buffer_s *p = NULL;
+    struct queue_item_s *prev = NULL, *item;
     #pragma pack(push)
     #pragma pack(1)
     struct {
         MCPptr_t p1,p2;
     } * bmask = (void*)( b->buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
     #pragma pack(pop)
-    f=comm_buf_peek_first(&b->comm->wait_for_answer);
-    p=NULL;
-    do {	p=comm_buf_from_queue(&(b->comm->wait_for_answer));
-        pmask = (void*)(p->buf + sizeof(MCPptr_t));
-        if( byte_reorder_get_int32(b->comm->flags,((MCPptr_t*)(p->buf))[0])==MEDUSA_COMM_FETCH_REQUEST
+
+    FOR_EACH_LOCKED(item, &(b->comm->wait_for_answer)) {
+        pmask = (void*)(item->buffer->buf + sizeof(MCPptr_t));
+        if( byte_reorder_get_int32(item->buffer->comm->flags,
+                                   ((MCPptr_t*)(item->buffer->buf))[0]) ==
+                MEDUSA_COMM_FETCH_REQUEST
                 && pmask->p1==bmask->p1
-                && pmask->p2==bmask->p2
-                )
+                && pmask->p2==bmask->p2) {
+            p = comm_buf_del(&(b->comm->wait_for_answer), prev, item);
             break;
-        comm_buf_to_queue(&(b->comm->wait_for_answer),p);
-        p=NULL;
-    } while( f != b->comm->wait_for_answer.first->buffer );
+        }
+        prev = item;
+        NEXT_ITEM(item);
+    }
+    END_FOR_EACH_LOCKED(&(b->comm->wait_for_answer));
 
     if( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->buf + sizeof(MCPptr_t)))[0])==MEDUSA_COMM_FETCH_ERROR )
     {	if( p!=NULL )
@@ -738,23 +742,28 @@ static int mcp_update_object_wait( struct comm_buffer_s *b )
 }
 
 static int mcp_r_update_answer( struct comm_buffer_s *b )
-{ struct comm_buffer_s *f,*p;
+{ struct comm_buffer_s *p = NULL;
+    struct queue_item_s *prev = NULL, *item;
     #pragma pack(push)
     #pragma pack(1)
     struct {
         MCPptr_t p1,p2,user;
     } * bmask = (void*)(b->buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
     #pragma pack(pop)
-    f=comm_buf_peek_first(&b->comm->wait_for_answer);
-    p=NULL;
-    do {	p=comm_buf_from_queue(&(b->comm->wait_for_answer));
-        pmask = (void*) (p->buf + sizeof(MCPptr_t));
-        if( byte_reorder_get_int32(b->comm->flags,*(MCPptr_t*)p->buf)==MEDUSA_COMM_UPDATE_REQUEST
-                && pmask->p1==bmask->p1 && pmask->p2==bmask->p2)
+
+    FOR_EACH_LOCKED(item, &(b->comm->wait_for_answer)) {
+        pmask = (void*) (item->buffer->buf + sizeof(MCPptr_t));
+        if( byte_reorder_get_int32(item->buffer->comm->flags,
+                                   *(MCPptr_t*)item->buffer->buf) ==
+                MEDUSA_COMM_UPDATE_REQUEST
+                && pmask->p1==bmask->p1 && pmask->p2==bmask->p2) {
+            p = comm_buf_del(&(b->comm->wait_for_answer), prev, item);
             break;
-        comm_buf_to_queue(&(b->comm->wait_for_answer),p);
-        p=NULL;
-    } while( f != b->comm->wait_for_answer.first->buffer );
+        }
+        prev = item;
+        NEXT_ITEM(item);
+    }
+    END_FOR_EACH_LOCKED(&(b->comm->wait_for_answer));
 
     if( p!=NULL )
     {

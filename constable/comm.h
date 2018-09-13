@@ -148,6 +148,18 @@ static inline struct comm_buffer_s* comm_buf_get_todo(void) {
     return comm_buf_from_queue_locked(&comm_todo);
 }
 
+/*
+ * For each construct for looping through locked queues.
+ * Used in fetch_answer and update_answer.
+ */
+#define FOR_EACH_LOCKED(item, queue)                 \
+    pthread_mutex_lock(&(queue)->lock);              \
+    item = (queue)->first;                           \
+    while (item)
+
+#define NEXT_ITEM(item) item = item->next
+
+#define END_FOR_EACH_LOCKED(queue) pthread_mutex_unlock(&(queue)->lock)
 
 void *comm_new_array( int size );
 int comm_alloc_buf_temp( int size );

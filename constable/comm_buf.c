@@ -197,6 +197,30 @@ struct comm_buffer_s *comm_buf_from_queue( struct comm_buffer_queue_s *q )
     return(b);
 }
 
+/*
+ * Deletes item from queue.
+ * @prev: item before the item to be deleted (since it's not doubly linked)
+ */
+struct comm_buffer_s *comm_buf_del(struct comm_buffer_queue_s *q,
+                  struct queue_item_s* prev,
+                  struct queue_item_s* item)
+{
+    struct comm_buffer_s *b = NULL;
+    if (!prev && !item->next) {
+        q->first = NULL;
+        q->last = NULL;
+    } else if (!prev)
+        q->first = item->next;
+    else if (!item->next) {
+        q->last = prev;
+        prev->next = NULL;
+    } else
+        prev->next = item->next;
+    b = item->buffer;
+    free_item(item);
+    return b;
+}
+
 inline struct comm_buffer_s *comm_buf_peek_first(struct comm_buffer_queue_s *q)
 {
     if (q->first)
