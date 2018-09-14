@@ -18,11 +18,8 @@ extern struct comm_buffer_s *comm_buf_from_queue_locked(
         struct comm_buffer_queue_s *q);
 #include "language/execute.h"
 #include "space.h"
+#include "threading.h"
 
-// TLS:
-#include "init.h"
-
-#define N_WORKER_THREADS 2
 static pthread_t comm_workers[N_WORKER_THREADS];
 
 extern struct event_handler_s *function_init; // mY

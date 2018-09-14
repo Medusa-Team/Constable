@@ -12,7 +12,7 @@
 #include "variables.h"
 #include "../constable.h"
 #include "../comm.h"
-#include "../init.h"
+#include "../threading.h"
 
 /* stack format:
 e->pos->
