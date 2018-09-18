@@ -8,6 +8,7 @@
 #define	_COMM_H
 
 #include "event.h"
+#include "threading.h"
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -61,7 +62,8 @@ struct comm_buffer_s {
 struct comm_s {
     struct comm_s	*next;
     int		conn;		/* connection number */
-    pthread_t   read_thread;    /* thread used for read operation */
+    pthread_t   read_workers[N_WORKER_THREADS];  /**< threads used for read
+                                                      operations */
     pthread_t   write_thread;    /* thread used for write operation */
     char		name[64];
     int		fd;
@@ -76,10 +78,10 @@ struct comm_s {
     struct execute_s	*execute;
 
     /* for read/write/... */
-    struct comm_buffer_s *buf;
     struct comm_buffer_queue_s output;
     sem_t output_sem;
     struct comm_buffer_queue_s wait_for_answer;	/* fetch */
+    pthread_mutex_t read_lock; /**< Lock for reading one buffer at a time. */
     int(*read)(struct comm_s*);
     int(*write)(struct comm_s*);
     int(*close)(struct comm_s*);
@@ -176,7 +178,6 @@ int comm_buf_init2( void );
 
 int comm_do( void );
 void* comm_worker(void*);
-void* read_loop(void*);
 void* write_loop(void*);
 
 int comm_error( const char *fmt, ... );

@@ -19,6 +19,7 @@ extern struct comm_buffer_s *comm_buf_from_queue_locked(
 #include "language/execute.h"
 #include "space.h"
 #include "threading.h"
+#include "mcp/mcp.h"
 
 static pthread_t comm_workers[N_WORKER_THREADS];
 
@@ -104,15 +105,23 @@ int comm_do( void )
 
     // CREATE READ AND WRITE THREADS FOR EACH COMMUNICATION INTERFACE
     for (c = first_comm; c != NULL; c = c->next) {
-        if (c->fd>=0) {
-            if (pthread_create(&c->read_thread, NULL, read_loop, c)) {
+        if (c->fd < 0)
+            continue;
+        if (mcp_receive_greeting(c)) {
+            comm_error("Error when receiving greeting");
+            c->close(c);
+            continue;
+        }
+        for (int i = 0; i < N_WORKER_THREADS; i++) {
+            if (pthread_create(c->read_workers + i, NULL,
+                               (void *(*)(void *)) c->read, c)) {
                 puts("Cannot create read thread");
                 return -1;
             }
-            if (pthread_create(&c->write_thread, NULL, write_loop, c)) {
-                puts("Cannot create read thread");
-                return -1;
-            }
+        }
+        if (pthread_create(&c->write_thread, NULL, write_loop, c)) {
+            puts("Cannot create read thread");
+            return -1;
         }
     }
 
@@ -127,9 +136,11 @@ int comm_do( void )
     // CALL JOIN
     for (c = first_comm; c != NULL; c = c->next) {
         if (c->fd>=0) {
-            if (pthread_join(c->read_thread, NULL)) {
-                puts("Error when joining read thread");
-                return -1;
+            for (int i = 0; i < N_WORKER_THREADS; i++) {
+                if (pthread_join(c->read_workers[i], NULL)) {
+                    puts("Error when joining read thread");
+                    return -1;
+                }
             }
             if (pthread_join(c->write_thread, NULL)) {
                 puts("Error when joining write thread");
@@ -182,17 +193,6 @@ void* comm_worker(void *arg)
     }
 
     return 0;
-}
-
-void* read_loop(void *arg) {
-    struct comm_s *c = (struct comm_s*) arg;
-    while (1) {
-        if( c->read(c)<0 )
-        {   c->close(c);
-            break;
-        }
-    }
-    return (void*) -1;
 }
 
 void* write_loop(void *arg) {

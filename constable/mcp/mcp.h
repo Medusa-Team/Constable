@@ -11,6 +11,7 @@
 #include "../comm.h"
 #include <netinet/in.h>
 
+int mcp_receive_greeting(struct comm_s *c);
 struct comm_s *mcp_alloc_comm( char *name );
 int mcp_open( struct comm_s *c, char *filename );
 struct comm_s *mcp_listen( in_port_t port );

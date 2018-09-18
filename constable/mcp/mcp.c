@@ -25,27 +25,37 @@
 
 extern struct event_handler_s *function_init;
 
+/**
+ * Enumeration of possible return values for read handlers
+ */
+typedef enum read_result {
+    READ_ERROR = -1,    /**< indicates and error during read operation */
+    READ_DONE,          /**< indicates succesful read operation */
+    READ_FREE,          /**< indicates succesful read operation and asks caller
+                             to free the buffer*/
+} read_result_e;
+
 static int get_event_context( struct comm_s *comm, struct event_context_s *c, struct event_type_s *t, void *data );
-static int mcp_opened( struct comm_s *c );
+static struct comm_buffer_s* mcp_opened( struct comm_s *c );
 static int mcp_accept( struct comm_s *c );
-static int mcp_r_greeting( struct comm_buffer_s *b );
-static int mcp_read( struct comm_s *c );
-static int mcp_r_head( struct comm_buffer_s *b );
-static int mcp_r_query( struct comm_buffer_s *b );
+static read_result_e mcp_r_greeting( struct comm_buffer_s *b );
+static int mcp_read_worker( struct comm_s *c );
+static read_result_e mcp_r_head( struct comm_buffer_s *b );
+static read_result_e mcp_r_query( struct comm_buffer_s *b );
 static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result );
-static int mcp_r_classdef_attr( struct comm_buffer_s *b );
-static int mcp_r_acctypedef_attr( struct comm_buffer_s *b );
-static int mcp_r_discard( struct comm_buffer_s *b );
+static read_result_e mcp_r_classdef_attr( struct comm_buffer_s *b );
+static read_result_e mcp_r_acctypedef_attr( struct comm_buffer_s *b );
+static read_result_e mcp_r_discard( struct comm_buffer_s *b );
 static int mcp_write( struct comm_s *c );
 static int mcp_nowrite( struct comm_s *c );
 static int mcp_close( struct comm_s *c );
 static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake );
 static int mcp_fetch_object_wait( struct comm_buffer_s *b );
-static int mcp_r_fetch_answer( struct comm_buffer_s *b );
-static int mcp_r_fetch_answer_done( struct comm_buffer_s *b );
+static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b );
+static read_result_e mcp_r_fetch_answer_done( struct comm_buffer_s *b );
 static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake );
 static int mcp_update_object_wait( struct comm_buffer_s *b );
-static int mcp_r_update_answer( struct comm_buffer_s *b );
+static read_result_e mcp_r_update_answer( struct comm_buffer_s *b );
 static int mcp_conf_error( struct comm_s *c, const char *fmt, ... );
 
 static int get_event_context( struct comm_s *comm, struct event_context_s *c, struct event_type_s *t, void *data )
@@ -99,7 +109,7 @@ struct comm_s *mcp_alloc_comm( char *name )
     if( (c=comm_new(name,sizeof(struct mcp_comm_s)))==NULL )
         return(NULL);
     c->state=0;
-    c->read=mcp_read;
+    c->read=mcp_read_worker;
     c->write=mcp_write;
     c->close=mcp_close;
     c->answer=mcp_answer;
@@ -109,25 +119,38 @@ struct comm_s *mcp_alloc_comm( char *name )
     return(c);
 }
 
-static int mcp_opened( struct comm_s *c )
+/**
+ * Prepares the communication interface for usage. Creates a buffer for the
+ * greeting message. Called from comm_do() for each communication interface.
+ */
+static struct comm_buffer_s* mcp_opened( struct comm_s *c )
 {
+    struct comm_buffer_s *b;
+
     class_free_all_clases(c);
     event_free_all_events(c);
     c->open_counter++;
-    if( c->buf==NULL && (c->buf=comm_buf_get(2048,c))==NULL )
-        return(-1);
-    c->buf->want=1*sizeof(MCPptr_t);
-    c->buf->completed=mcp_r_greeting;
-    return(0);
+    b = comm_buf_get(2048, c);
+    if (!b) {
+        fatal("Not enough memory for communication buffer");
+        return NULL;
+    }
+    b->want = sizeof(MCPptr_t);
+    b->completed = mcp_r_greeting;
+    return b;
 }
 
+/**
+ * Opens a file descriptor of the communication interface. Called from the
+ * configuration file parser.
+ */
 int mcp_open( struct comm_s *c, char *filename )
 {
     if( (c->fd=open(filename,O_RDWR))<0 )
     {	init_error("Can't open %s",filename);
         return(-1);
     }
-    return(mcp_opened(c));
+    return 0;
 }
 
 struct comm_s *mcp_listen( in_port_t port )
@@ -196,14 +219,18 @@ static int mcp_accept( struct comm_s *c )
                 p->close(p);
             }
             p->fd=sock;
-            return(mcp_opened(p));
+            return 0;
         }
     comm_error("comm %s: unauthorized access from [%s:%d] => close",c->name,inet_ntoa(addr.sin_addr),ntohs(addr.sin_port));
     close(sock);
     return(0);
 }
 
-static int mcp_r_greeting( struct comm_buffer_s *b )
+/**
+ * Reads the greeting message from the kernel and sets endianness used for
+ * communication.
+ */
+static read_result_e mcp_r_greeting( struct comm_buffer_s *b )
 {
     switch( ((MCPptr_t*)(b->buf))[0] )
     {	case 0x66007e5a:
@@ -219,75 +246,126 @@ static int mcp_r_greeting( struct comm_buffer_s *b )
         b->comm->flags=0;
         b->want=sizeof(MCPptr_t)+sizeof(unsigned int);
         b->completed=mcp_r_head;
-        return(0);
+        return READ_DONE;
 #if __BYTE_ORDER == __BIG_ENDIAN
     case 0x00665a7e:
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
     case 0x7e5a6600:
 #endif
         comm_error("comm %s: has PDP byte order ;-/ (if you realy need this please e-mail me to <marek@terminu.sk>)",b->comm->name);
-        return(-1);
+        return READ_ERROR;
 #if __BYTE_ORDER == __BIG_ENDIAN
     case 0x66001fcb:
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
     case 0xcb1f0066:
 #endif
         comm_error("comm %s: is 9 bit big endian ;-S",b->comm->name);
-        return(-1);
+        return READ_ERROR;
 #if __BYTE_ORDER == __BIG_ENDIAN
     case 0x9b3f800c:
 #elif __BYTE_ORDER == __LITTLE_ENDIAN
     case 0x0c803f9b:
 #endif
         comm_error("comm %s: is 9 bit little endian ;-s",b->comm->name);
-        return(-1);
+        return READ_ERROR;
     default:
         comm_error("comm %s: has some exotic byte order ;-|",b->comm->name);
-        return(-1);
+        return READ_ERROR;
     }
-    b->comm->buf=NULL;
-    b->free(b);
-    return(0);
+    b->completed = NULL;
+    return READ_FREE;
 }
 
-static int mcp_read( struct comm_s *c )
+static inline int mcp_check_size_and_read(struct comm_buffer_s *buf)
 {
     int r;
-    if( c->buf==NULL && (c->buf=comm_buf_get(2048,c))==NULL )
-        return(0);
-    if( c->buf->want==0 )
-    {	c->buf->want=sizeof(uint32_t)+sizeof(MCPptr_t);
-        c->buf->completed=mcp_r_head;
-    }
-    if( c->buf->want > c->buf->size && c->buf->pbuf==c->buf->buf )
-    { struct comm_buffer_s *b;
-        if( (b=comm_buf_resize(c->buf,c->buf->want))==NULL )
-        {	fatal(Out_of_memory);
-            return(-1);
+    if(buf->want > buf->size && buf->pbuf == buf->buf) {
+        struct comm_buffer_s *b;
+        if((b = comm_buf_resize(buf, buf->want))==NULL) {
+            fatal(Out_of_memory);
+            return  -1;
         }
-        c->buf=b;
+        buf = b;
     }
-    if( c->buf->len < c->buf->want )
-    {	r=read(c->fd,c->buf->pbuf+c->buf->len,c->buf->want-c->buf->len);
-        if( r<=0 )
-        {	comm_error("medusa comm %s: Read error or EOF (%d)",c->name,r);
-            return(-1);
+    while (buf->len < buf->want) {
+        r = read(buf->comm->fd, buf->pbuf + buf->len, buf->want - buf->len);
+        if(r <= 0) {
+            comm_error("medusa comm %s: Read error or EOF (%d)",
+                       buf->comm->name, r);
+            return  -1;
         }
-        c->buf->len+=r;
-        if( c->buf->len < c->buf->want )
-            return(0);
+        buf->len += r;
     }
-    return(c->buf->completed(c->buf));
+    return 0;
 }
 
-static int mcp_r_head( struct comm_buffer_s *b )
+static inline int mcp_read_loop(struct comm_buffer_s *buf)
+{
+    read_result_e result;
+
+    while (buf->completed) {
+        if (mcp_check_size_and_read(buf) < 0)
+            goto error;
+        result = buf->completed(buf);
+        if (result < READ_DONE)
+            goto error;
+        else if (result == READ_FREE) {
+            buf->free(buf);
+            return 0;
+        }
+    }
+    return 0;
+error:
+    buf->comm->close(buf->comm);
+    buf->free(buf);
+    return  -1;
+}
+
+int mcp_receive_greeting(struct comm_s *c)
+{
+    struct comm_buffer_s *b;
+    b = mcp_opened(c);
+    return mcp_read_loop(b);
+}
+
+/**
+ * Last function in the function chain of completed functions *must* set the
+ * completed attribute to NULL if it finishes successfully.
+ */
+int mcp_read_worker(struct comm_s *c)
+{
+    struct comm_buffer_s *buf;
+
+    if (tls_alloc())
+        return -1;
+
+    while (1) {
+        pthread_mutex_lock(&c->read_lock);
+        buf = comm_buf_get(2048, c);
+        buf->want=sizeof(uint32_t)+sizeof(MCPptr_t);
+        buf->completed=mcp_r_head;
+        if (mcp_read_loop(buf)) {
+            comm_error("mcp_read_worker: read error");
+            c->close(c);
+            pthread_mutex_unlock(&c->read_lock);
+            return -1;
+        }
+        pthread_mutex_unlock(&c->read_lock);
+    }
+}
+
+/**
+ *  Read header of the received buffer and determine number of bytes to be
+ *  read in the next read call.
+ */
+static read_result_e mcp_r_head( struct comm_buffer_s *b )
 {
     MCPptr_t x;
     if( (x=((MCPptr_t*)(b->buf))[0])!=0 )
     {
         if( (b->event=(struct event_type_s*)hash_find(&(b->comm->events),x))==NULL )
         {	comm_error("comm %s: Unknown access type %p!",b->comm->name,x);
-            return(-1);
+            return READ_ERROR;
         }
         b->want= sizeof(uint32_t) + b->len + (b->event->m.size);
         if( b->event->op[0]!=NULL )
@@ -295,7 +373,7 @@ static int mcp_r_head( struct comm_buffer_s *b )
         if( b->event->op[1]!=NULL )
             b->want += b->event->op[1]->m.size;
         b->completed=mcp_r_query;
-        return(0);
+        return READ_DONE;
     }
     else switch( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->buf+sizeof(MCPptr_t)))[0]) )
     {
@@ -324,25 +402,30 @@ static int mcp_r_head( struct comm_buffer_s *b )
         break;
     default:
         comm_error("comm %s: Communication protocol error! (%d)",b->comm->name,((unsigned int*)(b->buf+sizeof(MCPptr_t)))[0]);
-        return(-1);
+        return READ_ERROR;
     }
-    return(0);
+    return READ_DONE;
 }
 
-static int mcp_r_query( struct comm_buffer_s *b )
+/**
+ * Reads an authorization query from the kernel and saves it to a queue for
+ * later processing.
+ */
+static read_result_e mcp_r_query( struct comm_buffer_s *b )
 {
     get_event_context(b->comm, &(b->context), b->event, b->buf );
     b->ehh_list=EHH_VS_ALLOW;
     pthread_mutex_lock(&b->comm->state_lock);
     printf("ZZZ kim rychla %d\n",b->comm->state);
     //fflush(stdout);
+    // TODO Add unlikely directive
     if( b->comm->state==0 )
     {
         printf("ZZZ net slunicko\n");
         //fflush(stdout);
         if( comm_conn_init(b->comm)<0 ) {
             pthread_mutex_unlock(&b->comm->state_lock);
-            return(-1);
+            return READ_ERROR;
         }
         printf("ZZZ dan slanina\n");
         //fflush(stdout);
@@ -351,25 +434,24 @@ static int mcp_r_query( struct comm_buffer_s *b )
             if( (p=comm_buf_get(0,b->comm))==NULL )
             {	comm_error("Can't get comm buffer for _init");
                 pthread_mutex_unlock(&b->comm->state_lock);
-                return(-1);
+                return READ_ERROR;
             }
             get_empty_context(&(p->context));
             p->event=NULL;
             p->handler=function_init;
-            b->comm->buf=NULL;
             comm_buf_to_queue(&(p->to_wake),b);
             p->ehh_list=EHH_NOTIFY_ALLOW;
             comm_buf_todo(p);
             b->comm->state=1;
             pthread_mutex_unlock(&b->comm->state_lock);
-            return(0);
+            return READ_DONE;
         }
         b->comm->state=1;
     }
     pthread_mutex_unlock(&b->comm->state_lock);
-    b->comm->buf=NULL;
+    b->completed = NULL;
     comm_buf_todo(b);
-    return(0);
+    return READ_DONE;
 }
 
 static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
@@ -463,12 +545,12 @@ static void unify_bitmap_types(struct medusa_comm_attribute_s *a)
     }
 }
 
-static int mcp_r_classdef_attr( struct comm_buffer_s *b )
+static read_result_e mcp_r_classdef_attr( struct comm_buffer_s *b )
 {
     struct class_s *cl;
     if( ((struct medusa_comm_attribute_s *)(b->buf+b->len-sizeof(struct medusa_comm_attribute_s)))->type!=MED_TYPE_END )
     {	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
-        return(0);
+        return READ_DONE;
     }
     byte_reorder_class(b->comm->flags,(struct medusa_class_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)));
     byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s)));
@@ -477,16 +559,15 @@ static int mcp_r_classdef_attr( struct comm_buffer_s *b )
                       (struct medusa_class_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)),
                       (struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s))))==NULL )
         comm_error("comm %s: Can't add class",b->comm->name);
-    b->comm->buf=NULL;
-    b->free(b);
-    return(0);
+    b->completed = NULL;
+    return READ_FREE;
 }
 
-static int mcp_r_acctypedef_attr( struct comm_buffer_s *b )
+static read_result_e mcp_r_acctypedef_attr( struct comm_buffer_s *b )
 {
     if( ((struct medusa_comm_attribute_s *)(b->buf+b->len-sizeof(struct medusa_comm_attribute_s)))->type!=MED_TYPE_END )
     {	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
-        return(0);
+        return READ_DONE;
     }
     byte_reorder_acctype(b->comm->flags,(struct medusa_acctype_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)));
     byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)));
@@ -494,16 +575,14 @@ static int mcp_r_acctypedef_attr( struct comm_buffer_s *b )
     if( event_type_add(b->comm,(struct medusa_acctype_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)),
                        (struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)))<0 )
         comm_error("comm %s: Can't add acctype",b->comm->name);
-    b->comm->buf=NULL;
-    b->free(b);
-    return(0);
+    b->completed = NULL;
+    return READ_FREE;
 }
 
-static int mcp_r_discard( struct comm_buffer_s *b )
+static read_result_e mcp_r_discard( struct comm_buffer_s *b )
 {
-    b->comm->buf=NULL;
-    b->free(b);
-    return(0);
+    b->completed = NULL;
+    return READ_FREE;
 }
 
 static int mcp_write( struct comm_s *c )
@@ -552,10 +631,6 @@ static int mcp_close( struct comm_s *c )
 { struct comm_buffer_s *b;
     close(c->fd);
     c->fd= -1;
-    if( c->buf )
-    {	c->buf->free(c->buf);
-        c->buf=NULL;
-    }
     pthread_mutex_lock(&c->output.lock);
     while( (b=comm_buf_from_queue(&(c->output))) )
         b->free(b);
@@ -619,7 +694,7 @@ static int mcp_fetch_object_wait( struct comm_buffer_s *b )
     return(0);
 }
 
-static int mcp_r_fetch_answer( struct comm_buffer_s *b )
+static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
 { struct comm_buffer_s *p = NULL;
     struct queue_item_s *prev = NULL, *item;
     #pragma pack(push)
@@ -647,9 +722,8 @@ static int mcp_r_fetch_answer( struct comm_buffer_s *b )
     if( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->buf + sizeof(MCPptr_t)))[0])==MEDUSA_COMM_FETCH_ERROR )
     {	if( p!=NULL )
             p->free(p);
-        b->comm->buf=NULL;
-        b->free(b);
-        return(0);
+        b->completed = NULL;
+        return READ_FREE;
     }
 
     if( p!=NULL )
@@ -665,24 +739,23 @@ static int mcp_r_fetch_answer( struct comm_buffer_s *b )
         cl=(struct class_s*)hash_find(&(b->comm->classes),bmask->p1);
         if( cl==NULL )
         {	comm_error("comm %s: Can't find class by class id",b->comm->name);
-            return(-1);
+            return READ_ERROR;
         }
         b->want = b->len + cl->m.size;
         b->completed=mcp_r_discard;
     }
-    return(0);
+    return READ_DONE;
 }
 
-static int mcp_r_fetch_answer_done( struct comm_buffer_s *b )
+static read_result_e mcp_r_fetch_answer_done( struct comm_buffer_s *b )
 { struct comm_buffer_s *p;
     p=(struct comm_buffer_s *)(b->user1);
     if( p!=NULL )
     {	*((uint32_t*)(p->user2))=0;	/* success */ // Zmenene uintptr_t z na uint32_t - prepisovanie do_phase, by Matus
         p->free(p);
     }
-    b->comm->buf=NULL;
-    b->free(b);
-    return(0);
+    b->completed = NULL;
+    return READ_FREE;
 }
 
 static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake )
@@ -743,7 +816,7 @@ static int mcp_update_object_wait( struct comm_buffer_s *b )
     return(0);
 }
 
-static int mcp_r_update_answer( struct comm_buffer_s *b )
+static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
 { struct comm_buffer_s *p = NULL;
     struct queue_item_s *prev = NULL, *item;
     #pragma pack(push)
@@ -773,9 +846,8 @@ static int mcp_r_update_answer( struct comm_buffer_s *b )
                 byte_reorder_put_int32(b->comm->flags,bmask->user);   // Zmenene uintptr_t z na uint32_t - prepisovanie do_phase, by Matus
         p->free(p);
     }
-    b->comm->buf=NULL;
-    b->free(b);
-    return(0);
+    b->completed = NULL;
+    return READ_FREE;
 }
 
 int mcp_language_do( char *filename );
