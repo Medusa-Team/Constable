@@ -9,6 +9,7 @@
 
 #include "event.h"
 #include "threading.h"
+#include "language/execute.h"
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -41,7 +42,7 @@ struct comm_buffer_s {
     void			*user2;
     int	    user_data; // Matus mozno to ma byt intptr_t
     /* for do_event & execute ... */
-    //	struct execute_s	*execute;
+    struct execute_s    execute;
     int			do_phase;
     int			ehh_list;
     struct event_hadler_hash_s *hh;
@@ -73,9 +74,6 @@ struct comm_s {
     int		flags;
     struct hash_s	classes;
     struct hash_s	events;
-
-    /* for do_event & execute ... */
-    struct execute_s	*execute;
 
     /* for read/write/... */
     struct comm_buffer_queue_s output;

@@ -68,10 +68,6 @@ struct comm_s *comm_new( char *name, int user_size )
     memset(c,0,sizeof(struct comm_s)+user_size);
     strncpy(c->name,name,sizeof(c->name)-1);
     c->fd= -1;
-    if( (c->execute=execute_alloc_execute())==NULL )
-    {   free(c);
-        return(NULL);
-    }
     c->conn=comm_nr_connections++;
     c->state_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     sem_init(&c->output_sem, 0, 0);

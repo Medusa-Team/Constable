@@ -622,29 +622,29 @@ printf("%p RET\n",(e->p)-1);
 
 int execute_handler( struct comm_buffer_s *comm_buff, struct event_handler_s *h, struct event_context_s *c )
 { int i;
-	if( comm_buff->comm->execute->h!=NULL && (comm_buff->comm->execute->h!=h || comm_buff->comm->execute->c!=c) )
-	{	comm_buf_to_queue(&(comm_buff->comm->execute->my_comm_buff->to_wake),comm_buff);
+	if( comm_buff->execute.h!=NULL && (comm_buff->execute.h!=h || comm_buff->execute.c!=c) )
+	{	comm_buf_to_queue(&(comm_buff->execute.my_comm_buff->to_wake),comm_buff);
 		return(2);
 	}
 //	//if( comm_buff->do_phase==0 )
-	if( comm_buff->comm->execute->h==NULL )
-	{	comm_buff->comm->execute->h=h;
-		comm_buff->comm->execute->c=c;
-		comm_buff->comm->execute->comm=comm_buff->comm;
-		comm_buff->comm->execute->my_comm_buff=comm_buff;
+	if( comm_buff->execute.h==NULL )
+	{	comm_buff->execute.h=h;
+		comm_buff->execute.c=c;
+		comm_buff->execute.comm=comm_buff->comm;
+		comm_buff->execute.my_comm_buff=comm_buff;
 
-		comm_buff->comm->execute->c->result=RESULT_OK;
-		comm_buff->comm->execute->p=(uintptr_t *)(comm_buff->comm->execute->h->data);
-		comm_buff->comm->execute->cont=0;
-		comm_buff->comm->execute->keep_stack=0;
-		comm_buff->comm->execute->start=comm_buff->comm->execute->pos;
-		execute_push(comm_buff->comm->execute,comm_buff->comm->execute->base);
-		comm_buff->comm->execute->base=comm_buff->comm->execute->pos;
-		execute_push(comm_buff->comm->execute,0);	/* local_vars */
+		comm_buff->execute.c->result=RESULT_OK;
+		comm_buff->execute.p=(uintptr_t *)(comm_buff->execute.h->data);
+		comm_buff->execute.cont=0;
+		comm_buff->execute.keep_stack=0;
+		comm_buff->execute.start=comm_buff->execute.pos;
+		execute_push(&comm_buff->execute,comm_buff->execute.base);
+		comm_buff->execute.base=comm_buff->execute.pos;
+		execute_push(&comm_buff->execute,0);	/* local_vars */
 printf("ZZZ: execute_handler: executin handler for %s\n",h->op_name);
 	}
-	if( (i=execute_handler_do(comm_buff->comm->execute))<=0 )
-		comm_buff->comm->execute->h=NULL;
+	if( (i=execute_handler_do(&comm_buff->execute))<=0 )
+		comm_buff->execute.h=NULL;
 	return(i);
 }
 
