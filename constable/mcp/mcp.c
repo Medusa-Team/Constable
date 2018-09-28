@@ -822,7 +822,8 @@ static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
     #pragma pack(push)
     #pragma pack(1)
     struct {
-        MCPptr_t p1,p2,user;
+        MCPptr_t p1,p2;
+        uint32_t user;
     } * bmask = (void*)(b->buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
     #pragma pack(pop)
 
