@@ -170,11 +170,15 @@ void* comm_worker(void *arg)
             r=do_event(b);
         else { // mY : ak bola udalost vybavena, odosiela sa ANSWER
           // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
-            if( b->handler == function_init ) // mY
-                r = 0; // mY
-            else // mY
+            if( b->handler == function_init ) {
+                r = 0;
+                b->free(b);
+                continue;
+            }
+            else {
                 r=b->comm->answer(b->comm,b,r);
-        } // mY
+            }
+        }
         //printf("ZZZ: do_event()=%d\n",r);
         if(r == 1)
             comm_buf_todo(b);
