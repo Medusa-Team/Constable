@@ -20,6 +20,7 @@ struct hash_s {
 
 void hash_add( struct hash_s *h, struct hash_ent_s *e, uintptr_t key );
 struct hash_ent_s *hash_find( struct hash_s *h, uintptr_t key );
+struct hash_ent_s *hash_del(struct hash_s *h, uintptr_t key);
 
 
 #endif /* _HASH_H */

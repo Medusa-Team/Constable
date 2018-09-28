@@ -24,3 +24,18 @@ struct hash_ent_s *hash_find( struct hash_s *h, uintptr_t key )
     return(NULL);
 }
 
+/**
+ * Delete object from the hash table. Caller is responsible for deallocating
+ * the object.
+ */
+struct hash_ent_s *hash_del(struct hash_s *h, uintptr_t key)
+{
+    struct hash_ent_s **e, *ret;
+    for(e=&h->table[hash_func(key)];*e!=NULL;e=&(*e)->next)
+        if( (*e)->key==key ) {
+            ret = *e;
+            e = NULL;
+            return ret;
+        }
+    return NULL;
+}
