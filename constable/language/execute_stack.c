@@ -11,16 +11,21 @@
 #include <stdlib.h>
 
 static struct stack_s *free_stack=NULL;
+static pthread_mutex_t free_stack_lock = PTHREAD_MUTEX_INITIALIZER;
 
 #define STACKLEN	4096
 struct stack_s *execute_get_stack( void )
-{ struct stack_s *p;
+{
+	struct stack_s *p;
+	pthread_mutex_lock(&free_stack_lock);
 	if( (p=free_stack)!=NULL )
 	{	free_stack=p->next;
 		p->prev=p->next=NULL;
 		p->my_offset=0;
+		pthread_mutex_unlock(&free_stack_lock);
 		return(p);
 	}
+		pthread_mutex_unlock(&free_stack_lock);
 	if( (p=malloc(sizeof(struct stack_s)+STACKLEN*sizeof(uintptr_t)))==NULL )
 		return(NULL);
 	p->prev=p->next=NULL;
@@ -31,21 +36,10 @@ struct stack_s *execute_get_stack( void )
 
 void execute_put_stack( struct stack_s *stack )
 {
+	pthread_mutex_lock(&free_stack_lock);
 	stack->next=free_stack;
 	free_stack=stack;
-}
-
-struct execute_s *execute_alloc_execute( void )
-{ struct execute_s *e;
-	if( (e=malloc(sizeof(struct execute_s)))==NULL )
-		return(NULL);
-	e->stack=execute_get_stack();
-	e->pos=0;
-	e->base=0;
-	e->h=NULL;
-	e->c=NULL;
-	e->keep_stack=0;
-	return(e);
+	pthread_mutex_unlock(&free_stack_lock);
 }
 
 void execute_push( struct execute_s *e, uintptr_t data )

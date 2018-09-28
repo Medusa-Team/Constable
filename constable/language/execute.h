@@ -82,7 +82,6 @@ int execute_handler( struct comm_buffer_s *comm_buff, struct event_handler_s *h,
 
 struct stack_s *execute_get_stack( void );
 void execute_put_stack( struct stack_s *stack );
-struct execute_s *execute_alloc_execute( void );
 void execute_push( struct execute_s *e, uintptr_t data );
 uintptr_t execute_pop( struct execute_s *e );
 uintptr_t execute_readstack( struct execute_s *e, int pos );

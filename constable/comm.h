@@ -171,8 +171,8 @@ struct comm_s *comm_find( char *name );
 
 int comm_conn_init( struct comm_s *comm );
 
-int comm_buf_init( void );
-int comm_buf_init2( void );
+int buffers_init( void );
+int buffers_alloc( void );
 
 int comm_do( void );
 void* comm_worker(void*);

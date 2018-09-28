@@ -75,7 +75,7 @@ int init_all( char *filename )
 #ifdef RBAC
     _rbac_init();
 #endif
-    if( comm_buf_init()<0 )
+    if( buffers_init()<0 )
         return(-1);
     if( mcp_init(filename)<0 )
         return(-1);
@@ -88,7 +88,7 @@ int init_all( char *filename )
         }
     }
 
-    if( comm_buf_init2()<0 )
+    if( buffers_alloc()<0 )
         return(-1);
     if( vs_init()<0 )
         return(-1);

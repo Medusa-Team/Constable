@@ -22,6 +22,22 @@ static struct queue_item_s *item_free_list = NULL;
 
 static struct comm_buffer_s *malloc_buf( int size );
 
+static inline void *comm_buf_init(struct comm_buffer_s *b, struct comm_s *comm)
+{
+    b->comm=comm;
+    b->open_counter=comm->open_counter;
+    b->to_wake.lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    b->execute.pos=0;
+    b->execute.base=0;
+    b->execute.h=NULL;
+    b->execute.c=NULL;
+    b->execute.keep_stack=0;
+    b->do_phase=0;
+    b->ehh_list=EHH_VS_ALLOW;
+    b->context.cb=b;
+    b->temp=NULL;
+}
+
 struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
 { int i;
     struct comm_buffer_s *b;
@@ -33,28 +49,16 @@ struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
             b->len=0;
             b->want=0;
             b->pbuf=b->buf;
-            b->comm=comm;
-            b->open_counter=comm->open_counter;
             b->completed=NULL;
             b->to_wake.first=b->to_wake.last=NULL;
-            b->to_wake.lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
-            b->do_phase=0;
-            b->ehh_list=EHH_VS_ALLOW;
-            b->context.cb=b;
             b->handler=NULL;
-            b->temp=NULL;
+            comm_buf_init(b, comm);
             return(b);
         }
     }
     pthread_mutex_unlock(&buffers_lock);
     b=malloc_buf(size);
-    b->open_counter=comm->open_counter;
-    b->comm=comm;
-    b->to_wake.lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
-    b->do_phase=0;
-    b->ehh_list=EHH_VS_ALLOW;
-    b->context.cb=b;
-    b->temp=NULL;
+    comm_buf_init(b, comm);
     return(b);
 }
 
@@ -104,7 +108,10 @@ static void comm_buf_free( struct comm_buffer_s *b )
         buffers[b->_n]=b;
         pthread_mutex_unlock(&buffers_lock);
     }
-    else	free(b);
+    else {
+        execute_put_stack(b->execute.stack);
+        free(b);
+    }
 }
 
 static struct comm_buffer_s *malloc_buf( int size )
@@ -117,6 +124,7 @@ static struct comm_buffer_s *malloc_buf( int size )
     b->_n= -1;
     b->size=size;
 
+    b->execute.stack=execute_get_stack();
     b->len=0;
     b->want=0;
     b->pbuf=b->buf;
@@ -235,7 +243,7 @@ inline struct comm_buffer_s *comm_buf_peek_last(struct comm_buffer_queue_s *q)
     return NULL;
 }
 
-int comm_buf_init( void )
+int buffers_init( void )
 {
     // No need to lock comm_todo or buffers, since this is just one thread
     comm_todo.first=comm_todo.last=NULL;
@@ -243,7 +251,7 @@ int comm_buf_init( void )
     return sem_init(&comm_todo_sem, 0, 0);
 }
 
-int comm_buf_init2( void )
+int buffers_alloc( void )
 { struct comm_buffer_s *b;
     int i,n,num;
     num=comm_nr_connections;
