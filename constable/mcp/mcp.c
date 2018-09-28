@@ -444,6 +444,7 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
             comm_buf_todo(p);
             b->comm->state=1;
             pthread_mutex_unlock(&b->comm->state_lock);
+            b->completed = NULL;
             return READ_DONE;
         }
         b->comm->state=1;
