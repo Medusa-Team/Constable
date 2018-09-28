@@ -18,6 +18,7 @@
 #include "../event.h"
 #include <sys/param.h>
 #include <endian.h>
+#include <errno.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -278,6 +279,7 @@ static read_result_e mcp_r_greeting( struct comm_buffer_s *b )
 
 static inline int mcp_check_size_and_read(struct comm_buffer_s *buf)
 {
+    fd_set rd;
     int r;
     if(buf->want > buf->size && buf->pbuf == buf->buf) {
         struct comm_buffer_s *b;
@@ -288,6 +290,12 @@ static inline int mcp_check_size_and_read(struct comm_buffer_s *buf)
         buf = b;
     }
     while (buf->len < buf->want) {
+        FD_ZERO(&rd);
+        FD_SET(buf->comm->fd, &rd);
+        r = select(buf->comm->fd + 1, &rd, NULL, NULL, NULL);
+        if (r == EINTR) {
+            return -1;
+        }
         r = read(buf->comm->fd, buf->pbuf + buf->len, buf->want - buf->len);
         if(r <= 0) {
             comm_error("medusa comm %s: Read error or EOF (%d)",
