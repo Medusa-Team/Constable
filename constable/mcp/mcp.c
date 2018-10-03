@@ -51,11 +51,9 @@ static int mcp_write( struct comm_s *c );
 static int mcp_nowrite( struct comm_s *c );
 static int mcp_close( struct comm_s *c );
 static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake );
-static int mcp_fetch_object_wait( struct comm_buffer_s *b );
 static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b );
 static read_result_e mcp_r_fetch_answer_done( struct comm_buffer_s *b );
 static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake );
-static int mcp_update_object_wait( struct comm_buffer_s *b );
 static read_result_e mcp_r_update_answer( struct comm_buffer_s *b );
 static int mcp_conf_error( struct comm_s *c, const char *fmt, ... );
 
@@ -689,18 +687,12 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     memcpy(((MCPptr_t*)(r->buf))+3, o->data, o->class->m.size);
     r->len=3*sizeof(MCPptr_t) + o->class->m.size;
     r->want=0;
-    r->completed=mcp_fetch_object_wait;
+    r->completed=NULL;
+    comm_buf_to_queue(&(r->comm->wait_for_answer),r);
     comm_buf_to_queue(&(r->to_wake),wake);
     comm_buf_output_enqueue(c, r);
     printf("ZZZZ mcp_fetch_object 5\n");
     return(3);
-}
-
-static int mcp_fetch_object_wait( struct comm_buffer_s *b )
-{
-    printf("ZZZZ mcp_fetch_object_wait\n");
-    comm_buf_to_queue(&(b->comm->wait_for_answer),b);
-    return(0);
 }
 
 static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
@@ -816,17 +808,11 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     object_set_byte_order(o,r->comm->flags);
     r->len=3*sizeof(MCPptr_t) + o->class->m.size;
     r->want=0;
-    r->completed=mcp_update_object_wait;
+    r->completed=NULL;
+    comm_buf_to_queue(&(r->comm->wait_for_answer),r);
     comm_buf_to_queue(&(r->to_wake),wake);
     comm_buf_output_enqueue(c, r);
     return(3);
-}
-
-static int mcp_update_object_wait( struct comm_buffer_s *b )
-{
-    printf("ZZZZ mcp_update_object_wait\n");
-    comm_buf_to_queue(&(b->comm->wait_for_answer),b);
-    return(0);
 }
 
 static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
