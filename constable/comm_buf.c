@@ -22,7 +22,7 @@ static struct queue_item_s *item_free_list = NULL;
 
 static struct comm_buffer_s *malloc_buf( int size );
 
-static inline void *comm_buf_init(struct comm_buffer_s *b, struct comm_s *comm)
+static inline void comm_buf_init(struct comm_buffer_s *b, struct comm_s *comm)
 {
     b->comm=comm;
     b->open_counter=comm->open_counter;
