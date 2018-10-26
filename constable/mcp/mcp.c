@@ -275,55 +275,59 @@ static read_result_e mcp_r_greeting( struct comm_buffer_s *b )
     return READ_FREE;
 }
 
-static inline int mcp_check_size_and_read(struct comm_buffer_s *buf)
+static inline int mcp_check_size_and_read(struct comm_buffer_s **buf)
 {
     fd_set rd;
     int r;
-    if(buf->want > buf->size && buf->pbuf == buf->buf) {
+    if((*buf)->want > (*buf)->size && (*buf)->pbuf == (*buf)->buf) {
         struct comm_buffer_s *b;
-        if((b = comm_buf_resize(buf, buf->want))==NULL) {
+        if((b = comm_buf_resize(*buf, (*buf)->want))==NULL) {
             fatal(Out_of_memory);
             return  -1;
         }
-        buf = b;
+        *buf = b;
     }
-    while (buf->len < buf->want) {
+    while ((*buf)->len < (*buf)->want) {
         FD_ZERO(&rd);
-        FD_SET(buf->comm->fd, &rd);
-        r = select(buf->comm->fd + 1, &rd, NULL, NULL, NULL);
-        if (r == EINTR) {
+        FD_SET((*buf)->comm->fd, &rd);
+        r = select((*buf)->comm->fd + 1, &rd, NULL, NULL, NULL);
+        if (r == -1) {
+            fprintf(stderr, "mcp_check_size_and_read: select error %i", errno);
             return -1;
         }
-        r = read(buf->comm->fd, buf->pbuf + buf->len, buf->want - buf->len);
+        if (FD_ISSET((*buf)->comm->fd, &rd))
+            r = read((*buf)->comm->fd, (*buf)->pbuf + (*buf)->len, (*buf)->want - (*buf)->len);
+        else
+            continue;
         if(r <= 0) {
             comm_error("medusa comm %s: Read error or EOF (%d)",
-                       buf->comm->name, r);
+                       (*buf)->comm->name, errno);
             return  -1;
         }
-        buf->len += r;
+        (*buf)->len += r;
     }
     return 0;
 }
 
-static inline int mcp_read_loop(struct comm_buffer_s *buf)
+static inline int mcp_read_loop(struct comm_buffer_s **buf)
 {
     read_result_e result;
 
-    while (buf->completed) {
+    while ((*buf)->completed) {
         if (mcp_check_size_and_read(buf) < 0)
             goto error;
-        result = buf->completed(buf);
+        result = (*buf)->completed(*buf);
         if (result < READ_DONE)
             goto error;
         else if (result == READ_FREE) {
-            buf->free(buf);
+            (*buf)->free(*buf);
             return 0;
         }
     }
     return 0;
 error:
-    buf->comm->close(buf->comm);
-    buf->free(buf);
+    (*buf)->comm->close((*buf)->comm);
+    (*buf)->free(*buf);
     return  -1;
 }
 
@@ -331,7 +335,7 @@ int mcp_receive_greeting(struct comm_s *c)
 {
     struct comm_buffer_s *b;
     b = mcp_opened(c);
-    return mcp_read_loop(b);
+    return mcp_read_loop(&b);
 }
 
 /**
@@ -350,7 +354,7 @@ int mcp_read_worker(struct comm_s *c)
         buf = comm_buf_get(2048, c);
         buf->want=sizeof(uint32_t)+sizeof(MCPptr_t);
         buf->completed=mcp_r_head;
-        if (mcp_read_loop(buf)) {
+        if (mcp_read_loop(&buf)) {
             comm_error("mcp_read_worker: read error");
             c->close(c);
             pthread_mutex_unlock(&c->read_lock);
