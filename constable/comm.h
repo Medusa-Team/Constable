@@ -10,6 +10,7 @@
 #include "event.h"
 #include "threading.h"
 #include "language/execute.h"
+#include <stdbool.h>
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -42,6 +43,14 @@ struct comm_buffer_s {
     void			*user2;
     int	    user_data; // Matus mozno to ma byt intptr_t
     pthread_mutex_t lock; /**< lock for comm_worker */
+    pthread_mutex_t write_finished_lock; /**< lock for guarding the
+                                           write_finished predicate */
+    pthread_cond_t write_finished_condition; /**< condition variable for the
+                                                write_finished predicate */
+    bool write_finished; /**< Predicate used for fetch and update operations.
+                            If false, write operation on this buffer has not
+                            been completed. If true, write has already
+                            finished. */
     /* for do_event & execute ... */
     struct execute_s    execute;
     int			do_phase;

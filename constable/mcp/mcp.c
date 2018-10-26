@@ -49,6 +49,7 @@ static read_result_e mcp_r_acctypedef_attr( struct comm_buffer_s *b );
 static read_result_e mcp_r_discard( struct comm_buffer_s *b );
 static int mcp_write( struct comm_s *c );
 static int mcp_nowrite( struct comm_s *c );
+static int mcp_do_nothing(struct comm_buffer_s *b);
 static int mcp_close( struct comm_s *c );
 static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake );
 static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b );
@@ -596,6 +597,11 @@ static read_result_e mcp_r_discard( struct comm_buffer_s *b )
     return READ_FREE;
 }
 
+static int mcp_do_nothing(struct comm_buffer_s *b)
+{
+    return 0;
+}
+
 static int mcp_write( struct comm_s *c )
 { int r;
     struct comm_buffer_s *b;
@@ -620,8 +626,17 @@ static int mcp_write( struct comm_s *c )
             return(0);
         }
     }
-    if( b->completed )
-        r=b->completed(b);
+    if( b->completed ) {
+        if (b->completed != mcp_do_nothing)
+            r=b->completed(b);
+        else {
+            // This can happen only with fetch or update requests
+            pthread_mutex_lock(&b->write_finished_lock);
+            b->write_finished = true;
+            pthread_cond_signal(&b->write_finished_condition);
+            pthread_mutex_unlock(&b->write_finished_lock);
+        }
+    }
     else
     {	r=0;
         b->free(b);
@@ -671,11 +686,14 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     }
     printf("ZZZZ mcp_fetch_object 2\n");
     wake->user_data = -1;
+    pthread_mutex_lock(&c->wait_for_answer.lock);
     if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
     {
         comm_buf_to_queue(&(c->wait_for_answer.last->buffer->to_wake),wake);
+        pthread_mutex_unlock(&c->wait_for_answer.lock);
         return(2);
     }
+    pthread_mutex_unlock(&c->wait_for_answer.lock);
     printf("ZZZZ mcp_fetch_object 3\n");
     if( (r=comm_buf_get(3*sizeof(MCPptr_t) + o->class->m.size,c))==NULL )
     {	fatal("Can't alloc buffer for fetch!");
@@ -691,8 +709,11 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     memcpy(((MCPptr_t*)(r->buf))+3, o->data, o->class->m.size);
     r->len=3*sizeof(MCPptr_t) + o->class->m.size;
     r->want=0;
-    r->completed=NULL;
-    comm_buf_to_queue(&(r->comm->wait_for_answer),r);
+    r->completed=mcp_do_nothing;
+    r->write_finished_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    r->write_finished_condition = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
+    r->write_finished = false;
+    comm_buf_to_queue_locked(&(r->comm->wait_for_answer),r);
     comm_buf_to_queue(&(r->to_wake),wake);
     comm_buf_output_enqueue(c, r);
     printf("ZZZZ mcp_fetch_object 5\n");
@@ -783,10 +804,13 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
 #else
     wake->user_data = RESULT_UNKNOWN;  /* ma byt vzdy len MED_ERR !!! */
 #endif
+    pthread_mutex_lock(&c->wait_for_answer.lock);
     if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
     {	comm_buf_to_queue(&(c->wait_for_answer.last->buffer->to_wake),wake);
+        pthread_mutex_unlock(&c->wait_for_answer.lock);
         return(2);
     }
+    pthread_mutex_unlock(&c->wait_for_answer.lock);
     if( (r=comm_buf_get(3*sizeof(MCPptr_t) + ((struct object_s *)((void*)o))->class->m.size,c))==NULL )
     {	fatal("Can't alloc buffer for update!");
         return(-1);
@@ -812,13 +836,25 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     object_set_byte_order(o,r->comm->flags);
     r->len=3*sizeof(MCPptr_t) + o->class->m.size;
     r->want=0;
-    r->completed=NULL;
-    comm_buf_to_queue(&(r->comm->wait_for_answer),r);
+    r->completed=mcp_do_nothing;
+    r->write_finished_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    r->write_finished_condition = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
+    r->write_finished = false;
+    comm_buf_to_queue_locked(&(r->comm->wait_for_answer),r);
     comm_buf_to_queue(&(r->to_wake),wake);
     comm_buf_output_enqueue(c, r);
     return(3);
 }
 
+/**
+ * Reads an update answer message from the kernel.
+ *
+ * This function uses condition variable write_finished_condition to wait until
+ * the write function for update request buffer is finished. Otherwise the
+ * buffer would be freed before the write finishes causing unexpected behaviour
+ * because of the completed function.
+ * \param b received buffer with the update answer message
+ */
 static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
 { struct comm_buffer_s *p = NULL;
     struct queue_item_s *prev = NULL, *item;
@@ -846,6 +882,12 @@ static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
 
     if( p!=NULL )
     {
+        pthread_mutex_lock(&p->write_finished_lock);
+        while (!p->write_finished) {
+            pthread_cond_wait(&p->write_finished_condition,
+                    &p->write_finished_lock);
+        }
+        pthread_mutex_unlock(&p->write_finished_lock);
         *((uint32_t*)(p->user2))=
                 byte_reorder_put_int32(b->comm->flags,bmask->user);   // Zmenene uintptr_t z na uint32_t - prepisovanie do_phase, by Matus
         p->free(p);
