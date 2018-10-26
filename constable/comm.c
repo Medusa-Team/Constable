@@ -159,10 +159,13 @@ void* comm_worker(void *arg)
     while (1) {
         struct comm_buffer_s *b;
         b = comm_buf_get_todo();
+        pthread_mutex_lock(&b->lock);
         if(b->temp == NULL) {
             b = comm_malloc_temps(b);
-            if( b==NULL )
+            if( b==NULL ) {
+                pthread_mutex_unlock(&b->lock);
                 return (void*) -1;
+            }
         }
         if(b->do_phase < 1000)
             r=do_event(b);
@@ -170,6 +173,7 @@ void* comm_worker(void *arg)
           // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
             if( b->handler == function_init ) {
                 r = 0;
+                pthread_mutex_unlock(&b->lock);
                 b->free(b);
                 continue;
             }
@@ -178,16 +182,21 @@ void* comm_worker(void *arg)
             }
         }
         //printf("ZZZ: do_event()=%d\n",r);
-        if(r == 1)
+        if(r == 1) {
+            pthread_mutex_unlock(&b->lock);
             comm_buf_todo(b);
+        }
         else if(r <= 0) {   
             if( b->do_phase<1000 ) {   
                 b->do_phase=1000;
+                pthread_mutex_unlock(&b->lock);
                 comm_buf_todo(b);
-            }
-            else    
+            } else {
+                pthread_mutex_unlock(&b->lock);
                 b->free(b);
-        }
+            }
+        } else
+            pthread_mutex_unlock(&b->lock);
     }
 
     return 0;

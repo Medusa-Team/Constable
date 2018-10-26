@@ -41,6 +41,7 @@ struct comm_buffer_s {
     void			*user1;
     void			*user2;
     int	    user_data; // Matus mozno to ma byt intptr_t
+    pthread_mutex_t lock; /**< lock for comm_worker */
     /* for do_event & execute ... */
     struct execute_s    execute;
     int			do_phase;

@@ -27,6 +27,7 @@ static inline void comm_buf_init(struct comm_buffer_s *b, struct comm_s *comm)
     b->comm=comm;
     b->open_counter=comm->open_counter;
     b->to_wake.lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    b->lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     b->execute.pos=0;
     b->execute.base=0;
     b->execute.h=NULL;
