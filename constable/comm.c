@@ -108,12 +108,10 @@ int comm_do( void )
             c->close(c);
             continue;
         }
-        for (int i = 0; i < N_WORKER_THREADS; i++) {
-            if (pthread_create(c->read_workers + i, NULL,
-                               (void *(*)(void *)) c->read, c)) {
-                puts("Cannot create read thread");
-                return -1;
-            }
+        if (pthread_create(&c->read_thread, NULL,
+                           (void *(*)(void *)) c->read, c)) {
+            puts("Cannot create read thread");
+            return -1;
         }
         if (pthread_create(&c->write_thread, NULL, write_loop, c)) {
             puts("Cannot create read thread");
@@ -133,7 +131,7 @@ int comm_do( void )
     for (c = first_comm; c != NULL; c = c->next) {
         if (c->fd>=0) {
             for (int i = 0; i < N_WORKER_THREADS; i++) {
-                if (pthread_join(c->read_workers[i], NULL)) {
+                if (pthread_join(c->read_thread, NULL)) {
                     puts("Error when joining read thread");
                     return -1;
                 }

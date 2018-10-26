@@ -63,8 +63,7 @@ struct comm_buffer_s {
 struct comm_s {
     struct comm_s	*next;
     int		conn;		/* connection number */
-    pthread_t   read_workers[N_WORKER_THREADS];  /**< threads used for read
-                                                      operations */
+    pthread_t   read_thread;  /**< thread used for read operations */
     pthread_t   write_thread;    /* thread used for write operation */
     char		name[64];
     int		fd;
