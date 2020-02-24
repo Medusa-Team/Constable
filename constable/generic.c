@@ -123,7 +123,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     if( (execute_get_last_attr()->type & 0x0f) != MED_TYPE_STRING )
         n="";
     else	n=execute_get_last_data();
-    //printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,n);
+    printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,n);
 
     if( (t=find_one(t,n))==NULL )
     {	c->result=RESULT_DENY;
