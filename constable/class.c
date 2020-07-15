@@ -130,14 +130,15 @@ struct class_s *add_class( struct comm_s *comm, struct medusa_class_s *mc, struc
 #define DWORDS_PER_PTR (sizeof(uintptr_t) / sizeof(u_int32_t))
 /**
  * Allocate a block in cinfo. Size of the block is determined by
- * sizeof(uintptr_t).
+ * \c sizeof(uintptr_t).
  *
- * cinfo stores a pointer in Constable.
+ * @param cinfo_size Stores number of 32-bit words available at \p cinfo_offset
+ * for allocation.
  * @return Offset for the allocated cinfo block or -1 if block can't be
  * allocated.
  */
 int class_alloc_cinfo(u_int16_t cinfo_size, uintptr_t *cinfo_mask,
-                       u_int16_t cinfo_offset)
+                      u_int16_t cinfo_offset)
 {
     int i;
 
