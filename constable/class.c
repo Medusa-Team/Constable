@@ -127,36 +127,39 @@ struct class_s *add_class( struct comm_s *comm, struct medusa_class_s *mc, struc
     return(c);
 }
 
-/* vrati offset (u_int16_t), alebo -1 ak chyba */
-/*
-   cinfo v constablovi uchovava pointer
-   cinfo_size uchovava pocet u_int32_t-bitovych slov od cinfo_offset
-*/
-int class_alloc_object_cinfo( struct class_s *c )
-{ int i;
-    for(i=0;i<c->cinfo_size/(sizeof(uintptr_t)/sizeof(u_int32_t)) && i<sizeof(c->cinfo_mask)*8;i++)
-    {	if( !(c->cinfo_mask & (1<<i)) )
-        {	c->cinfo_mask|= 1<<i;
-            return(c->cinfo_offset+i*sizeof(uintptr_t));
+#define DWORDS_PER_PTR (sizeof(uintptr_t) / sizeof(u_int32_t))
+/**
+ * Allocate a block in cinfo. Size of the block is determined by
+ * sizeof(uintptr_t).
+ *
+ * cinfo stores a pointer in Constable.
+ * @return Offset for the allocated cinfo block or -1 if block can't be
+ * allocated.
+ */
+int class_alloc_cinfo(u_int16_t cinfo_size, uintptr_t *cinfo_mask,
+                       u_int16_t cinfo_offset)
+{
+    int i;
+
+    for (i = 0; (i < cinfo_size / DWORDS_PER_PTR) && (i < sizeof(cinfo_mask) * 8); i++) {
+        if (!(*cinfo_mask & 1 << i)) {
+            /* found a free block */
+            *cinfo_mask |= 1 << i;
+            return cinfo_offset + i * sizeof(uintptr_t);
         }
     }
-    return(-1);
+    return -1;
 }
 
-/* vrati offset (u_int16_t), alebo -1 ak chyba */
-/*
-   cinfo v constablovi uchovava pointer
-   cinfo_size uchovava pocet u_int32_t-bitovych slov od cinfo_offset
-*/
-int class_alloc_subject_cinfo( struct class_s *c )
-{ int i;
-    for(i=0;i<c->subject.cinfo_size/(sizeof(uintptr_t)/sizeof(u_int32_t)) && i<sizeof(c->subject.cinfo_mask)*8;i++)
-    {	if( !(c->subject.cinfo_mask & (1<<i)) )
-        {	c->subject.cinfo_mask|= 1<<i;
-            return(c->subject.cinfo_offset+i*sizeof(uintptr_t));
-        }
-    }
-    return(-1);
+int class_alloc_object_cinfo(struct class_s *c)
+{
+    return class_alloc_cinfo(c->cinfo_size, &c->cinfo_mask, c->cinfo_offset);
+}
+
+int class_alloc_subject_cinfo(struct class_s *c)
+{
+    return class_alloc_cinfo(c->subject.cinfo_size, &c->subject.cinfo_mask,
+                             c->subject.cinfo_offset);
 }
 
 int class_add_handler( struct class_names_s *c, struct class_handler_s *handler )

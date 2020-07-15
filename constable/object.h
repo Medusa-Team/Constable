@@ -42,23 +42,26 @@ struct class_handler_s {
 struct class_s {
     struct hash_ent_s		hashent;
     u_int16_t			cinfo_offset;
-    u_int16_t			cinfo_size;	/* v 32 bit slovach */
-    uintptr_t			cinfo_mask;
-    struct class_names_s		*classname;
-    struct comm_s			*comm;
+    u_int16_t			cinfo_size;	/**< size in 32-bit words */
+    uintptr_t			cinfo_mask;	/**< bitmap that determines
+                                                 * which blocks are allocated in
+                                                 * cinfo */
+    struct class_names_s	*classname;
+    struct comm_s		*comm;
     u_int16_t			name_offset;
-    u_int16_t			name_size;	/* v bajtoch */
+    u_int16_t			name_size;	/**< size in bytes */
     u_int16_t			event_offset;
-    u_int16_t			event_size;	/* v bajtoch */
+    u_int16_t			event_size;	/**< size in bytes */
     struct medusa_attribute_s	*vs_attr[NR_ACCESS_TYPES];
     struct {
         u_int16_t	event_offset;
-        u_int16_t	event_size;	/* v bajtoch */
+        u_int16_t	event_size;	/**< size in bytes */
         u_int16_t	cinfo_offset;
-        u_int16_t	cinfo_size;	/* v 32 bit slovach */
-        uintptr_t	cinfo_mask;
+        u_int16_t	cinfo_size;	/**< size in 32-bit words */
+        uintptr_t	cinfo_mask;	/**< bitmap that determines which blocks
+                                         * are allocated in cinfo */
     }				subject;
-    struct medusa_class_s		m;
+    struct medusa_class_s	m;
     struct medusa_attribute_s	attr[0];
 };
 
