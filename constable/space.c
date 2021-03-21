@@ -196,7 +196,7 @@ static void space_for_one_path_i( struct tree_s *t, struct space_for_one_path_s 
     if( a->recursive && r<2 )
     {	for(p=t->child;p!=NULL;p=p->next)
             space_for_one_path_i(p,a);
-        for(p=t->reg;p!=NULL;p=p->next)
+        for(p=t->regex_child;p!=NULL;p=p->next)
             space_for_one_path_i(p,a);
     }
 }
@@ -388,7 +388,7 @@ static void tree_comm_reinit( struct comm_s *comm, struct tree_s *t )
     }
     for(p=t->child;p!=NULL;p=p->next)
         tree_comm_reinit(comm,p);
-    for(p=t->reg;p!=NULL;p=p->next)
+    for(p=t->regex_child;p!=NULL;p=p->next)
         tree_comm_reinit(comm,p);
 }
 

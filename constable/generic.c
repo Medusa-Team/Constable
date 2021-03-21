@@ -58,7 +58,7 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
             /* !!!! no_vs !!!! */
         }
         object_add_event(o,&(t->events[comm->conn].event[0]));
-        if( t->child!=NULL || t->reg!=NULL )
+        if( t->child!=NULL || t->regex_child!=NULL )
             inh=1;
 #ifdef USE_ALT
     }

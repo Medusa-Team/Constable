@@ -147,7 +147,7 @@ static struct tree_type_s global_root_type={
                     return(p);
         }
         else
-        {	for(p=base->reg;p!=NULL;p=p->next)
+        {	for(p=base->regex_child;p!=NULL;p=p->next)
                 if( !strcmp(p->name,name) )
                     return(p);
         }
@@ -164,14 +164,14 @@ static struct tree_type_s global_root_type={
         p->name[l]=0;
         p->parent=base;
         p->child=NULL;
-        p->reg=NULL;
+        p->regex_child=NULL;
         p->primary_space=NULL;
         if( (p->events=comm_new_array(sizeof(struct tree_event_s)))==NULL )
         {	free(p);
             return(NULL);
         }
-        if( base->extra==(void*)1	/* speed up .* */
-                && base->child==NULL && base->reg==NULL
+        if( base->compiled_regex==(void*)1	/* speed up .* */
+                && base->child==NULL && base->regex_child==NULL
                 && !(regexp && !strcmp(p->name,".*"))
                 )
         {
@@ -182,19 +182,19 @@ static struct tree_type_s global_root_type={
         }
         if( !regexp )
         {
-            p->extra=NULL;	/* important */
+            p->compiled_regex=NULL;	/* important */
             p->next=base->child;
             base->child=p;
         }
         else
         {
-            p->extra=regcompile(p->name);
-            p->next=base->reg;
-            base->reg=p;
+            p->compiled_regex=regcompile(p->name);
+            p->next=base->regex_child;
+            base->regex_child=p;
         }
         if( p->type->init )
             p->type->init(p);
-        if( !regexp || p->extra!=(void*)1 )	/* speed up .* */
+        if( !regexp || p->compiled_regex!=(void*)1 )	/* speed up .* */
         {
             if( create_one_i(p,".*",1)==NULL )
                 return(NULL);
@@ -256,11 +256,11 @@ static struct tree_type_s global_root_type={
         for(p=base->child;p!=NULL;p=p->next)
             if( !strcmp(p->name,name) )
                 return(p);
-        for(p=base->reg;p!=NULL;p=p->next)
-            if( !regcmp(p->extra,name) )
+        for(p=base->regex_child;p!=NULL;p=p->next)
+            if( !regcmp(p->compiled_regex,name) )
                 return(p);
         /* ... zeby este cyklus base=base->alt ??? a lepsie to retazit cez alt */
-        if( base->child==NULL && base->reg==NULL )
+        if( base->child==NULL && base->regex_child==NULL )
             return(base);
         return(NULL);
     }
@@ -278,13 +278,13 @@ static struct tree_type_s global_root_type={
         { char s[b-(*name)+1];
             strncpy(s,*name,b-(*name));
             s[b-(*name)]=0;
-            for(p=base->reg;p!=NULL;p=p->next)
-                if( !regcmp(p->extra,s) )
+            for(p=base->regex_child;p!=NULL;p=p->next)
+                if( !regcmp(p->compiled_regex,s) )
                 {	*name=b;
                     return(p);
                 }
         }
-        if( base->child==NULL && base->reg==NULL )
+        if( base->child==NULL && base->regex_child==NULL )
             return(base);
         return(NULL);
     }
@@ -324,21 +324,21 @@ static struct tree_type_s global_root_type={
         }
         n--;
         r=tree_get_rnth(p,n);
-        if( r->extra==NULL )
+        if( r->compiled_regex==NULL )
         {	for(a=t->child;a!=NULL;a=a->next)
                 if( !strcmp(r->name,a->name) )
                     tree_for_alt_i(a,p,n,func,arg);
         }
         else
         {	for(a=t->child;a!=NULL;a=a->next)
-                if( !regcmp(r->extra,a->name) )
+                if( !regcmp(r->compiled_regex,a->name) )
                     tree_for_alt_i(a,p,n,func,arg);
-            if( r->extra==(void*)1 /* .* speed up */ )
-            {	for(a=t->reg;a!=NULL;a=a->next)
+            if( r->compiled_regex==(void*)1 /* .* speed up */ )
+            {	for(a=t->regex_child;a!=NULL;a=a->next)
                     tree_for_alt_i(a,p,n,func,arg);
             }
             else
-            {	for(a=t->reg;a!=NULL;a=a->next)
+            {	for(a=t->regex_child;a!=NULL;a=a->next)
                     if( !strcmp(r->name,a->name) )
                         tree_for_alt_i(a,p,n,func,arg);
             }
@@ -418,7 +418,7 @@ static struct tree_type_s global_root_type={
         {	if( (tc=create_one_i(t,rc->name,0))!=NULL )
                 tree_node_merge(rc,tc);
         }
-        for(rc=r->reg;rc!=NULL;rc=rc->next)
+        for(rc=r->regex_child;rc!=NULL;rc=rc->next)
         {	if( (tc=create_one_i(t,rc->name,1))!=NULL )
                 tree_node_merge(rc,tc);
         }
@@ -426,23 +426,23 @@ static struct tree_type_s global_root_type={
 
     static void tree_apply_alts( struct tree_s *dir )
     { struct tree_s *r,*t,*all=NULL;
-        for(r=dir->reg;r!=NULL;r=r->next)
-        {	if( r->extra==(void*)1 /* .* speed up */ )
+        for(r=dir->regex_child;r!=NULL;r=r->next)
+        {	if( r->compiled_regex==(void*)1 /* .* speed up */ )
                 all=r;
             for(t=dir->child;t!=NULL;t=t->next)
-            {	if( !regcmp(r->extra,t->name) )
+            {	if( !regcmp(r->compiled_regex,t->name) )
                     tree_node_merge(r,t);
             }
         }
         if( all!=NULL )
-        {	for(t=dir->reg;t!=NULL;t=t->next)
+        {	for(t=dir->regex_child;t!=NULL;t=t->next)
             {	if( t!=all )
                     tree_node_merge(all,t);
             }
         }
         for(t=dir->child;t!=NULL;t=t->next)
             tree_apply_alts(t);
-        for(t=dir->reg;t!=NULL;t=t->next)
+        for(t=dir->regex_child;t!=NULL;t=t->next)
             tree_apply_alts(t);
     }
 
@@ -530,7 +530,7 @@ static struct tree_type_s global_root_type={
         out(arg,"\n");
         for(p=t->child;p!=NULL;p=p->next)
             tree_print_node(p,level+1,out,arg);
-        for(p=t->reg;p!=NULL;p=p->next)
+        for(p=t->regex_child;p!=NULL;p=p->next)
             tree_print_node(p,level+1,out,arg);
     }
 
