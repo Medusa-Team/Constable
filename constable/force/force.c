@@ -102,9 +102,11 @@ too_big:	runtime("force_code(): code is too big");
 
 	while( getarg(e,&r) )
 	{	switch( (r.attr->type&0x0f) )
-		{	case MED_TYPE_SIGNED:
+		{
+            struct object_s o;
+            case MED_TYPE_SIGNED:
 			case MED_TYPE_UNSIGNED:
-				object_get_val(r2o(&r),r.attr,&d,sizeof(d));
+				object_get_val(r2o(&r, &o),r.attr,&d,sizeof(d));
 				d=byte_reorder_put_int32(flags,d);
 				if( sizeof(d) > size )
 					goto too_big;
@@ -183,9 +185,11 @@ too_big:	runtime("force_code(): code is too big");
 	while( getarg(e,&r) )
 	{	l=r.attr->length;
 		switch( (r.attr->type&0x0f) )
-		{	case MED_TYPE_SIGNED:
+		{
+            struct object_s o;
+            case MED_TYPE_SIGNED:
 			case MED_TYPE_UNSIGNED:
-				object_get_val(r2o(&r),r.attr,&d,sizeof(d));
+				object_get_val(r2o(&r, &o),r.attr,&d,sizeof(d));
 				d=byte_reorder_put_int32(flags,d);
 				if( 2*sizeof(d) > size )
 					goto too_big;
@@ -205,7 +209,7 @@ too_big:	runtime("force_code(): code is too big");
 				if( l > size )
 					goto too_big;
 				rvarpos-=l;
-				object_get_val(r2o(&r),r.attr,dest_begin+rvarpos,l);
+				object_get_val(r2o(&r, &o),r.attr,dest_begin+rvarpos,l);
 				d=rvarpos;
 				d=byte_reorder_put_int32(flags,d);
 				size-=l;

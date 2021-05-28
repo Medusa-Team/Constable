@@ -9,6 +9,7 @@
 #include "comm.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <pthread.h>
 
 struct medusa_attribute_s *execute_get_last_attr( void );
 char *execute_get_last_data( void );
@@ -57,7 +58,7 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
             /* !!!! no_vs !!!! */
         }
         object_add_event(o,&(t->events[comm->conn].event[0]));
-        if( t->child!=NULL || t->reg!=NULL )
+        if( t->child!=NULL || t->regex_child!=NULL )
             inh=1;
 #ifdef USE_ALT
     }
@@ -122,7 +123,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     if( (execute_get_last_attr()->type & 0x0f) != MED_TYPE_STRING )
         n="";
     else	n=execute_get_last_data();
-    //printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,n);
+    printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,n);
 
     if( (t=find_one(t,n))==NULL )
     {	c->result=RESULT_DENY;
@@ -195,15 +196,18 @@ int generic_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, str
 { int perm;
     vs_t vse[MAX_VS_BITS/32];
     if( node->type->class_handler!=h )
-    {	errstr="class handler mismatch";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     if( h->classname->classes[comm->conn]!=o->class )
-    {	errstr="class mismatch";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     if( h->cinfo_offset[comm->conn]<0 )
-    {	errstr="no cinfo";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     perm=1;
@@ -218,23 +222,28 @@ int generic_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, str
         object_do_sethandler(o);
         return(1);
     }
-    else
-        errstr="Permission denied";
+    else {
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
+    }
     return(0);
 }
 
 struct space_s *generic_get_primary_space( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )
 { struct tree_s *t;
     if( h->classname->classes[comm->conn]!=o->class )
-    {	errstr="class mismatch";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     if( h->cinfo_offset[comm->conn]<0 )
-    {	errstr="no cinfo";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     if( (t=h->get_tree_node(h,comm,o))==NULL )
-    {	errstr="invalid cinfo";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     return(t->primary_space);

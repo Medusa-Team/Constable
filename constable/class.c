@@ -9,14 +9,20 @@
 #include "comm.h"
 
 #include <stdio.h>
+#include <pthread.h>
 
+static pthread_mutex_t classes_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct class_names_s *classes=NULL;
 
 struct class_names_s *get_class_by_name( char *name )
 { struct class_names_s *c;
+    pthread_mutex_lock(&classes_lock);
     for(c=classes;c!=NULL;c=c->next)
-        if( !strncmp(c->name,name,MEDUSA_CLASSNAME_MAX) )
+        if( !strncmp(c->name,name,MEDUSA_CLASSNAME_MAX) ) {
+            pthread_mutex_unlock(&classes_lock);
             return( c );
+        }
+    pthread_mutex_unlock(&classes_lock);
     if( (c=malloc(sizeof(struct class_names_s)+strlen(name)+1))==NULL )
         return(NULL);
     if( (c->classes=(struct class_s**)(comm_new_array(sizeof(struct class_s*))))==NULL )
@@ -26,13 +32,16 @@ struct class_names_s *get_class_by_name( char *name )
     c->name=(char*)(c+1);
     strcpy(c->name,name);
     c->class_handler=NULL;
+    pthread_mutex_lock(&classes_lock);
     c->next=classes;
     classes=c;
+    pthread_mutex_unlock(&classes_lock);
     return(c);
 }
 
 int class_free_all_clases( struct comm_s *comm )
 { struct class_names_s *c;
+    pthread_mutex_lock(&classes_lock);
     for(c=classes;c!=NULL;c=c->next)
     {	if( c->classes[comm->conn]!=NULL )
         {
@@ -40,6 +49,7 @@ int class_free_all_clases( struct comm_s *comm )
             c->classes[comm->conn]=NULL;
         }
     }
+    pthread_mutex_unlock(&classes_lock);
     return(0);
 }
 
@@ -108,42 +118,49 @@ struct class_s *add_class( struct comm_s *comm, struct medusa_class_s *mc, struc
     p->classes[comm->conn]=c;
     hash_add(&(comm->classes),&(c->hashent),c->m.classid);
     if( debug_def_out!=NULL )
-    {	debug_def_out(debug_def_arg,"REGISTER ");
+    {	
+        pthread_mutex_lock(&debug_def_lock);
+        debug_def_out(debug_def_arg,"REGISTER ");
         class_print(c,debug_def_out,debug_def_arg);
+        pthread_mutex_unlock(&debug_def_lock);
     }
     return(c);
 }
 
-/* vrati offset (u_int16_t), alebo -1 ak chyba */
-/*
-   cinfo v constablovi uchovava pointer
-   cinfo_size uchovava pocet u_int32_t-bitovych slov od cinfo_offset
-*/
-int class_alloc_object_cinfo( struct class_s *c )
-{ int i;
-    for(i=0;i<c->cinfo_size/(sizeof(uintptr_t)/sizeof(u_int32_t)) && i<sizeof(c->cinfo_mask)*8;i++)
-    {	if( !(c->cinfo_mask & (1<<i)) )
-        {	c->cinfo_mask|= 1<<i;
-            return(c->cinfo_offset+i*sizeof(uintptr_t));
+#define DWORDS_PER_PTR (sizeof(uintptr_t) / sizeof(u_int32_t))
+/**
+ * Allocate a block in cinfo. Size of the block is determined by
+ * \c sizeof(uintptr_t).
+ *
+ * @param cinfo_size Stores number of 32-bit words available at \p cinfo_offset
+ * for allocation.
+ * @return Offset for the allocated cinfo block or -1 if block can't be
+ * allocated.
+ */
+int class_alloc_cinfo(u_int16_t cinfo_size, uintptr_t *cinfo_mask,
+                      u_int16_t cinfo_offset)
+{
+    int i;
+
+    for (i = 0; (i < cinfo_size / DWORDS_PER_PTR) && (i < sizeof(cinfo_mask) * 8); i++) {
+        if (!(*cinfo_mask & 1 << i)) {
+            /* found a free block */
+            *cinfo_mask |= 1 << i;
+            return cinfo_offset + i * sizeof(uintptr_t);
         }
     }
-    return(-1);
+    return -1;
 }
 
-/* vrati offset (u_int16_t), alebo -1 ak chyba */
-/*
-   cinfo v constablovi uchovava pointer
-   cinfo_size uchovava pocet u_int32_t-bitovych slov od cinfo_offset
-*/
-int class_alloc_subject_cinfo( struct class_s *c )
-{ int i;
-    for(i=0;i<c->subject.cinfo_size/(sizeof(uintptr_t)/sizeof(u_int32_t)) && i<sizeof(c->subject.cinfo_mask)*8;i++)
-    {	if( !(c->subject.cinfo_mask & (1<<i)) )
-        {	c->subject.cinfo_mask|= 1<<i;
-            return(c->subject.cinfo_offset+i*sizeof(uintptr_t));
-        }
-    }
-    return(-1);
+int class_alloc_object_cinfo(struct class_s *c)
+{
+    return class_alloc_cinfo(c->cinfo_size, &c->cinfo_mask, c->cinfo_offset);
+}
+
+int class_alloc_subject_cinfo(struct class_s *c)
+{
+    return class_alloc_cinfo(c->subject.cinfo_size, &c->subject.cinfo_mask,
+                             c->subject.cinfo_offset);
 }
 
 int class_add_handler( struct class_names_s *c, struct class_handler_s *handler )
@@ -166,11 +183,15 @@ struct medusa_attribute_s *get_attribute( struct class_s *c, char *name )
 int class_comm_init( struct comm_s *comm )
 { struct class_names_s *c;
     struct class_handler_s *h;
+    pthread_mutex_lock(&classes_lock);
     for(c=classes;c!=NULL;c=c->next)
         for(h=c->class_handler;h!=NULL;h=h->next)
             if( h->init_comm )
-                if( h->init_comm(h,comm) < 0 )
+                if( h->init_comm(h,comm) < 0 ) {
+                    pthread_mutex_unlock(&classes_lock);
                     return(-1);
+                }
+    pthread_mutex_unlock(&classes_lock);
     return(0);
 }
 

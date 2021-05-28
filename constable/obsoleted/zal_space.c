@@ -2,6 +2,7 @@
 #include "constable.h"
 #include "comm.h"
 #include "space.h"
+#include <pthread.h>
 
 /* cesty sa do space pridavaju naraz.. nestane sa, ze by sa pridavali do dvoch
    na striedacku. Je to zabezpecene c language/conf_lang.c
@@ -12,7 +13,8 @@ struct space_s *global_spaces=NULL;
 static ltree_t *new_path( ltree_t *prev, void *path_or_space )
 { ltree_t *l;
     if( (l=malloc(sizeof(ltree_t)))==NULL )
-    {	errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     l->prev=prev;
@@ -23,7 +25,8 @@ static ltree_t *new_path( ltree_t *prev, void *path_or_space )
 static levent_t *new_levent( levent_t **prev, struct event_handler_s *handler, struct space_s *subject, struct space_s *object )
 { levent_t *l;
     if( (l=malloc(sizeof(levent_t)))==NULL )
-    {	errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     l->handler=handler;
@@ -47,13 +50,15 @@ struct space_s *space_create( char *name, int primary )
     int a;
     if( name!=NULL )
     {	if( space_find(name)!=NULL )
-        {	errstr="Redefinition of space";
+        {	char **errstr = (char**) pthread_getspecific(errstr_key);
+            *errstr=Out_of_memory;
             return(NULL);
         }
     }
     else	name=" _";
     if( (t=malloc(sizeof(struct space_s)+strlen(name)+1))==NULL )
-    {	errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     strcpy(t->name,name);

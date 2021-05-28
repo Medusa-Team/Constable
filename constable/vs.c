@@ -6,6 +6,7 @@
 
 #include "constable.h"
 #include "vs.h"
+#include <pthread.h>
 
 //static int number_of_vs=MAX_VS_BITS/32;
 #define	number_of_vs	(MAX_VS_BITS/32)
@@ -15,7 +16,8 @@ static struct vs_s vs_tab;
 int vs_init( void )
 { int i;
     /*	if( (max_vs % 32) !=0 )
-    {	errstr="Invalid number of vs";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
 */
@@ -25,7 +27,8 @@ int vs_init( void )
     /*
     if( max_vs > MAX_VS_BITS )
     {	number_of_vs=MAX_VS_BITS/32;
-        errstr="Too many vs";
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(1);
     }
     number_of_vs= max_vs/32;
@@ -40,12 +43,14 @@ struct vs_s *vs_alloc( char *name )
     vs_t x;
     for(p=&vs_tab;p->next!=NULL;p=p->next)
     {	if( name[0]!=' ' && !strcmp(name,p->next->name) )
-        {	errstr="Redefinition of vs";
+        {	char **errstr = (char**) pthread_getspecific(errstr_key);
+            *errstr=Out_of_memory;
             return(NULL);
         }
     }
     if( (p->next=malloc(sizeof(struct vs_s)+strlen(name)+1))==NULL )
-    {		errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     p->next->next=NULL;
@@ -59,7 +64,8 @@ struct vs_s *vs_alloc( char *name )
     if( x )
     {	free(p->next);
         p->next=NULL;
-        errstr="Out of vs";
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     return(p->next);
@@ -83,7 +89,8 @@ struct vs_s *vs_find( char *name )
     {	if( !strcmp(name,p->name) )
             return(p);
     }
-    errstr="Undefined vs";
+    char **errstr = (char**) pthread_getspecific(errstr_key);
+    *errstr=Out_of_memory;
     return(NULL);
 }
 

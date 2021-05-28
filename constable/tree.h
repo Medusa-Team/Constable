@@ -29,12 +29,12 @@ struct tree_event_s {
 struct tree_s {
     struct tree_s	*parent;
     struct tree_s	*child;		/* normalny potomkovia */
-    struct tree_s	*reg;		/* potomkovia s regexpami */
+    struct tree_s	*regex_child;	/* potomkovia s regexpami */
     struct tree_s	*next;
     struct tree_s	*alt;		/* alternative */
     struct tree_type_s *type;
     char		*name;
-    void		*extra;		/* precompiled regexp... */
+    void		*compiled_regex;
     struct space_s	*primary_space;
     struct tree_event_s	*events;
     vs_t	vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];

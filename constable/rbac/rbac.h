@@ -12,6 +12,7 @@
 #include "../tree.h"
 #include "../object.h"
 #include <sys/types.h>
+#include <pthread.h>
 
 struct user_assignment_s;
 struct permission_assignment_s;
@@ -90,12 +91,21 @@ struct hierarchy_s {			/* H - hierarchy */
 extern struct class_s *rbac_user_class,*rbac_perm_class,*rbac_role_class,*rbac_ROLE_class;
 extern struct tree_type_s rbac_t_user,rbac_t_perm,rbac_t_role,rbac_t_ROLE;
 extern struct user_s *rbac_users;
+extern pthread_rwlock_t rbac_roles_lock;
 extern struct role_s *rbac_roles;
 extern struct comm_s *rbac_comm;
 
 extern int rbac_roles_need_reinit;
 int rbac_roles_reinit( void );
-#define VALIDATE_ROLES()	do { if(rbac_roles_need_reinit) rbac_roles_reinit(); } while(0)
+#define VALIDATE_ROLES()                                        \
+    do {                                                        \
+        pthread_rwlock_rdlock(&rbac_roles_lock);                \
+        if(rbac_roles_need_reinit) {                            \
+            pthread_rwlock_unlock(&rbac_roles_lock);            \
+            rbac_roles_reinit();                                \
+        }                                                       \
+        pthread_rwlock_unlock(&rbac_roles_lock);                \
+    } while(0)
 
 struct user_s * rbac_user_add( char *name, uid_t uid );
 struct user_s * rbac_user_find( char *name );

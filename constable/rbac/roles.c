@@ -12,7 +12,9 @@
 #include "../language/error.h"
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
+pthread_rwlock_t rbac_roles_lock = PTHREAD_RWLOCK_INITIALIZER;
 struct role_s *rbac_roles=NULL;
 
 int rbac_roles_need_reinit=1;
@@ -20,15 +22,22 @@ int rbac_roles_need_reinit=1;
 struct role_s * rbac_role_add( char *name )
 { struct role_s *n,**p;
     int x=1;
+    pthread_rwlock_wrlock(&rbac_roles_lock);
     for(p=&rbac_roles;(*p)!=NULL;p=&((*p)->next))
         if( (x=strcmp((*p)->name,name))>=0 )
             break;
     if( x==0 )
-    {	errstr="Redefinition of role";
+    {
+        pthread_rwlock_unlock(&rbac_roles_lock);
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     if( (n=malloc(sizeof(struct role_s)))==NULL )
-    {	errstr=Out_of_memory;
+    {
+        pthread_rwlock_unlock(&rbac_roles_lock);
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     memset(n,0,sizeof(struct role_s));
@@ -47,17 +56,20 @@ struct role_s * rbac_role_add( char *name )
     n->object.class=rbac_role_class;
     n->object.data=(char*)n;
     *p=n;
+    pthread_rwlock_unlock(&rbac_roles_lock);
     return(n);
 }
 
 int rbac_role_del( struct role_s *role )
 { struct role_s **p,*o;
     struct permission_assignment_s *a;
+    pthread_rwlock_wrlock(&rbac_roles_lock);
     for(p=&rbac_roles;(*p)!=NULL;p=&((*p)->next))
         if( (*p)==role )
             break;
     if( (*p)!=role )
-    {	errstr="Undefined role";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
 
@@ -75,15 +87,20 @@ int rbac_role_del( struct role_s *role )
         rbac_del_hierarchy(o,o->sub->sub_role);
 
     *p= (*p)->next;
+    pthread_rwlock_unlock(&rbac_roles_lock);
     free(o);
     return(0);
 }
 
 struct role_s * rbac_role_find( char *name )
 { struct role_s *p;
+    pthread_rwlock_rdlock(&rbac_roles_lock);
     for(p=rbac_roles;p!=NULL;p=p->next)
-        if( strcmp(p->name,name)==0 )
+        if( strcmp(p->name,name)==0 ) {
+            pthread_rwlock_unlock(&rbac_roles_lock);
             return(p);
+        }
+    pthread_rwlock_unlock(&rbac_roles_lock);
     return(NULL);
 }
 
@@ -91,13 +108,15 @@ int rbac_add_ua( struct user_s *user, struct role_s *role )
 { struct user_assignment_s *n;
     int i;
     if( (n=malloc(sizeof(struct user_assignment_s)))==NULL )
-    {	errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     for(i=0;i<user->nr_roles;i++)
     {	if( user->roles[i]==role )
         {	free(n);
-            errstr="User already assignet to this role";
+            char **errstr = (char**) pthread_getspecific(errstr_key);
+            *errstr=Out_of_memory;
             return(-1);
         }
     }
@@ -106,7 +125,8 @@ int rbac_add_ua( struct user_s *user, struct role_s *role )
             if( user->roles[i]==NULL )
                 break;
         if( i>=USER_MAX_ROLES )
-        {	errstr="Reached maximum roles per user";
+        {	char **errstr = (char**) pthread_getspecific(errstr_key);
+            *errstr=Out_of_memory;
             return(-1);
         }
         user->roles[i]=role;
@@ -137,7 +157,8 @@ int rbac_del_ua( struct user_s *user, struct role_s *role )
         }
     }
     if( a==NULL )
-    {	errstr="Not user of role";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     for(u=&(role->ua);*u!=a;u=&((*u)->next_user));
@@ -180,6 +201,7 @@ int rbac_roles_reinit( void )
     struct permission_assignment_s *p;
     int i;
     vs_t *v;
+    pthread_rwlock_wrlock(&rbac_roles_lock);
     for(r=rbac_roles;r!=NULL;r=r->next)
     {
         for(i=0;i<NR_ACCESS_TYPES;i++)
@@ -204,6 +226,7 @@ int rbac_roles_reinit( void )
     for(r=rbac_roles;r!=NULL;r=r->next)
         rbac_inherit_sub(r);
     rbac_roles_need_reinit=0;
+    pthread_rwlock_unlock(&rbac_roles_lock);
     return(0);
 }
 
@@ -221,11 +244,13 @@ static int is_subrole( struct role_s *role, struct role_s *test )
 int rbac_set_hierarchy( struct role_s *sup_role, struct role_s *sub_role )
 { struct hierarchy_s *n;
     if( is_subrole(sub_role,sup_role) )
-    {	errstr="Recursive subroles";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     if( (n=malloc(sizeof(struct hierarchy_s)))==NULL )
-    {	errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     n->sup_role= sup_role;
@@ -246,7 +271,8 @@ int rbac_del_hierarchy( struct role_s *sup_role, struct role_s *sub_role )
             break;
     }
     if( h==NULL )
-    {	errstr="Not subrole";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     for(b=&(sup_role->sub);*b!=h;b=&((*b)->next_sub));
@@ -262,7 +288,8 @@ int rbac_role_add_perm( struct role_s *role, int which, struct space_s *t )
 { struct permission_assignment_s **p;
     vs_t *v;
     if( which<0 || which>=NR_ACCESS_TYPES )
-    {	errstr="Invalid access type";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     for(p=&(role->perm);*p!=NULL;p=&((*p)->next))
@@ -270,7 +297,8 @@ int rbac_role_add_perm( struct role_s *role, int which, struct space_s *t )
             break;
     if( *p==NULL )
     {	if( (*p=malloc(sizeof(struct permission_assignment_s)))==NULL )
-        {	errstr=Out_of_memory;
+        {	char **errstr = (char**) pthread_getspecific(errstr_key);
+            *errstr=Out_of_memory;
             return(-1);
         }
         (*p)->next=NULL;
@@ -290,7 +318,8 @@ int rbac_role_del_perm( struct role_s *role, int which, struct space_s *t )
 { struct permission_assignment_s **p,*o;
     int i;
     if( which<0 || which>=NR_ACCESS_TYPES )
-    {	errstr="Invalid access type";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     for(p=&(role->perm);*p!=NULL;p=&((*p)->next))
@@ -311,7 +340,8 @@ int rbac_role_del_perm( struct role_s *role, int which, struct space_s *t )
             }
         }
     }
-    errstr="Not permissoion of role";
+    char **errstr = (char**) pthread_getspecific(errstr_key);
+    *errstr=Out_of_memory;
     return(-1);
 }
 

@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <pthread.h>
 
 enum {
     LS_start=LS|1,
@@ -230,7 +231,8 @@ static char *store_string( char *s )
     if( r==0 )
         return((*p)->str);
     if( (n=malloc(sizeof(struct str_archive_s)+strlen(s)+1))==NULL )
-    {	errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     strcpy(n->str,s);
@@ -272,7 +274,8 @@ static void gen_lex_char( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t
 {	*sym=T_num;
     *data=(uintptr_t)(buf[0]);
     if( buf[0]==0 || buf[1]!=0 )
-    {	errstr="Invalid Character constant";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         *sym=E|1;
     }
 }
@@ -282,7 +285,8 @@ static void gen_lex_num( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t 
     errno=0;
     *data=(uintptr_t)strtol(buf,NULL,0);
     if( errno==ERANGE )
-    {	errstr="Constant out of range";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         *sym=E|1;
     }
 }
@@ -292,7 +296,8 @@ static void gen_lex_arg( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t 
     errno=0;
     *data=(uintptr_t)strtol(buf,NULL,0);
     if( errno==ERANGE )
-    {	errstr="Constant out of range";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         *sym=E|1;
     }
 }

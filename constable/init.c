@@ -13,12 +13,14 @@
 #include <sys/wait.h>
 #include <sched.h>
 #include <signal.h>
+#include <pthread.h>
 #include "event.h"
 #include "comm.h"
 #include "init.h"
 
 #include "space.h"
 #include "tree.h"
+#include "constable.h"
 
 #ifndef MEDUSA_INITNAME
 #define MEDUSA_INITNAME	"/sbin/init"
@@ -73,7 +75,7 @@ int init_all( char *filename )
 #ifdef RBAC
     _rbac_init();
 #endif
-    if( comm_buf_init()<0 )
+    if( buffers_init()<0 )
         return(-1);
     if( mcp_init(filename)<0 )
         return(-1);
@@ -86,7 +88,7 @@ int init_all( char *filename )
         }
     }
 
-    if( comm_buf_init2()<0 )
+    if( buffers_alloc()<0 )
         return(-1);
     if( vs_init()<0 )
         return(-1);
@@ -164,14 +166,33 @@ static int run_init( int argc, char *argv[] )
 }
 
 void(*debug_def_out)( int arg, char *str )=NULL; 
+pthread_mutex_t debug_def_lock = PTHREAD_MUTEX_INITIALIZER;
 int debug_def_arg=0;
 void(*debug_do_out)( int arg, char *str )=NULL; 
+pthread_mutex_t debug_do_lock = PTHREAD_MUTEX_INITIALIZER;
 int debug_do_arg=0;
 
 static void debug_fd_write( int arg, char *s )
 {
     //write((int)arg,s,strlen(s));
     write(arg,s,strlen(s));
+}
+
+int tls_create(void)
+{
+    TLS_CREATE(&runtime_file_key, NULL);
+    TLS_CREATE(&runtime_pos_key, NULL);
+    TLS_CREATE(&errstr_key, NULL);
+    return 0;
+}
+
+int tls_alloc(void)
+{
+    void *data;
+    TLS_ALLOC(runtime_file_key, RUNTIME_FILE_TYPE);
+    TLS_ALLOC(runtime_pos_key, RUNTIME_POS_TYPE);
+    TLS_ALLOC(errstr_key, char**);
+    return 0;
 }
 
 int main( int argc, char *argv[] )
@@ -215,6 +236,12 @@ int main( int argc, char *argv[] )
         }
     }
 
+    if (tls_create())
+        return -1;
+
+    if (tls_alloc())
+        return -1;
+
     if( init_all(conf_name)<0 )
         return(-1);
 
@@ -234,6 +261,6 @@ int main( int argc, char *argv[] )
     if( kill_init )
         kill(1,SIGHUP);
     comm_do();
-    return(-1);
+    return(0);
 }
 

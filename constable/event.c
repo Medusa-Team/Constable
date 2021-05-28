@@ -11,6 +11,7 @@
 #include <sys/param.h>
 
 #include <stdio.h>
+#include <pthread.h>
 
 int event_mask_clear( event_mask_t *e )
 {
@@ -81,11 +82,12 @@ int event_mask_sub( event_mask_t *e, event_mask_t *f )
 }
 
 
-
+static pthread_mutex_t events_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct event_names_s *events;
 
 int event_free_all_events( struct comm_s *comm )
 { struct event_names_s *e;
+    pthread_mutex_lock(&events_lock);
     for(e=events;e!=NULL;e=e->next)
     {	if( e->events[comm->conn]!=NULL )
         {
@@ -93,6 +95,7 @@ int event_free_all_events( struct comm_s *comm )
             e->events[comm->conn]=NULL;
         }
     }
+    pthread_mutex_unlock(&events_lock);
     return(0);
 }
 
@@ -137,6 +140,7 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
 
     if( debug_def_out!=NULL )
     { char buf[16];
+        pthread_mutex_lock(&debug_def_lock);
         debug_def_out(debug_def_arg,"REGISTER [\"");
         debug_def_out(debug_def_arg,comm->name);
         debug_def_out(debug_def_arg,"\"] event ");
@@ -172,6 +176,7 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
         debug_def_out(debug_def_arg," {\n");
         attr_print(&(e->operation_class.attr[0]),debug_def_out,debug_def_arg);
         debug_def_out(debug_def_arg,"}\n");
+        pthread_mutex_unlock(&debug_def_lock);
     }
 
     if( (p=event_type_find_name(e->m.name))==NULL )
@@ -187,9 +192,13 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
 struct event_names_s *event_type_find_name( char *name )
 { struct event_names_s *e;
     int i;
+    pthread_mutex_lock(&events_lock);
     for(e=events;e!=NULL;e=e->next)
-        if( !strcmp(e->name,name) )
+        if( !strcmp(e->name,name) ) {
+            pthread_mutex_unlock(&events_lock);
             return( e );
+        }
+    pthread_mutex_unlock(&events_lock);
     if( (e=malloc(sizeof(struct event_names_s)+strlen(name)+1))==NULL )
         return(NULL);
     if( (e->events=(struct event_type_s**)(comm_new_array(sizeof(struct event_type_s*))))==NULL )
@@ -200,15 +209,18 @@ struct event_names_s *event_type_find_name( char *name )
         e->handlers_hash[i]=NULL;
     e->name=(char*)(e+1);
     strcpy(e->name,name);
+    pthread_mutex_lock(&events_lock);
     e->next=events;
     events=e;
+    pthread_mutex_unlock(&events_lock);
     return(e);
 }
 
 struct event_hadler_hash_s *evhash_add( struct event_hadler_hash_s **hash, struct event_handler_s *handler, struct event_names_s *evname )
 { struct event_hadler_hash_s *l;
     if( (l=malloc(sizeof(struct event_hadler_hash_s)))==NULL )
-    {	errstr=Out_of_memory;
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(NULL);
     }
     for(;*hash!=NULL;hash=&((*hash)->next))
@@ -330,8 +342,11 @@ static int do_event_list( struct comm_buffer_s *cb )
     if( cb->event==NULL )
         return(do_handler(cb));
     c=&(cb->context);
-    if( debug_do_out!=NULL && cb->do_phase==0 )
+    if( debug_do_out!=NULL && cb->do_phase==0 ) {
+        pthread_mutex_lock(&debug_do_lock);
         event_context_print(c,debug_do_out,debug_do_arg);
+        pthread_mutex_unlock(&debug_do_lock);
+    }
 
 #if 0
     //printf("ZZZ cb->ehh_list=%d\n",cb->ehh_list);

@@ -293,8 +293,10 @@ static sym_t err_error( struct compiler_err_class *this, sym_t errsym, sym_t inf
         mcp_error("Unexpected %s",sym2str(info));
     else if( (errsym&TYP)==T && ((info&TYP)==T || info==TEND) )
         mcp_error("Missing %s",sym2str(errsym));
-    else if( errsym==(E|1) )
-        mcp_error("%s",errstr);
+    else if( errsym==(E|1) ) {
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        mcp_error("%s",*errstr);
+    }
     else if( (errsym&TYP)==E && info==END )
         mcp_error("%04x",errsym&~TYP);
     else	mcp_error("%04x %04x",errsym,info);

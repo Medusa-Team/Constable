@@ -16,6 +16,7 @@
 #include "../language/error.h"
 #include "../comm.h"
 #include "../init.h"
+#include <pthread.h>
 
 struct class_s *rbac_user_class,*rbac_perm_class,*rbac_role_class,*rbac_ROLE_class;
 
@@ -140,7 +141,8 @@ static struct medusa_comm_class_s rbac_user_mclass={
 
                 static int rbac_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, struct tree_s *node )
                 {
-                    errstr="rbac objects cannot be moved";
+                    char **errstr = (char**) pthread_getspecific(errstr_key);
+                    *errstr=Out_of_memory;
                     return(-1);
                 }
 

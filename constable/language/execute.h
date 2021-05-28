@@ -59,8 +59,7 @@ extern struct medusa_attribute_s execute_attr_int;
 extern struct medusa_attribute_s execute_attr_str;
 extern struct medusa_attribute_s execute_attr_pointer;
 
-struct object_s *r2o( struct register_s *r );
-struct object_s *r2o2( struct register_s *r );
+struct object_s *r2o(const struct register_s *r, struct object_s *o);
 
 int r_int( struct register_s *r );
 void r_imm( struct register_s *r );
@@ -83,12 +82,12 @@ int execute_handler( struct comm_buffer_s *comm_buff, struct event_handler_s *h,
 
 struct stack_s *execute_get_stack( void );
 void execute_put_stack( struct stack_s *stack );
-struct execute_s *execute_alloc_execute( void );
 void execute_push( struct execute_s *e, uintptr_t data );
 uintptr_t execute_pop( struct execute_s *e );
 uintptr_t execute_readstack( struct execute_s *e, int pos );
 uintptr_t *execute_stack_pointer( struct execute_s *e, int pos );
 int execute_init_stacks( int n );
+int execute_registers_init(void);
 
 #endif /* _EXECUTE_H */
 

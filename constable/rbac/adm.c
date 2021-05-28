@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
+#include <pthread.h>
 
 /*
     - vytvorit rolu			create <role>
@@ -104,7 +105,8 @@ int rbac_adm_delete_role( struct comm_buffer_s *to_wait, char *name )
 { struct comm_buffer_s *p;
     struct role_s *r;
     if( (r=rbac_role_find(name))==NULL )
-    {	errstr="Undefined role";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     if( (p=comm_buf_get(0,rbac_comm))==NULL )
@@ -135,7 +137,8 @@ int rbac_adm_hierarchy( int add, struct comm_buffer_s *to_wait, char *sup_name, 
     struct role_s *rp,*rb;
     if( (rp=rbac_role_find(sup_name))==NULL
             || (rb=rbac_role_find(sub_name))==NULL )
-    {	errstr="Undefined role";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     if( (p=comm_buf_get(0,rbac_comm))==NULL )
@@ -189,11 +192,13 @@ int rbac_adm_user( int add, struct comm_buffer_s *to_wait, char *role, char *use
     struct role_s *r;
     struct user_s *u;
     if( (r=rbac_role_find(role))==NULL )
-    {	errstr="Undefined role";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     if( (u=rbac_user_find(user))==NULL )
-    {	errstr="Undefined user";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     if( (p=comm_buf_get(0,rbac_comm))==NULL )
@@ -258,7 +263,8 @@ int rbac_adm_perm( int add, struct comm_buffer_s *to_wait, char *role, char *acc
     struct role_s *r;
     struct perm_s *perm;
     if( (r=rbac_role_find(role))==NULL )
-    {	errstr="Undefined role";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     if( (p=comm_buf_get(sizeof(struct perm_s),rbac_comm))==NULL )
@@ -302,7 +308,8 @@ int rbac_adm_perm_do2( struct comm_buffer_s *b )
     r=(struct role_s *)(b->context.object.data);
     perm=(struct perm_s *)(b->user2);
     if( (t=space_find(perm->space))==NULL )
-    {	errstr="Undefined space";
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     if( b->user_data )
@@ -325,7 +332,8 @@ int rbac_adm( struct comm_buffer_s *to_wait, char *op, char *s1, char *s2, char 
         case RESULT_OK:
             return(0);
         }
-        errstr="Permission denied";
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
         return(-1);
     }
     if( !strcmp(op,"lu") )
@@ -349,11 +357,13 @@ int rbac_adm( struct comm_buffer_s *to_wait, char *op, char *s1, char *s2, char 
     if( !strcmp(op,"save") )
     {	/*if( (x=atoi(s2))==0 )*/	x=16;
         if( rbac_save(rbac_conffile /*s1*/,x)<0 )
-        {	errstr="Can't write RBAC configuration file";
+        {	char **errstr = (char**) pthread_getspecific(errstr_key);
+            *errstr=Out_of_memory;
             return(-1);
         }
         return(0);
     }
-    errstr="Unknown command";
+    char **errstr = (char**) pthread_getspecific(errstr_key);
+    *errstr=Out_of_memory;
     return(-1);
 }

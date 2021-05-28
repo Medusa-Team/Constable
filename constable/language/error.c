@@ -10,13 +10,14 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <pthread.h>
 #include "../constable.h"
 #include "error.h"
 #include "language.h"
 
 extern compiler_class_t *global_compiler;
 
-char *errstr=NULL;
+pthread_key_t errstr_key;
 char *Out_of_memory="Out of memory";
 
 int error( const char *fmt, ... )
@@ -116,8 +117,10 @@ static sym_t err_error( struct compiler_err_class *this, sym_t errsym, sym_t inf
 		error("Unexpected %s",sym2str(info));
 	else if( (errsym&TYP)==T && ((info&TYP)==T || info==TEND) )
 		error("Missing %s",sym2str(errsym));
-	else if( errsym==(E|1) )
-		error("%s",errstr);
+	else if( errsym==(E|1) ) {
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+		error("%s",*errstr);
+    }
 	else if( errsym==(E|0x0d01) )
 		error("Undefined function");
 	else if( errsym==(SEC_START|3) && info==END )

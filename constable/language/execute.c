@@ -12,6 +12,7 @@
 #include "variables.h"
 #include "../constable.h"
 #include "../comm.h"
+#include "../threading.h"
 
 /* stack format:
 e->pos->
@@ -274,16 +275,19 @@ void reg_load_var( struct register_s *r, struct execute_s *e, char *name, char *
 	obj_to_reg(r,o,attr);
 }
 
-static struct register_s r0,r1;
+// static struct register_s r0,r1;
+static pthread_key_t r0_key, r1_key;
 
 char *execute_get_last_data( void )
 {
-	return (char*)(r0.data);
+    struct register_s *r0 = pthread_getspecific(r0_key);
+	return (char*)(r0->data);
 }
 
 struct medusa_attribute_s *execute_get_last_attr( void )
 {
-	return(r0.attr);
+    struct register_s *r0 = pthread_getspecific(r0_key);
+	return(r0->attr);
 }
 
 static int execute_handler_do( struct execute_s *e )
@@ -291,10 +295,15 @@ static int execute_handler_do( struct execute_s *e )
   struct object_s *v;
   int i;
   uintptr_t *cmd_p;
+  struct register_s *r0 = pthread_getspecific(r0_key);
+  struct register_s *r1 = pthread_getspecific(r1_key);
 
 #ifdef DEBUG_TRACE
-	strncpy(runtime_file,e->h->op_name+MEDUSA_OPNAME_MAX,sizeof(runtime_file));
-	runtime_file[sizeof(runtime_file)-1]=0;
+    char *runtime_file;
+    runtime_file = (char*) pthread_getspecific(runtime_file_key);
+	strncpy(runtime_file, e->h->op_name+MEDUSA_OPNAME_MAX, 
+            sizeof(RUNTIME_FILE_TYPE));
+	runtime_file[sizeof(RUNTIME_FILE_TYPE)-1]=0;
 #endif
 for(;;)
 {	cmd_p=e->p;
@@ -302,8 +311,9 @@ for(;;)
 #ifdef DEBUG_TRACE
 	x=*(e->p)++;
 	//snprintf(runtime_pos,sizeof(runtime_pos)-1,"%d:%d",((x>>16)&0x0000ffff),(x&0x0000ffff));
-	snprintf(runtime_pos,sizeof(runtime_pos)-1,"%p",(void*)x);
-	runtime_pos[sizeof(runtime_pos)-1]=0;
+    char *runtime_pos = (char*) pthread_getspecific(runtime_pos_key);
+	snprintf(runtime_pos,sizeof(RUNTIME_POS_TYPE)-1,"%p",(void*)x);
+	runtime_pos[sizeof(RUNTIME_POS_TYPE)-1]=0;
 //runtime("ZZZ %04x",cmd);
 #endif
 	switch( cmd )
@@ -323,33 +333,38 @@ for(;;)
 	case oLD1:	push(1);
 			push(LTI);
 			break;
-	case oDUP:	r_pop(&r0);
-			r_push(&r0);
-			r_push(&r0);
+	case oDUP:
+            r_pop(r0);
+			r_push(r0);
+			r_push(r0);
 			break;
-	case oSWP:	r_pop(&r0);
-			r_pop(&r1);
-			r_push(&r0);
-			r_push(&r1);
+	case oSWP:
+            r_pop(r0);
+			r_pop(r1);
+			r_push(r0);
+			r_push(r1);
 			break;
-	case oDEL:	r_pop(&r0);
+	case oDEL:
+            r_pop(r0);
 			break;
-	case oDEn:	r_pop(&r1);
+	case oDEn:	r_pop(r1);
 			x=pop();
 			while( x )
-			{	r_pop(&r0);
+			{	r_pop(r0);
 				x--;
 			}
-			r_push(&r1);
+			r_push(r1);
 			break;
-	case oIMM:	r_pop(&r0);
-			r_imm(&r0);
-			r_push(&r0);
+	case oIMM:
+            r_pop(r0);
+			r_imm(r0);
+			r_push(r0);
 			break;
-	case oSTO:	r_pop(&r0);
-			r_pop(&r1);
-			r_sto(&r1,&r0);
-			r_push(&r1);
+	case oSTO:
+            r_pop(r0);
+			r_pop(r1);
+			r_sto(r1,r0);
+			r_push(r1);
 			break;
 	case oFET:	if( (v=data_find_var(e,(char *)(*(e->p)++)))!=NULL )
 			{	if( (i=v->class->comm->fetch_object(v->class->comm,e->cont,v,e->my_comm_buff))<0 )
@@ -388,117 +403,117 @@ for(;;)
 			}
 			break;
 	case oLDC:	x=*(e->p)++;
-			load_constant(&r0,x,(char*)(*(e->p)++));
-			r_push(&r0);
+			load_constant(r0,x,(char*)(*(e->p)++));
+			r_push(r0);
 			break;
-	case oLDV:	reg_load_var(&r0,e,(char*)(*(e->p)++),NULL);
-			r_push(&r0);
+	case oLDV:	reg_load_var(r0,e,(char*)(*(e->p)++),NULL);
+			r_push(r0);
 			break;
 	case oLDS:	x=*(e->p)++;
-			reg_load_var(&r0,e,(char*)x,(char*)(*(e->p)++));
-			r_push(&r0);
+			reg_load_var(r0,e,(char*)x,(char*)(*(e->p)++));
+			r_push(r0);
 			break;
 	case oATR:	x=*(e->p)++;
-			r_pop(&r0);
-			if( r0.object==NULL )
+			r_pop(r0);
+			if( r0->object==NULL )
 			{	runtime("Referencing attribute in non object");
 				push(0);
 				push(LTI);
 				break;
 			}
-			obj_to_reg(&r0,r0.object,(char*)x);
-			r_push(&r0);
+			obj_to_reg(r0,r0->object,(char*)x);
+			r_push(r0);
 			break;
 	case oNEW:	x=*(e->p)++;
-			r_pop(&r0);
-			if( r0.attr!=&execute_attr_pointer
-				||  (*((uintptr_t*)(r0.data)))==0
-				|| ((struct class_names_s*)(*((uintptr_t*)(r0.data))))->classes[e->comm->conn]==NULL )
+			r_pop(r0);
+			if( r0->attr!=&execute_attr_pointer
+				||  (*((uintptr_t*)(r0->data)))==0
+				|| ((struct class_names_s*)(*((uintptr_t*)(r0->data))))->classes[e->comm->conn]==NULL )
 			{	runtime("Invalid variable type");
-				*((uintptr_t*)(r0.data))=0; /* NULL */
-				r_push(&r0); /* len aby nieco bolo */
+				*((uintptr_t*)(r0->data))=0; /* NULL */
+				r_push(r0); /* len aby nieco bolo */
 				break;
 			}
-			if( (v=alloc_var((char*)(x),NULL,((struct class_names_s*)(*((uintptr_t*)(r0.data))))->classes[e->comm->conn]))==NULL )
-				runtime("Can't allocate varible",((struct class_names_s*)((struct class_names_s*)(*((uintptr_t*)(r0.data)))))->name);
-			*((uintptr_t*)(r0.data))=(uintptr_t)v;
-			r_push(&r0);
+			if( (v=alloc_var((char*)(x),NULL,((struct class_names_s*)(*((uintptr_t*)(r0->data))))->classes[e->comm->conn]))==NULL )
+				runtime("Can't allocate varible",((struct class_names_s*)((struct class_names_s*)(*((uintptr_t*)(r0->data)))))->name);
+			*((uintptr_t*)(r0->data))=(uintptr_t)v;
+			r_push(r0);
 			break;
 	case oALI:	x=*(e->p)++;
-			r_pop(&r0);
-			if( (r0.attr->type & 0x0f)!=MED_TYPE_STRING
-				||  r0.data==NULL )
+			r_pop(r0);
+			if( (r0->attr->type & 0x0f)!=MED_TYPE_STRING
+				||  r0->data==NULL )
 			{	runtime("Invalid name of aliased variable");
-				r0.attr=&execute_attr_pointer;
-				r0.data=r0.buf;
-				*((uintptr_t*)(r0.data))=0; /* NULL */
-				r_push(&r0); /* len aby nieco bolo */
+				r0->attr=&execute_attr_pointer;
+				r0->data=r0->buf;
+				*((uintptr_t*)(r0->data))=0; /* NULL */
+				r_push(r0); /* len aby nieco bolo */
 				break;
 			}
-			if( (v=data_alias_var((char*)(x),data_find_var(e,(char *)(r0.data))))==NULL )
+			if( (v=data_alias_var((char*)(x),data_find_var(e,(char *)(r0->data))))==NULL )
 				runtime("Can't alias varible");
 			/* init register */
-			r0.flags=0;
-			r0.object=NULL;
-			r0.class=NULL;
-			r0.attr=&execute_attr_pointer;
-			r0.data=r0.buf;
-			*((uintptr_t*)(r0.data))=(uintptr_t)v;
-			r_push(&r0);
+			r0->flags=0;
+			r0->object=NULL;
+			r0->class=NULL;
+			r0->attr=&execute_attr_pointer;
+			r0->data=r0->buf;
+			*((uintptr_t*)(r0->data))=(uintptr_t)v;
+			r_push(r0);
 			break;
-	case oVRL:	r_pop(&r0);
-			if( r0.attr!=&execute_attr_pointer
-			    || (v=(struct object_s*)(*((uintptr_t*)(r0.data))))==NULL )
-			{	r_push(&r0); /* len aby nieco bolo */
+	case oVRL:	r_pop(r0);
+			if( r0->attr!=&execute_attr_pointer
+			    || (v=(struct object_s*)(*((uintptr_t*)(r0->data))))==NULL )
+			{	r_push(r0); /* len aby nieco bolo */
 				break;
 			}
 			var_link((struct object_s**)(execute_stack_pointer(e,e->base)),v);
-			obj_to_reg(&r0,v,NULL);
-			r_push(&r0);
+			obj_to_reg(r0,v,NULL);
+			r_push(r0);
 			break;
-	case oVRT:	r_pop(&r0);
-			if( r0.attr!=&execute_attr_pointer
-			    || (v=(struct object_s*)(*((uintptr_t*)(r0.data))))==NULL )
-			{	r_push(&r0); /* len aby nieco bolo */
+	case oVRT:	r_pop(r0);
+			if( r0->attr!=&execute_attr_pointer
+			    || (v=(struct object_s*)(*((uintptr_t*)(r0->data))))==NULL )
+			{	r_push(r0); /* len aby nieco bolo */
 				break;
 			}
 			var_link(&(e->c->local_vars),v);
-			obj_to_reg(&r0,v,NULL);
-			r_push(&r0);
+			obj_to_reg(r0,v,NULL);
+			r_push(r0);
 			break;
-	case oTOF:	r_pop(&r0);
-			if( r0.class==NULL )
+	case oTOF:	r_pop(r0);
+			if( r0->class==NULL )
 			{	runtime("Invalid typeof() argument");
 				push(0);
 			}
-			else	push((uintptr_t)(r0.class->classname->name));
+			else	push((uintptr_t)(r0->class->classname->name));
 			push(LTS);
 			break;
-	case oCOF:	r_pop(&r0);
-			if( r0.class==NULL )
+	case oCOF:	r_pop(r0);
+			if( r0->class==NULL )
 			{	runtime("Invalid commof() argument");
 				push(0);
 			}
-			else	push((uintptr_t)(r0.class->comm->name));
+			else	push((uintptr_t)(r0->class->comm->name));
 			push(LTS);
-	case oS2C:	r_pop(&r0);
-			if( (r0.attr->type & 0x0f)!=MED_TYPE_STRING )
+	case oS2C:	r_pop(r0);
+			if( (r0->attr->type & 0x0f)!=MED_TYPE_STRING )
 			{	runtime("Name of class must be identifier or string");
 				push(0);
 			}
-			else if( (x=(uintptr_t)(get_class_by_name((char*)r0.data)))==0 )
-			{	runtime("Class '%s' does not exist",r0.data);
+			else if( (x=(uintptr_t)(get_class_by_name((char*)r0->data)))==0 )
+			{	runtime("Class '%s' does not exist",r0->data);
 				push(0);
 			}
 			else	push(x);
 			push(LTP);
 			break;
-	case oSCS:	r_pop(&r0);
-			if( (r0.attr->type & 0x0f)!=MED_TYPE_STRING )
+	case oSCS:	r_pop(r0);
+			if( (r0->attr->type & 0x0f)!=MED_TYPE_STRING )
 			{	runtime("Name of connection must be string");
 				break;
 			}
-			if( (e->comm=comm_find((char*)r0.data))!=NULL )
+			if( (e->comm=comm_find((char*)r0->data))!=NULL )
 				break;
 	case oSCD:	e->comm=e->my_comm_buff->comm;
 			break;
@@ -518,30 +533,30 @@ for(;;)
 	case oOR:
 	case oAND:
 	case oXOR:
-			r_pop(&r0);
-			r_pop(&r1);
-			do_bin_op(cmd,&r1,&r0);
-			r_push(&r1);
+			r_pop(r0);
+			r_pop(r1);
+			do_bin_op(cmd,r1,r0);
+			r_push(r1);
 			break;
-	case oNOT:	r_pop(&r0);
-			r_not(&r0);
-			r_push(&r0);
+	case oNOT:	r_pop(r0);
+			r_not(r0);
+			r_push(r0);
 			break;
-	case oNEG:	r_pop(&r0);
-			r_imm(&r0);
-			r_neg(&r0);
-			r_push(&r0);
+	case oNEG:	r_pop(r0);
+			r_imm(r0);
+			r_neg(r0);
+			r_push(r0);
 			break;
 
 	case oJR:	(e->p)+= *(e->p)+1;	/* (e->p)+= *(e->p)++; */
 			break;
-	case oJIZ:	r_pop(&r0);
-			if( ! r_nz(&r0) )
+	case oJIZ:	r_pop(r0);
+			if( ! r_nz(r0) )
 				(e->p)+= *(e->p)+1; /* (e->p)+= *(e->p)++; */
 			else	(e->p)++;
 			break;
-	case oJNZ:	r_pop(&r0);
-			if( r_nz(&r0) )
+	case oJNZ:	r_pop(r0);
+			if( r_nz(r0) )
 				(e->p)+= *(e->p)+1; /* (e->p)+= *(e->p)++; */
 			else	(e->p)++;
 			break;
@@ -562,42 +577,42 @@ printf("%p JSR %lx\n",(e->p)-2,x);
 			break;
 	case oRET:	
 printf("%p RET\n",(e->p)-1);
-			r_pop(&r0);
-			r_imm(&r0);	/* POZOR! mohla by byt z local_vars */
+			r_pop(r0);
+			r_imm(r0);	/* POZOR! mohla by byt z local_vars */
 			free_vars((struct object_s**)(execute_stack_pointer(e,e->base)));
 			pop(); /* local_vars */
 			e->base=pop();
 			if( e->pos <= e->start )
 			{	
-				e->c->result=r_int(&r0);
+				e->c->result=r_int(r0);
 				e->pos=e->start;
 				free_vars(&(e->c->local_vars));
 				return( 0 );
 			}
 			
 			(e->p)= (uintptr_t*) pop();
-			r_push(&r0);
+			r_push(r0);
 			break;
 	case oARG:	x=*(e->p)++;
-			if( !fn_getargsval(e,&r0,x) )
+			if( !fn_getargsval(e,r0,x) )
 				runtime("Invalid argument $%d",x);
-			r_push(&r0);
+			r_push(r0);
 			break;
 	case oBIN:	x=*(e->p)++;
 			e->fn_getsval_p=0;
 			/* init register */
-			r0.flags=0;
-			r0.object=NULL;
-			r0.class=NULL;
-			r0.attr=&execute_attr_int; r0.data=r0.buf;
-			*((uintptr_t*)(r0.data))= -1;
-			i=((buildin_t)(x))(e,&r0,fn_getsval);
+			r0->flags=0;
+			r0->object=NULL;
+			r0->class=NULL;
+			r0->attr=&execute_attr_int; r0->data=r0->buf;
+			*((uintptr_t*)(r0->data))= -1;
+			i=((buildin_t)(x))(e,r0,fn_getsval);
 			if( i>0 )
 			{	e->cont=i;
 				e->p=cmd_p;
 				return(i);
 			}
-			r_push(&r0);
+			r_push(r0);
 			break;
 	default:	runtime("Illegal instruction 0x%08x 0x%08x 0x%08x",cmd,(e->p)[0],(e->p)[1]);
 	}
@@ -607,35 +622,47 @@ printf("%p RET\n",(e->p)-1);
 
 int execute_handler( struct comm_buffer_s *comm_buff, struct event_handler_s *h, struct event_context_s *c )
 { int i;
-	if( comm_buff->comm->execute->h!=NULL && (comm_buff->comm->execute->h!=h || comm_buff->comm->execute->c!=c) )
-	{	comm_buf_to_queue(&(comm_buff->comm->execute->my_comm_buff->to_wake),comm_buff);
+	if( comm_buff->execute.h!=NULL && (comm_buff->execute.h!=h || comm_buff->execute.c!=c) )
+	{	comm_buf_to_queue(&(comm_buff->execute.my_comm_buff->to_wake),comm_buff);
 		return(2);
 	}
 //	//if( comm_buff->do_phase==0 )
-	if( comm_buff->comm->execute->h==NULL )
-	{	comm_buff->comm->execute->h=h;
-		comm_buff->comm->execute->c=c;
-		comm_buff->comm->execute->comm=comm_buff->comm;
-		comm_buff->comm->execute->my_comm_buff=comm_buff;
+	if( comm_buff->execute.h==NULL )
+	{	comm_buff->execute.h=h;
+		comm_buff->execute.c=c;
+		comm_buff->execute.comm=comm_buff->comm;
+		comm_buff->execute.my_comm_buff=comm_buff;
 
-		comm_buff->comm->execute->c->result=RESULT_OK;
-		comm_buff->comm->execute->p=(uintptr_t *)(comm_buff->comm->execute->h->data);
-		comm_buff->comm->execute->cont=0;
-		comm_buff->comm->execute->keep_stack=0;
-		comm_buff->comm->execute->start=comm_buff->comm->execute->pos;
-		execute_push(comm_buff->comm->execute,comm_buff->comm->execute->base);
-		comm_buff->comm->execute->base=comm_buff->comm->execute->pos;
-		execute_push(comm_buff->comm->execute,0);	/* local_vars */
+		comm_buff->execute.c->result=RESULT_OK;
+		comm_buff->execute.p=(uintptr_t *)(comm_buff->execute.h->data);
+		comm_buff->execute.cont=0;
+		comm_buff->execute.keep_stack=0;
+		comm_buff->execute.start=comm_buff->execute.pos;
+		execute_push(&comm_buff->execute,comm_buff->execute.base);
+		comm_buff->execute.base=comm_buff->execute.pos;
+		execute_push(&comm_buff->execute,0);	/* local_vars */
 printf("ZZZ: execute_handler: executin handler for %s\n",h->op_name);
 	}
-	if( (i=execute_handler_do(comm_buff->comm->execute))<=0 )
-		comm_buff->comm->execute->h=NULL;
+	if( (i=execute_handler_do(&comm_buff->execute))<=0 )
+		comm_buff->execute.h=NULL;
 	return(i);
 }
 
 int execute_init( int n )
 {
 	execute_init_stacks(n);
+    TLS_CREATE(&r0_key, NULL);
+    TLS_CREATE(&r1_key, NULL);
 	return(0);
 }
 
+/**
+ * Allocates thread-specific memory for registers used in the virtual machine.
+ */
+int execute_registers_init(void)
+{
+    void *data;
+    TLS_ALLOC(r0_key, struct register_s);
+    TLS_ALLOC(r1_key, struct register_s);
+    return 0;
+}

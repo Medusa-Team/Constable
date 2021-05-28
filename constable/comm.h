@@ -8,6 +8,11 @@
 #define	_COMM_H
 
 #include "event.h"
+#include "threading.h"
+#include "language/execute.h"
+#include <stdbool.h>
+#include <pthread.h>
+#include <semaphore.h>
 
 struct comm_s;
 struct comm_buffer_s;
@@ -16,12 +21,18 @@ struct event_hadler_hash_s;
 struct class_handler_s;
 
 struct comm_buffer_queue_s {
-    struct comm_buffer_s	*first;
-    struct comm_buffer_s	*last;
+    struct queue_item_s	*first;
+    struct queue_item_s	*last;
+    pthread_mutex_t lock;
+};
+
+struct queue_item_s {
+    struct queue_item_s *next;
+    struct comm_buffer_s *buffer;
 };
 
 struct comm_buffer_s {
-    struct comm_buffer_s	*next;
+    struct comm_buffer_s	*next; /* Used only for the buffers free list */
     int			_n;	/* position in buffers[] */
     int			size;
     void(*free)(struct comm_buffer_s*);
@@ -31,8 +42,17 @@ struct comm_buffer_s {
     void			*user1;
     void			*user2;
     int	    user_data; // Matus mozno to ma byt intptr_t
+    pthread_mutex_t lock; /**< lock for comm_worker */
+    pthread_mutex_t write_finished_lock; /**< lock for guarding the
+                                           write_finished predicate */
+    pthread_cond_t write_finished_condition; /**< condition variable for the
+                                                write_finished predicate */
+    bool write_finished; /**< Predicate used for fetch and update operations.
+                            If false, write operation on this buffer has not
+                            been completed. If true, write has already
+                            finished. */
     /* for do_event & execute ... */
-    //	struct execute_s	*execute;
+    struct execute_s    execute;
     int			do_phase;
     int			ehh_list;
     struct event_hadler_hash_s *hh;
@@ -53,21 +73,22 @@ struct comm_buffer_s {
 struct comm_s {
     struct comm_s	*next;
     int		conn;		/* connection number */
+    pthread_t   read_thread;  /**< thread used for read operations */
+    pthread_t   write_thread;    /* thread used for write operation */
     char		name[64];
     int		fd;
     int		open_counter;
+    pthread_mutex_t state_lock;
     int		state;
     int		flags;
     struct hash_s	classes;
     struct hash_s	events;
 
-    /* for do_event & execute ... */
-    struct execute_s	*execute;
-
     /* for read/write/... */
-    struct comm_buffer_s *buf;
     struct comm_buffer_queue_s output;
+    sem_t output_sem;
     struct comm_buffer_queue_s wait_for_answer;	/* fetch */
+    pthread_mutex_t read_lock; /**< Lock for reading one buffer at a time. */
     int(*read)(struct comm_s*);
     int(*write)(struct comm_s*);
     int(*close)(struct comm_s*);
@@ -87,11 +108,68 @@ struct comm_buffer_s *comm_buf_resize( struct comm_buffer_s *b, int size );
 extern int comm_nr_connections;
 
 extern struct comm_buffer_queue_s comm_todo;
+extern sem_t comm_todo_sem;
 int comm_buf_to_queue( struct comm_buffer_queue_s *q, struct comm_buffer_s *b );
+inline int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q,
+                             struct comm_buffer_s *b)
+{
+    int ret;
+    pthread_mutex_lock(&q->lock);
+    ret = comm_buf_to_queue(q, b);
+    pthread_mutex_unlock(&q->lock);
+    return ret;
+}
 struct comm_buffer_s *comm_buf_from_queue( struct comm_buffer_queue_s *q );
+inline struct comm_buffer_s *comm_buf_from_queue_locked(
+        struct comm_buffer_queue_s *q)
+{
+    struct comm_buffer_s *ret;
+    pthread_mutex_lock(&q->lock);
+    ret = comm_buf_from_queue(q);
+    pthread_mutex_unlock(&q->lock);
+    return ret;
+}
+struct comm_buffer_s *comm_buf_del(struct comm_buffer_queue_s *q,
+                                   struct queue_item_s* prev,
+                                   struct queue_item_s* item);
+struct comm_buffer_s *comm_buf_peek_first(struct comm_buffer_queue_s *q);
+struct comm_buffer_s *comm_buf_peek_last(struct comm_buffer_queue_s *q);
 
-#define	comm_buf_todo(b)	comm_buf_to_queue(&comm_todo,(b))
-#define	comm_buf_get_todo()	comm_buf_from_queue(&comm_todo)
+static inline int comm_buf_output_enqueue(struct comm_s *c, struct comm_buffer_s *b)
+{
+    comm_buf_to_queue_locked(&c->output, b);
+    sem_post(&c->output_sem);
+    return 0;
+}
+
+static inline struct comm_buffer_s* comm_buf_output_dequeue(struct comm_s *c)
+{
+    sem_wait(&c->output_sem);
+    return comm_buf_from_queue_locked(&c->output);
+}
+
+#define	comm_buf_todo(b)	do {                                \
+    comm_buf_to_queue_locked(&comm_todo, (b));                  \
+    sem_post(&comm_todo_sem);                                   \
+} while (0)
+
+static inline struct comm_buffer_s* comm_buf_get_todo(void) {
+    sem_wait(&comm_todo_sem);
+    return comm_buf_from_queue_locked(&comm_todo);
+}
+
+/*
+ * For each construct for looping through locked queues.
+ * Used in fetch_answer and update_answer.
+ */
+#define FOR_EACH_LOCKED(item, queue)                 \
+    pthread_mutex_lock(&(queue)->lock);              \
+    item = (queue)->first;                           \
+    while (item)
+
+#define NEXT_ITEM(item) item = item->next
+
+#define END_FOR_EACH_LOCKED(queue) pthread_mutex_unlock(&(queue)->lock)
 
 void *comm_new_array( int size );
 int comm_alloc_buf_temp( int size );
@@ -102,10 +180,12 @@ struct comm_s *comm_find( char *name );
 
 int comm_conn_init( struct comm_s *comm );
 
-int comm_buf_init( void );
-int comm_buf_init2( void );
+int buffers_init( void );
+int buffers_alloc( void );
 
 int comm_do( void );
+void* comm_worker(void*);
+void* write_loop(void*);
 
 int comm_error( const char *fmt, ... );
 int comm_info( const char *fmt, ... );

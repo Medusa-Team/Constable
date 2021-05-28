@@ -9,7 +9,9 @@
 #ifndef _ERROR_H
 #define _ERROR_H
 
-extern char *errstr;
+#include <pthread.h>
+
+extern pthread_key_t errstr_key;
 extern char *Out_of_memory;
 
 int error( const char *fmt, ... );

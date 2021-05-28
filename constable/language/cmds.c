@@ -24,13 +24,14 @@ static BUILDIN_FUNC(cmd_constable_pid)
 static BUILDIN_FUNC(cmd_hex)
 { long long d;
     struct register_s r;
+    struct object_s o;
     ret->attr=&(execute_attr_str);
     ret->data[0]=0;
     if( !getarg(e,&r) || ((r.attr->type&0x0f)!=MED_TYPE_SIGNED && (r.attr->type&0x0f)!=MED_TYPE_UNSIGNED) )
     {	runtime("hex(): 1st argument must be signed or unsigned int");
         return(-1);
     }
-    object_get_val(r2o(&r),r.attr,&d,sizeof(d));
+    object_get_val(r2o(&r, &o),r.attr,&d,sizeof(d));
     sprintf(ret->data,"%llx",d);
     if( getarg(e,&r) )
     {	runtime("hex(): too many arguments");
@@ -102,6 +103,7 @@ static BUILDIN_FUNC(cmd_str2path)
 static BUILDIN_FUNC(cmd_spaces)
 { 
     struct register_s r;
+    struct object_s o;
     vs_t vs[MAX_VS_BITS/32];
 
     ret->attr=&(execute_attr_str);
@@ -111,7 +113,7 @@ static BUILDIN_FUNC(cmd_spaces)
     {	runtime("spaces: 1st argument must be bitmap");
         return(-1);
     }
-    object_get_val(r2o(&r),r.attr,vs,sizeof(vs));
+    object_get_val(r2o(&r, &o),r.attr,vs,sizeof(vs));
     if( getarg(e,&r) )
     {	runtime("spaces: too many arguments");
         return(-1);
@@ -238,7 +240,9 @@ static BUILDIN_FUNC(cmd_primaryspace)
         return(-1);
     }
     if( (space=t->type->class_handler->get_primary_space(t->type->class_handler,e->my_comm_buff->comm,o))==NULL )
-    {	if( errstr==NULL )
+    {
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        if( *errstr==NULL )
             return(0);
         runtime("primaryspace: %s",errstr);
         return(-1);
@@ -273,7 +277,9 @@ static BUILDIN_FUNC(cmd_enter)
         return(-1);
     }
     if( (i=t->type->class_handler->enter_tree_node(t->type->class_handler,e->my_comm_buff->comm,o,t))<0 )
-    {	runtime("enter: %s",errstr);
+    {
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        runtime("enter: %s",*errstr);
         i=0;
     }
     *((uintptr_t*)(ret->data))=(uintptr_t)(i);
