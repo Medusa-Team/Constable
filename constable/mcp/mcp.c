@@ -430,6 +430,9 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
     printf("ZZZ kim rychla %d\n",b->comm->state);
     //fflush(stdout);
     // TODO Add unlikely directive
+    /*
+     * ak prisla prva ziadost o rozhodnutie z kernelu
+     */
     if( b->comm->state==0 )
     {
         printf("ZZZ net slunicko\n");
@@ -440,6 +443,12 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
         }
         printf("ZZZ dan slanina\n");
         //fflush(stdout);
+	/*
+	 * ak je v konfigu definovana funkcia _init,
+	 * najprv tu zarad do fronty na spracovanie,
+	 * az potom tam zarad ziadost, ktora prisla
+	 * z kernelu
+	 */
         if( function_init!=NULL )
         { struct comm_buffer_s *p;
             if( (p=comm_buf_get(0,b->comm))==NULL )
@@ -452,6 +461,7 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
             p->handler=function_init;
             comm_buf_to_queue(&(p->to_wake),b);
             p->ehh_list=EHH_NOTIFY_ALLOW;
+	    // tu sa zaradi najskor _init
             comm_buf_todo(p);
             b->comm->state=1;
             pthread_mutex_unlock(&b->comm->state_lock);
@@ -462,6 +472,7 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
     }
     pthread_mutex_unlock(&b->comm->state_lock);
     b->completed = NULL;
+    // az po _init sa zaradi ziadost z kernelu
     comm_buf_todo(b);
     return READ_DONE;
 }
@@ -483,6 +494,16 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
             b->do_phase=1000;
         printf("ZZZ: snazim sa updatnut\n");
         i=c->update_object(c,b->do_phase-1000,&(b->context.subject),b);
+	/*
+	 * update_object() vracia hodnoty: -1, 0, 2, 3
+	 * -1 v pripade chyby alokacie pamate alebo neuspechu `update` operacie
+	 *  0 v pripade uspechu `update` operacie
+	 *  2 v TODO pripade
+	 *  3 pri prvom prechode - pri odoslani `update` ziadosti
+	 *
+	 *  zaporne hodnoty (vratane NEUSPECHU `update` operacie su v tichosti
+	 *  ignorovane
+	 */
         if( i>0 )
         {	b->do_phase=i+1000;
             return(i);
@@ -789,6 +810,13 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     static MCPptr_t id = 2;
     static pthread_mutex_t id_lock = PTHREAD_MUTEX_INITIALIZER;
     struct comm_buffer_s *r;
+
+    /*
+     * ak ide o druhy prechod touto funkciou, znamena to, ze uz je
+     * k dispozicii odpoved kernelu na `update` operaciu - ci bola
+     * uspesna alebo nie;
+     * v pripade uspechu sa vrati 0, inak -1
+     */
     if( cont==3 )
     {
 #ifdef TRANSLATE_RESULT
@@ -799,6 +827,12 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
             return(0);	/* done */
         return(-1);		/* done */
     }
+
+    /*
+     * ak ide o prvy prechod touto funkciou,
+     * pokracujeme dalej
+     */
+
 #ifdef TRANSLATE_RESULT
     wake->user_data = MED_ERR;
 #else
@@ -840,7 +874,19 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     r->write_finished_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     r->write_finished_condition = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
     r->write_finished = false;
+    /*
+     * Zarad buffer `r` do fronty cakajucich na odpoved kernelu. Po prichode
+     * odpovede sa vo funkcii `mcp_r_update_answer()` odoberie z fronty. Vid
+     * komentar v onej funkcii ohladom zapisu navratovej hodnoty z kernelu.
+     */
     comm_buf_to_queue_locked(&(r->comm->wait_for_answer),r);
+    /*
+     * Zarad buffer `wake`, ktory vyvolal operaciu `update`, na spracovanie
+     * pri uvolnovani buffera `r` operacie `update`, t.j. az po prichode
+     * odpovede jadra na tuto operaciu. Vysledok, t.j. uspech/neuspech sa
+     * zapisujde do `wake->user_data`, teda do buffera, ktory vyvolal
+     * operaciu `update` (vid par riadkov vyssie toto priradenie).
+     */
     comm_buf_to_queue(&(r->to_wake),wake);
     comm_buf_output_enqueue(c, r);
     return(3);
@@ -882,14 +928,30 @@ static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
 
     if( p!=NULL )
     {
+	/*
+	 * Ak este neskoncil zapis (nepreniesli sa vsetky udaje
+	 * z jadra, treba pockat.
+	 */
         pthread_mutex_lock(&p->write_finished_lock);
         while (!p->write_finished) {
             pthread_cond_wait(&p->write_finished_condition,
                     &p->write_finished_lock);
         }
         pthread_mutex_unlock(&p->write_finished_lock);
+	/*
+	 * Tu sa nachadza magia prenosu navratovej hodnoty z jadra
+	 * ohladom uspechu operacie do buffera, ktory vyvolal
+	 * operaciu `update`. Vid komentar na konci funkcie
+	 * `mcp_update_object()`.
+	 */
         *((uint32_t*)(p->user2))=
-                byte_reorder_put_int32(b->comm->flags,bmask->user);   // Zmenene uintptr_t z na uint32_t - prepisovanie do_phase, by Matus
+                byte_reorder_put_int32(b->comm->flags,bmask->user);
+	/* Po obdrzani vysledku operacie `update` zo strany jadra
+	 * sa moze uvolnit buffer pouzity na tuto operaciu. Realne
+	 * sa vola funkcia `comm_buf_free()`, v ramci ktorej
+	 * sa zabezpeci, ze buffer, ktory cakal na vysledok (teda
+	 * vyvolal operaciu `update`) sa opat naplanuje na spracovanie.
+	 */
         p->free(p);
     }
     b->completed = NULL;

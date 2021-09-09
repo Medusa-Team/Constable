@@ -182,6 +182,16 @@ void* comm_worker(void *arg)
             }
         }
         //printf("ZZZ: do_event()=%d\n",r);
+
+	/*
+	 * b->comm->answer() vracia:
+	 * -1 pri nedostatku pamate
+	 *  0 v pripade dokoncenia odoslania odpovede
+	 *  2 ak `update_object()` vrati 2
+	 *  3 ak sa urobil `update_object()` a caka sa na odpoved kernelu
+	 *    ohladom uspechu/neuspechu operacie `update`
+	 *  takze hodnota `r == 1` nemoze prist z `b->comm->answer()`
+	 */
         if(r == 1) {
             pthread_mutex_unlock(&b->lock);
             comm_buf_todo(b);
@@ -196,6 +206,15 @@ void* comm_worker(void *arg)
                 b->free(b);
             }
         } else
+	    /*
+	     * Ak `b->comm->answer()` vrati 2 alebo 3.
+	     * To znamena, ze operacia `answer` nebola dokoncena,
+	     * musi sa pockat na odpoved jadra (na `update`).
+	     * Buffer `b` sa vrati na spracovanie do fronty
+	     * pomocou `comm_buf_todo()` vo funkcii uvolnovania
+	     * buffera `comm_buf_free()`, ked sa uvolnuje
+	     * buffer pouzity na operaciu `update`.
+	     */
             pthread_mutex_unlock(&b->lock);
     }
 
