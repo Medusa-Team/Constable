@@ -92,8 +92,27 @@ struct comm_s {
     int(*read)(struct comm_s*);
     int(*write)(struct comm_s*);
     int(*close)(struct comm_s*);
+    /**
+     * Answer a request from the kernel.
+     *
+     * \return
+     * -1 when no memory is available for allocation
+     *  0 when answer was succesfully sent
+     *  2 when update_object() returns 2
+     *  3 when update_object() was executed and Constable is waiting for the
+     *    answer (success/failure of update operation) from the kernel.
+     */
     int(*answer)(struct comm_s*,struct comm_buffer_s*,int);
     int(*fetch_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);
+    /**
+     * Update object information in the kernel.
+     *
+     * \return
+     * -1 when no memory is available for allocation or `update` failed
+     *  0 when object was succesfully updated
+     *  2 TODO
+     *  3 after `update` request was sent to the kernel (first pass)
+     */
     int(*update_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);
 
     int(*conf_error)(struct comm_s *,const char *fmt,...);

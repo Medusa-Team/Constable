@@ -184,13 +184,9 @@ void* comm_worker(void *arg)
         //printf("ZZZ: do_event()=%d\n",r);
 
 	/*
-	 * b->comm->answer() vracia:
-	 * -1 pri nedostatku pamate
-	 *  0 v pripade dokoncenia odoslania odpovede
-	 *  2 ak `update_object()` vrati 2
-	 *  3 ak sa urobil `update_object()` a caka sa na odpoved kernelu
-	 *    ohladom uspechu/neuspechu operacie `update`
-	 *  takze hodnota `r == 1` nemoze prist z `b->comm->answer()`
+         * See documentation of answer() function in `struct comm_s`. answer()
+	 * returns values -1, 0, 2 and 3. Return value `r == 1` doesn't
+	 * originate from b->comm->answer()
 	 */
         if(r == 1) {
             pthread_mutex_unlock(&b->lock);
@@ -207,13 +203,11 @@ void* comm_worker(void *arg)
             }
         } else
 	    /*
-	     * Ak `b->comm->answer()` vrati 2 alebo 3.
-	     * To znamena, ze operacia `answer` nebola dokoncena,
-	     * musi sa pockat na odpoved jadra (na `update`).
-	     * Buffer `b` sa vrati na spracovanie do fronty
-	     * pomocou `comm_buf_todo()` vo funkcii uvolnovania
-	     * buffera `comm_buf_free()`, ked sa uvolnuje
-	     * buffer pouzity na operaciu `update`.
+	     * If `b->comm->answer()` returns 2 or 3, operation `answer` wasn't
+	     * finished. Constable has to wait for an answer to the `update`
+	     * request from the kernel. Buffer `b` is returned back to the queue
+	     * using comm_buf_todo() in the comm_buf_free() function when buffer
+	     * used for the `update` operation is freed.
 	     */
             pthread_mutex_unlock(&b->lock);
     }
