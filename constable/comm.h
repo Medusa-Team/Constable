@@ -80,6 +80,8 @@ struct comm_s {
     int		open_counter;
     pthread_mutex_t state_lock;
     int		state;
+    pthread_mutex_t init_finished_lock;
+    int		init_finished;
     int		flags;
     struct hash_s	classes;
     struct hash_s	events;
