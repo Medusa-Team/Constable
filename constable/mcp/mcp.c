@@ -25,7 +25,6 @@
 #include <arpa/inet.h>
 
 extern struct event_handler_s *function_init;
-static struct comm_buffer_s *init_buffer;
 
 /**
  * Enumeration of possible return values for read handlers
@@ -464,7 +463,7 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
 	    // _init() is inserted here
             comm_buf_todo(p);
             b->comm->state=1;
-            init_buffer = p;
+            b->comm->init_buffer = p;
             pthread_mutex_unlock(&b->comm->state_lock);
             b->completed = NULL;
             return READ_DONE;
@@ -473,8 +472,8 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
     }
 
     pthread_mutex_lock(&b->comm->init_finished_lock);
-    if (function_init != NULL && !b->comm->init_finished) {
-        comm_buf_to_queue(&(init_buffer->to_wake), b);
+    if (function_init && b->comm->init_buffer) {
+        comm_buf_to_queue(&(b->comm->init_buffer->to_wake), b);
         b->completed = NULL;
         pthread_mutex_unlock(&b->comm->init_finished_lock);
         pthread_mutex_unlock(&b->comm->state_lock);

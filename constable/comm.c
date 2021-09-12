@@ -71,6 +71,7 @@ struct comm_s *comm_new( char *name, int user_size )
     c->conn=comm_nr_connections++;
     c->state_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     c->init_finished_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+    c->init_buffer = NULL;
     sem_init(&c->output_sem, 0, 0);
     c->wait_for_answer.lock =
         (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
@@ -175,10 +176,11 @@ void* comm_worker(void *arg)
             if( b->handler == function_init ) {
                 r = 0;
 		pthread_mutex_lock(&b->comm->init_finished_lock);
-		b->comm->init_finished = 1;
-		pthread_mutex_unlock(&b->comm->init_finished_lock);
                 pthread_mutex_unlock(&b->lock);
+		struct comm_s *comm = b->comm;
                 b->free(b);
+		comm->init_buffer = NULL;
+		pthread_mutex_unlock(&comm->init_finished_lock);
                 continue;
             }
             else {

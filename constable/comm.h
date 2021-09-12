@@ -81,7 +81,7 @@ struct comm_s {
     pthread_mutex_t state_lock;
     int		state;
     pthread_mutex_t init_finished_lock;
-    int		init_finished;
+    struct comm_buffer_s *init_buffer;
     int		flags;
     struct hash_s	classes;
     struct hash_s	events;
