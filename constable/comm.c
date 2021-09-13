@@ -70,7 +70,6 @@ struct comm_s *comm_new( char *name, int user_size )
     c->fd= -1;
     c->conn=comm_nr_connections++;
     c->state_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
-    c->init_finished_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     c->init_buffer = NULL;
     sem_init(&c->output_sem, 0, 0);
     c->wait_for_answer.lock =
@@ -175,7 +174,7 @@ void* comm_worker(void *arg)
           // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
             if( b->handler == function_init ) {
                 r = 0;
-		pthread_mutex_lock(&b->comm->init_finished_lock);
+		pthread_mutex_lock(&b->comm->state_lock);
                 pthread_mutex_unlock(&b->lock);
 		struct comm_s *comm = b->comm;
                 b->free(b);
@@ -184,7 +183,7 @@ void* comm_worker(void *arg)
                  * NULL, new requests are inserted into `comm_todo` (see
                  * mcp.c). */
 		comm->init_buffer = NULL;
-		pthread_mutex_unlock(&comm->init_finished_lock);
+		pthread_mutex_unlock(&comm->state_lock);
                 continue;
             }
             else {

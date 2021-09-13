@@ -472,7 +472,6 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
         b->comm->state=1;
     }
 
-    pthread_mutex_lock(&b->comm->init_finished_lock);
     if (function_init && b->comm->init_buffer) {
         /* Enqueue incoming requests to be processed after _init() finishes. */
         comm_buf_to_queue(&(b->comm->init_buffer->to_wake), b);
@@ -483,11 +482,9 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
 	 * here. In this way is guarantied that the state of `b` is properly
 	 * initialized before scheduling it for execution by some worker. */
         b->completed = NULL;
-        pthread_mutex_unlock(&b->comm->init_finished_lock);
         pthread_mutex_unlock(&b->comm->state_lock);
         return READ_DONE;
     }
-    pthread_mutex_unlock(&b->comm->init_finished_lock);
 
     /* In this case comes `unlock(state_lock)` before `b->completed = NULL`.
      * Integrity of `b` is not damaged and the code path is more effective

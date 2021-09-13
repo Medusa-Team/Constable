@@ -84,7 +84,6 @@ struct comm_s {
 				 * zero value. When initialized (while first
 				 * decision request is received), value
 				 * is set to 1. */
-    pthread_mutex_t init_finished_lock;
     struct comm_buffer_s *init_buffer; /**< Buffer for _init(). If not NULL,
                                         * _init() was not yet processed and all
                                         * requests received by Constable are
