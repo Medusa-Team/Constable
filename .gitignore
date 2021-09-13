@@ -91,3 +91,8 @@ GTAGS
 #remove executable
 constable/constable
 constable/rbacadm
+
+#exclude ctags dir
+constable/tags
+libmcompiler/tags
+medusa-forwarder/tags
