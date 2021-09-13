@@ -78,8 +78,12 @@ struct comm_s {
     char		name[64];
     int		fd;
     int		open_counter;
-    pthread_mutex_t state_lock;
-    int		state;
+    pthread_mutex_t state_lock;	/**< Mutex for `state` and `init_buffer`
+				 * manipulation. */
+    int		state;		/**< Until comm is not initialized, holds
+				 * zero value. When initialized (while first
+				 * decision request is received), value
+				 * is set to 1. */
     pthread_mutex_t init_finished_lock;
     struct comm_buffer_s *init_buffer; /**< Buffer for _init(). If not NULL,
                                         * _init() was not yet processed and all
