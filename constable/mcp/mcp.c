@@ -444,9 +444,10 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
         printf("ZZZ dan slanina\n");
         //fflush(stdout);
 	/*
-	 * If the configuration file defines function _init(), it is inserted to
-	 * the queue first and decision request that came from the kernel is
-	 * inserted second.
+	 * If the configuration file defines _init(), it is inserted into the
+	 * queue first and decision request that came from the kernel is
+	 * inserted into `init_buffer->to_wake` queue to be processed after
+	 * _init() finishes.
 	 */
         if( function_init!=NULL )
         { struct comm_buffer_s *p;
@@ -473,6 +474,7 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
 
     pthread_mutex_lock(&b->comm->init_finished_lock);
     if (function_init && b->comm->init_buffer) {
+        /* Enqueue incoming requests to be processed after _init() finishes. */
         comm_buf_to_queue(&(b->comm->init_buffer->to_wake), b);
         b->completed = NULL;
         pthread_mutex_unlock(&b->comm->init_finished_lock);
@@ -483,7 +485,7 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
 
     pthread_mutex_unlock(&b->comm->state_lock);
     b->completed = NULL;
-    // request from the kernel is inserted after _init()
+    /* After _init() was processed, new requests are always inserted here. */
     comm_buf_todo(b);
     return READ_DONE;
 }

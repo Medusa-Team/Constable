@@ -81,7 +81,11 @@ struct comm_s {
     pthread_mutex_t state_lock;
     int		state;
     pthread_mutex_t init_finished_lock;
-    struct comm_buffer_s *init_buffer;
+    struct comm_buffer_s *init_buffer; /**< Buffer for _init(). If not NULL,
+                                        * _init() was not yet processed and all
+                                        * requests received by Constable are
+                                        * enqueued into `init_buffer->to_wake`
+                                        * queue. */
     int		flags;
     struct hash_s	classes;
     struct hash_s	events;

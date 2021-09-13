@@ -179,6 +179,10 @@ void* comm_worker(void *arg)
                 pthread_mutex_unlock(&b->lock);
 		struct comm_s *comm = b->comm;
                 b->free(b);
+                /* _init() is processed and waiting requests from `b->to_wake`
+                 * are already in `comm_todo`. After setting `init_buffer` to
+                 * NULL, new requests are inserted into `comm_todo` (see
+                 * mcp.c). */
 		comm->init_buffer = NULL;
 		pthread_mutex_unlock(&comm->init_finished_lock);
                 continue;
