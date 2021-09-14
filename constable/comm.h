@@ -113,7 +113,7 @@ struct comm_s {
      *  3 when update_object() was executed and Constable is waiting for the
      *    answer (success/failure of update operation) from the kernel.
      */
-    int(*answer)(struct comm_s*,struct comm_buffer_s*,int);
+    int(*answer)(struct comm_s*,struct comm_buffer_s*);
     int(*fetch_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);
     /**
      * Update object information in the kernel.

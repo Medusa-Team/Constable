@@ -43,7 +43,7 @@ static read_result_e mcp_r_greeting( struct comm_buffer_s *b );
 static int mcp_read_worker( struct comm_s *c );
 static read_result_e mcp_r_head( struct comm_buffer_s *b );
 static read_result_e mcp_r_query( struct comm_buffer_s *b );
-static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result );
+static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b);
 static read_result_e mcp_r_classdef_attr( struct comm_buffer_s *b );
 static read_result_e mcp_r_acctypedef_attr( struct comm_buffer_s *b );
 static read_result_e mcp_r_discard( struct comm_buffer_s *b );
@@ -496,7 +496,7 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
     return READ_DONE;
 }
 
-static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
+static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
 { struct comm_buffer_s *r;
     #pragma pack(push)
     #pragma pack(1)

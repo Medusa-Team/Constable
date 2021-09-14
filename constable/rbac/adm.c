@@ -58,10 +58,10 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
     return(0);
 }
 
-int rbac_comm_answer( struct comm_s *c, struct comm_buffer_s *b, int result )
+int rbac_comm_answer( struct comm_s *c, struct comm_buffer_s *b)
 {
-    ((struct comm_buffer_s*)(b->user1))->user_data=result;
-    switch( result )
+    ((struct comm_buffer_s*)(b->user1))->user_data=b->context.result;
+    switch( b->context.result )
     {
     case RESULT_ALLOW:
     case RESULT_OK:

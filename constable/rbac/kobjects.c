@@ -148,7 +148,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
 
                 struct comm_s *rbac_comm;
 
-                int rbac_comm_answer( struct comm_s *c, struct comm_buffer_s *b, int result );
+                int rbac_comm_answer( struct comm_s *c, struct comm_buffer_s *b);
 
                 int rbac_comm_alloc( struct module_s *m )
                 {

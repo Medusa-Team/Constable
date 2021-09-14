@@ -192,7 +192,7 @@ void* comm_worker(void *arg)
             }
             else {
                 printf("comm_worker: answer buf id = %u, r = %d\n", b->id, r);
-                r=b->comm->answer(b->comm,b,r);
+                r=b->comm->answer(b->comm,b);
             }
         }
         //printf("ZZZ: do_event()=%d\n",r);
