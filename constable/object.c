@@ -127,6 +127,11 @@ int object_cmp_vs( vs_t *vs, int n, struct object_s *o )
     return(vs_test(vs,vs_tmp));
 }
 
+/**
+ * Remove the object from all virtual spaces for each access type.
+ * \param o Object
+ * \return Always 0
+ */
 int object_clear_all_vs( struct object_s *o )
 { int n;
     for(n=0;n<NR_ACCESS_TYPES;n++)

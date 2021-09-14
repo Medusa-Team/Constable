@@ -118,6 +118,11 @@ void vs_set( const vs_t *from, vs_t *to )
         to[i]= from[i];
 }
 
+/**
+ * Add virtual spaces, no virtual spaces will be removed.
+ * \param from Set of virtual spaces that will be added
+ * \param to Set of virtual spaces that will be changed
+ */
 void vs_add( const vs_t *from, vs_t *to )
 { int i;
     for(i=0;i<number_of_vs;i++)

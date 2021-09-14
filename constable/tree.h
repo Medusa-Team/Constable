@@ -38,7 +38,7 @@ struct tree_s {
     struct space_s	*primary_space;
     struct tree_event_s	*events;
     vs_t	vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];
-    vs_t	no_vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];
+    vs_t	no_vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];  /**< not used */
     struct event_hadler_hash_s	*subject_handlers[EHH_LISTS];
     struct event_hadler_hash_s	*object_handlers[EHH_LISTS];
 };

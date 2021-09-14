@@ -17,6 +17,11 @@
 
 struct space_s *global_spaces=NULL;
 
+/**
+ * Create a new path and append it to the end of \p prev.
+ * \param prev tree node to append to
+ * \param path_or_space tree node to append
+ */
 static ltree_t *new_path( ltree_t *prev, void *path_or_space )
 { ltree_t *l;
     if( (l=malloc(sizeof(ltree_t)))==NULL )
@@ -281,6 +286,13 @@ static void tree_add_vs_do( struct tree_s *p, struct tree_add_vs_do_s *arg )
 
 
 
+/**
+ * Add path node to the list of paths of space and set its type.
+ * \param space New path will be added to this virtual space.
+ * \param type Type of the new node (see macros LTREE_*).
+ * \param path_or_space Pointer to the node that will be added.
+ * \return 0 on success, -1 otherwise
+ */
 int space_add_path( struct space_s *space, int type, void *path_or_space )
 {
     if( path_or_space==NULL )	return(-1);
@@ -428,6 +440,15 @@ int space_init_event_mask( struct comm_s *comm )
     return(0);
 }
 
+/**
+ * Place subject with virtual space \p space into virtual spaces defined by \p
+ * vs for access type \p which. Original virtual spaces of \p space won't be
+ * changed.
+ * \param space Virtual spaces of the subject
+ * \param which Access type
+ * \param vs Virtual spaces to add
+ * \return 0 on success, -1 on invalid which value
+ */
 int space_add_vs( struct space_s *space, int which, vs_t *vs )
 {
     if( which<0 || which>=NR_ACCESS_TYPES )
