@@ -132,7 +132,8 @@ int init_all( char *filename )
 int usage( char *me )
 {
     fprintf(stderr,"usage: %s [-t] [-d <tree debug file>] [-D[D] <class/events debug file>] [<config. file>]"
-                   "\n",me);
+                   "\n\n"
+		   "    -t and/or -d causes Constable to shut down before initiating communication\n",me);
     return(0);
 }
 
