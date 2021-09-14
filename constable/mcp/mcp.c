@@ -475,11 +475,11 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
     if (function_init && b->comm->init_buffer) {
         /* Enqueue incoming requests to be processed after _init() finishes. */
         comm_buf_to_queue(&(b->comm->init_buffer->to_wake), b);
-	/* Setting `b->completed` to NULL should be before `unlock(state_lock)`;
-	 * after _init() finishes, `comm_worker()` calls `free(init_buffer)`,
-	 * which insert `b` into `comm_todo`. As `free()` is called with locked
+	/* `b->completed` should be set to NULL before `unlock(state_lock)`.
+	 * After _init() finishes, comm_worker() calls `free(init_buffer)`,
+	 * which inserts `b` into `comm_todo`. As free() is called with locked
 	 * `state_lock`, it cannot be done until `state_lock` is not unlocked
-	 * here. In this way is guarantied that the state of `b` is properly
+	 * here. In this way is guaranteed that the state of `b` is properly
 	 * initialized before scheduling it for execution by some worker. */
         b->completed = NULL;
         pthread_mutex_unlock(&b->comm->state_lock);
@@ -487,8 +487,8 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
     }
 
     /* In this case comes `unlock(state_lock)` before `b->completed = NULL`.
-     * Integrity of `b` is not damaged and the code path is more effective
-     * (in the terms of concurrency). */
+     * Integrity of `b` is not damaged and the code path is more effective (in
+     * the terms of concurrency). */
     pthread_mutex_unlock(&b->comm->state_lock);
     b->completed = NULL;
     /* After _init() was processed, new requests are always inserted here. */

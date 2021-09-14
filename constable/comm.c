@@ -172,16 +172,15 @@ void* comm_worker(void *arg)
         }
         if(b->do_phase < 1000) {
             /*
-	     * If `do_event()` finishes handler execution (instruction
-	     * RET in virtual machine), returns 0 and `b->do_phase`
-	     * is set to 0, too. Decision result is stored in
-	     * `b->context.result`.
+	     * If do_event() finishes handler execution (instruction RET in
+	     * virtual machine), it returns 0 and `b->do_phase` is set to 0 too.
+	     * Decision result is stored in `b->context.result`.
 	     *
-	     * Result (answer to decision request) is written to an output
-	     * in next iteration of `b` processing (via `comm_buf_todo`).
-	     * In the next iteration should be `b->do_phase` >= 1000
-	     * to not run `do_event(b)`. See comments of the code below,
-	     * where is examinated result `r` from `do_event()` function. */
+	     * Result (answer to a decision request) is written to an output in
+	     * the next iteration of `b` processing (via `comm_buf_todo`). In
+	     * the next iteration `b->do_phase` should be >= 1000, so
+	     * `do_event(b)` won't run. See comments of the code below, where
+	     * result `r` from do_event() is examined. */
             r=do_event(b);
 	} else { // mY : ak bola udalost vybavena, odosiela sa ANSWER
           // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
@@ -219,19 +218,18 @@ void* comm_worker(void *arg)
         }
         else if(r <= 0) {   
             /*
-	     * `r` is 0 and `b->do_phase` is 0, too, if `do_event()` finished
+	     * `r` is 0 and `b->do_phase` is 0 too if do_event() finished
 	     * execution of a `b->handler` (i.e., the code of virtual machine
-	     * executed RET instruction of the handler). Answer of buffer
-	     * `b` should be handled in the next iteration of `comm_buf_todo`
-	     * queue. As `do_event()` is executed if `b->do_phase` < 1000,
-	     * in this place is value of `do_phase` changed to prevent
-	     * executing it.
+	     * executed RET instruction of the handler). Answer of buffer `b`
+	     * should be handled in the next iteration of `comm_buf_todo` queue.
+	     * As do_event() is executed if `b->do_phase` < 1000, the value of
+	     * `do_phase` is changed here to prevent its execution.
 	     *
-	     * TODO: I think, `b` should precede all buffers in `comm_buf_todo`,
-	     * so it has to be added at the head of the queue. But first we
-	     * have analyse the code of `do_phase` and `answer` functions,
-	     * if this case of setting `b->do_phase`=1000 is only for
-	     * this case. */
+	     * TODO: I think `b` should precede all buffers in `comm_buf_todo`,
+	     * so it has to be added at the head of the queue. But first, we
+	     * have to analyse the code of do_phase() and answer() functions, if
+	     * this case of setting `b->do_phase`=1000 is only for this case.
+             */
             if( b->do_phase<1000 ) {   
                 b->do_phase=1000;
                 pthread_mutex_unlock(&b->lock);

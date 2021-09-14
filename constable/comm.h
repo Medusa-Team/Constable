@@ -33,11 +33,12 @@ struct queue_item_s {
 };
 
 struct comm_buffer_s {
-    struct comm_buffer_s	*next; /* Used only for the buffers free list */
-    int			_n;	/* position in buffers[] */
+    struct comm_buffer_s	*next; /**< Used only for the buffers free
+                                        * list */
+    int			_n;	/**< position in buffers[] */
     int			size;
     void(*free)(struct comm_buffer_s*);
-    unsigned int	id;	/* identification of the buffer for debug */
+    unsigned int	id;	/**< identification of the buffer for debug */
 
     struct comm_s		*comm;
     int			open_counter;
@@ -74,18 +75,18 @@ struct comm_buffer_s {
 
 struct comm_s {
     struct comm_s	*next;
-    int		conn;		/* connection number */
+    int		conn;		/**< connection number */
     pthread_t   read_thread;  /**< thread used for read operations */
-    pthread_t   write_thread;    /* thread used for write operation */
+    pthread_t   write_thread;    /**< thread used for write operation */
     char		name[64];
     int		fd;
     int		open_counter;
     pthread_mutex_t state_lock;	/**< Mutex for `state` and `init_buffer`
 				 * manipulation. */
-    int		state;		/**< Until comm is not initialized, holds
-				 * zero value. When initialized (while first
-				 * decision request is received), value
-				 * is set to 1. */
+    int		state;		/**< Until comm is not initialized, holds zero
+				 * value. When initialized (while the first
+				 * decision request is received), value is set
+				 * to 1. */
     struct comm_buffer_s *init_buffer; /**< Buffer for _init(). If not NULL,
                                         * _init() was not yet processed and all
                                         * requests received by Constable are
