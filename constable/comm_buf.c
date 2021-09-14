@@ -12,6 +12,8 @@
 
 static pthread_mutex_t buffers_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct comm_buffer_s *buffers[2];
+static unsigned int buf_id = 0;	/**< global counter for `buf->id`, access
+				 * under `buffers_lock` */
 
 #define ITEM_FREE_LIST_CAPACITY 10
 static size_t ready_items = 0;
@@ -42,7 +44,9 @@ static inline void comm_buf_init(struct comm_buffer_s *b, struct comm_s *comm)
 struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
 { int i;
     struct comm_buffer_s *b;
+    unsigned int id;
     pthread_mutex_lock(&buffers_lock);
+    id = buf_id++;
     for(i=0;i<BN;i++)
     {	if( (b=buffers[i]) && size<=b->size )
         {	buffers[i]=b->next;
@@ -53,12 +57,14 @@ struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
             b->completed=NULL;
             b->to_wake.first=b->to_wake.last=NULL;
             b->handler=NULL;
+            b->id=id;
             comm_buf_init(b, comm);
             return(b);
         }
     }
     pthread_mutex_unlock(&buffers_lock);
     b=malloc_buf(size);
+    b->id=id;
     comm_buf_init(b, comm);
     return(b);
 }
@@ -68,6 +74,7 @@ struct comm_buffer_s *comm_buf_resize( struct comm_buffer_s *b, int size )
     if( size > b->size )
     { struct comm_buffer_s *n;
         int z__n,z_size;
+        unsigned int z_id;
         struct comm_buffer_s *z_next,*z_context_cb;
         void(*z_free)(struct comm_buffer_s*);
         if( b->temp!=NULL )
@@ -78,12 +85,14 @@ struct comm_buffer_s *comm_buf_resize( struct comm_buffer_s *b, int size )
         {	fatal(Out_of_memory);
             return(NULL);
         }
+        z_id=n->id;
         z__n=n->_n;
         z_size=n->size;
         z_next=n->next;
         z_context_cb=n->context.cb;
         z_free=n->free;
         *n=*b;
+        n->id=z_id;
         n->_n=z__n;
         n->size=z_size;
         n->next=z_next;
@@ -102,6 +111,7 @@ static void comm_buf_free( struct comm_buffer_s *b )
 { struct comm_buffer_s *q;
     while( (q=comm_buf_from_queue(&(b->to_wake)))!=NULL )
         comm_buf_todo(q);
+    printf("comm_buf_free: free buffer %u\n", b->id);
     if( b->_n >= 0 )
     {
         pthread_mutex_lock(&buffers_lock);

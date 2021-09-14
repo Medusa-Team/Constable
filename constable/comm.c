@@ -160,6 +160,8 @@ void* comm_worker(void *arg)
     while (1) {
         struct comm_buffer_s *b;
         b = comm_buf_get_todo();
+	printf("comm_worker: b->do_phase = %d, b->temp = %p\n",
+			b->do_phase, b->temp);
         pthread_mutex_lock(&b->lock);
         if(b->temp == NULL) {
             b = comm_malloc_temps(b);
@@ -173,6 +175,8 @@ void* comm_worker(void *arg)
         else { // mY : ak bola udalost vybavena, odosiela sa ANSWER
           // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
             if( b->handler == function_init ) {
+                printf("comm_worker: answer for function init, buf id = %u, b->handler = %p\n",
+				b->id, b->handler);
                 r = 0;
 		pthread_mutex_lock(&b->comm->state_lock);
                 pthread_mutex_unlock(&b->lock);
@@ -187,6 +191,7 @@ void* comm_worker(void *arg)
                 continue;
             }
             else {
+                printf("comm_worker: answer buf id = %u, r = %d\n", b->id, r);
                 r=b->comm->answer(b->comm,b,r);
             }
         }

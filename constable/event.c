@@ -292,7 +292,7 @@ static int do_event_handler( struct comm_buffer_s *cb )
     h=cb->hh->handler;
     if( cb->do_phase==0 )
     {
-        printf("testujem handler %p [%s]\n",cb->hh,cb->hh->handler->op_name);
+        printf("do_event_handler: testujem handler %p [%s]\n",cb->hh,cb->hh->handler->op_name);
         //		if( (cb->context.subject.class==NULL) != (vs_isclear(cb->hh->subject_vs)!=0) )
         //			return(-1);
         //		if( (cb->context.object.class==NULL) != (vs_isclear(cb->hh->object_vs)!=0) )
@@ -306,14 +306,14 @@ static int do_event_handler( struct comm_buffer_s *cb )
                 return(-1);
         }
     }
-    printf("HANDLER result=%d\n",cb->context.result);
+    printf("do_event_handler: event result=%d A\n",cb->context.result);
     result=cb->context.result;
     if( (i=h->handler(cb,h,&(cb->context)))==0 )
     {	cb->context.result=evaluate_result(result,cb->context.result);
         cb->context.first=0;
     }
     else	cb->context.result=result;
-    printf("handler result=%d\n",cb->context.result);
+    printf("do_event_handler: event result=%d B\n",cb->context.result);
     return(i);
 }
 
@@ -379,7 +379,7 @@ static int do_event_list( struct comm_buffer_s *cb )
     if( cb->do_phase==0 || cb->do_phase==1 )
     {	if( cb->do_phase==0 )
             evhash_foreach_first(cb->hh,cb->event->evname->handlers_hash[cb->ehh_list]);
-        printf("eeeeeeeeee cb->hh=%p\n",cb->hh);
+        //printf("eeeeeeeeee cb->hh=%p\n",cb->hh);
         for(;cb->hh!=NULL;evhash_foreach_next(cb->hh,cb->event->evname->handlers_hash[cb->ehh_list]))
         {	if( (i=do_event_handler(cb))>0 )
             {	cb->do_phase=1;
@@ -456,20 +456,23 @@ static int do_event_list( struct comm_buffer_s *cb )
     cb->do_phase=0;		/* len tak pre istotu */
     if( c->first )
     {
-        printf("do_event: No event executed! [%s]\n",cb->event->m.name);
+        printf("do_event_list: No event executed! [%s]\n",cb->event->m.name);
         return(-1);
     }
-    printf("ZZZ: do_event return %d\n",c->result);
+    printf("do_event_list: return 0, event result is %d\n",c->result);
     return(0);
 }
 
 int do_event( struct comm_buffer_s *cb )
 { int r;
-    printf("ZZZ: do_event\n");
+    printf("do_event: run do_event_list(buf) for buf id %u\n", cb->id);
     r=do_event_list(cb);
-    printf("ZZZ: %d do_event_list()=%d\n",cb->ehh_list,r);
-    if( r>0 )
+    printf("do_event: buf_id=%u buf->ehh_list=%d do_event_list(buf) returned %d\n",
+		    cb->id, cb->ehh_list, r);
+    if( r>0 ) {
+        printf("do_event: do_event_list(buf)>0, return %d\n", r);
         return(r);
+    }
     if( cb->ehh_list==EHH_VS_ALLOW )
     {	switch( cb->context.result )
         {	case RESULT_ALLOW:
@@ -482,9 +485,14 @@ int do_event( struct comm_buffer_s *cb )
             cb->ehh_list=EHH_NOTIFY_DENY;
             break;
         case RESULT_RETRY:
+	    printf("do_event: buf->ehh_list == EHH_VS_ALLOW, event result RETRY, do_phase = %d, return %d\n",
+			    cb->do_phase, r);
             return(r);
         }
-        return(do_event_list(cb));
+	r = do_event_list(cb);
+	printf("do_event: buf->ehh_list == EHH_VS_ALLOW, event result %d, do_phase = %d, return %d\n",
+			cb->context.result, cb->do_phase, r);
+        return r;
     }
     else if( cb->ehh_list==EHH_VS_DENY )
     {	switch( cb->context.result )
@@ -498,11 +506,16 @@ int do_event( struct comm_buffer_s *cb )
             cb->ehh_list=EHH_NOTIFY_DENY;
             break;
         case RESULT_RETRY:
+	    printf("do_event: buf->ehh_list == EHH_VS_DENY, event result RETRY, do_phase = %d, return %d\n",
+			    cb->do_phase, r);
             return(r);
         }
-        return(do_event_list(cb));
+	r = do_event_list(cb);
+	printf("do_event: buf->ehh_list == EHH_VS_DENY, event result %d, do_phase = %d, return %d\n",
+			cb->context.result, cb->do_phase, r);
+        return r;
     }
-    printf("ZZZ: do_event: return\n");
+    printf("do_event: return %d\n", r);
     return(r);
 }
 

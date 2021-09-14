@@ -641,16 +641,16 @@ static int mcp_write( struct comm_s *c )
 { int r;
     struct comm_buffer_s *b;
     b = comm_buf_output_dequeue(c);
-    printf("ZZZ mcp_write 2\n");
+    printf("mcp_write: check writing buffer %u\n", b->id);
     if( b->open_counter != c->open_counter )
     {
         b->free(b);
         return(0);
     }
-    printf("ZZZ mcp_write 3\n");
+    printf("mcp_write: start writing buffer %u\n", b->id);
     if( b->want < b->len )
     {	r=write(c->fd,b->pbuf+b->want,b->len-b->want);
-        printf("ZZZ mcp_write 4 r=%d\n",r);
+        printf("mcp_write: write of buffer %u returned %d\n", b->id, r);
         if( r<=0 )
         {	comm_error("medusa comm %s: Write error",c->name);
             return(-1);
@@ -900,6 +900,8 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
      * to the `comm_todo` queue. Result of the update operation
      * (success/failure) is stored in `wake->user_data`.
      */
+    printf("mcp_update_object: postpone processing of buf %u after finish buf %u\n",
+		    wake->id, r->id);
     comm_buf_to_queue(&(r->to_wake),wake);
     comm_buf_output_enqueue(c, r);
     return(3);
