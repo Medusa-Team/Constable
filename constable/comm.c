@@ -174,7 +174,7 @@ void* comm_worker(void *arg)
             r=do_event(b);
         else { // mY : ak bola udalost vybavena, odosiela sa ANSWER
           // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
-            if( b->handler == function_init ) {
+            if( function_init && (b->handler == function_init) ) {
                 printf("comm_worker: answer for function init, buf id = %u, b->handler = %p\n",
 				b->id, b->handler);
                 r = 0;
