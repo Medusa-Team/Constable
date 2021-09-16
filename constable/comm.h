@@ -69,8 +69,8 @@ struct comm_buffer_s {
     int			want;		/* for comm */
     int(*completed)(struct comm_buffer_s*);	/* for comm */
     void			*temp;
-    char			*pbuf;		/*  for read/write */
-    char			buf[0]; 	/* for comm */
+    char			*p_comm_buf;	/*  for read/write */
+    char			comm_buf[0]; 	/* for comm */
 };
 
 struct comm_s {

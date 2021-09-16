@@ -53,7 +53,7 @@ struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
             pthread_mutex_unlock(&buffers_lock);
             b->len=0;
             b->want=0;
-            b->pbuf=b->buf;
+            b->p_comm_buf=b->comm_buf;
             b->completed=NULL;
             b->to_wake.first=b->to_wake.last=NULL;
             b->handler=NULL;
@@ -98,7 +98,7 @@ struct comm_buffer_s *comm_buf_resize( struct comm_buffer_s *b, int size )
         n->next=z_next;
         n->context.cb=z_context_cb;
         n->free=z_free;
-        memcpy(n->buf,b->buf,n->len);
+        memcpy(n->comm_buf,b->comm_buf,n->len);
         b->to_wake.first=b->to_wake.last=NULL;
         b->free(b);
         return(n);
@@ -138,7 +138,7 @@ static struct comm_buffer_s *malloc_buf( int size )
     b->execute.stack=execute_get_stack();
     b->len=0;
     b->want=0;
-    b->pbuf=b->buf;
+    b->p_comm_buf=b->comm_buf;
     b->completed=NULL;
     b->to_wake.first=b->to_wake.last=NULL;
     return(b);

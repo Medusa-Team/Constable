@@ -85,7 +85,7 @@ int rbac_adm_create_role( struct comm_buffer_s *to_wait, char *name )
     p->completed=rbac_adm_create_role_do;
     p->user1=(void*)to_wait;
     p->user2=(void*)name;
-    get_event_context(rbac_comm,&(p->context),p->event,p->buf,&(to_wait->context.subject),p->buf);
+    get_event_context(rbac_comm,&(p->context),p->event,p->comm_buf,&(to_wait->context.subject),p->comm_buf);
     comm_buf_todo(p);
     return(2);
 }
@@ -119,7 +119,7 @@ int rbac_adm_delete_role( struct comm_buffer_s *to_wait, char *name )
     p->completed=rbac_adm_delete_role_do;
     p->user1=(void*)to_wait;
     p->user2=(void*)r;	/* FIXME: usecount */
-    get_event_context(rbac_comm,&(p->context),p->event,p->buf,&(to_wait->context.subject),r);
+    get_event_context(rbac_comm,&(p->context),p->event,p->comm_buf,&(to_wait->context.subject),r);
     comm_buf_todo(p);
     return(2);
 }
@@ -152,7 +152,7 @@ int rbac_adm_hierarchy( int add, struct comm_buffer_s *to_wait, char *sup_name, 
     p->user1=(void*)to_wait;
     p->user2=(void*)rb;	/* FIXME: usecount */
     p->user_data=add;
-    get_event_context(rbac_comm,&(p->context),p->event,p->buf,&(to_wait->context.subject),rp);
+    get_event_context(rbac_comm,&(p->context),p->event,p->comm_buf,&(to_wait->context.subject),rp);
     comm_buf_todo(p);
     return(2);
 }
@@ -161,7 +161,7 @@ int rbac_adm_hierarchy_do1( struct comm_buffer_s *b )
 { void *rp;
     rp=b->context.object.data;
     b->event=(event_type_find_name("role_hierarchy"))->events[rbac_comm->conn];
-    get_event_context(rbac_comm,&(b->context),b->event,b->buf,&(((struct comm_buffer_s*)(b->user1))->context.subject),(b->user2));
+    get_event_context(rbac_comm,&(b->context),b->event,b->comm_buf,&(((struct comm_buffer_s*)(b->user1))->context.subject),(b->user2));
     b->completed=rbac_adm_hierarchy_do2;
     b->user2=(void*)rp;
     b->do_phase=0;
@@ -212,7 +212,7 @@ int rbac_adm_user( int add, struct comm_buffer_s *to_wait, char *role, char *use
     p->user1=(void*)to_wait;
     p->user2=(void*)r;	/* FIXME: usecount */
     p->user_data=add;
-    get_event_context(rbac_comm,&(p->context),p->event,p->buf,&(to_wait->context.subject),u);
+    get_event_context(rbac_comm,&(p->context),p->event,p->comm_buf,&(to_wait->context.subject),u);
     comm_buf_todo(p);
     return(2);
 }
@@ -221,7 +221,7 @@ int rbac_adm_user_do1( struct comm_buffer_s *b )
 { void *u;
     u=b->context.object.data;
     b->event=(event_type_find_name("role_assign"))->events[rbac_comm->conn];
-    get_event_context(rbac_comm,&(b->context),b->event,b->buf,&(((struct comm_buffer_s*)(b->user1))->context.subject),(b->user2));
+    get_event_context(rbac_comm,&(b->context),b->event,b->comm_buf,&(((struct comm_buffer_s*)(b->user1))->context.subject),(b->user2));
     b->completed=rbac_adm_user_do2;
     b->user2=(void*)u;
     b->do_phase=0;
@@ -273,7 +273,7 @@ int rbac_adm_perm( int add, struct comm_buffer_s *to_wait, char *role, char *acc
     }
     to_wait->do_phase=2;
     comm_buf_to_queue(&(p->to_wake),to_wait);
-    perm=(struct perm_s *)p->buf;
+    perm=(struct perm_s *)p->comm_buf;
     memset(perm,0,sizeof(struct perm_s));
     //	perm->object.
     perm->access=str2at(access);
@@ -284,7 +284,7 @@ int rbac_adm_perm( int add, struct comm_buffer_s *to_wait, char *role, char *acc
     p->user1=(void*)to_wait;
     p->user2=(void*)r;	/* FIXME: usecount */
     p->user_data=add;
-    get_event_context(rbac_comm,&(p->context),p->event,p->buf,&(to_wait->context.subject),perm);
+    get_event_context(rbac_comm,&(p->context),p->event,p->comm_buf,&(to_wait->context.subject),perm);
     comm_buf_todo(p);
     return(2);
 }
@@ -293,7 +293,7 @@ int rbac_adm_perm_do1( struct comm_buffer_s *b )
 { void *perm;
     perm=b->context.object.data;
     b->event=(event_type_find_name("role_assign"))->events[rbac_comm->conn];
-    get_event_context(rbac_comm,&(b->context),b->event,b->buf,&(((struct comm_buffer_s*)(b->user1))->context.subject),(b->user2));
+    get_event_context(rbac_comm,&(b->context),b->event,b->comm_buf,&(((struct comm_buffer_s*)(b->user1))->context.subject),(b->user2));
     b->completed=rbac_adm_perm_do2;
     b->user2=(void*)perm;
     b->do_phase=0;

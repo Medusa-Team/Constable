@@ -232,7 +232,7 @@ static int mcp_accept( struct comm_s *c )
  */
 static read_result_e mcp_r_greeting( struct comm_buffer_s *b )
 {
-    switch( ((MCPptr_t*)(b->buf))[0] )
+    switch( ((MCPptr_t*)(b->comm_buf))[0] )
     {	case 0x66007e5a:
         comm_info("comm %s: has native byte order ;-D",b->comm->name);
         b->comm->flags=0;
@@ -280,7 +280,7 @@ static inline int mcp_check_size_and_read(struct comm_buffer_s **buf)
 {
     fd_set rd;
     int r;
-    if((*buf)->want > (*buf)->size && (*buf)->pbuf == (*buf)->buf) {
+    if((*buf)->want > (*buf)->size && (*buf)->p_comm_buf == (*buf)->comm_buf) {
         struct comm_buffer_s *b;
         if((b = comm_buf_resize(*buf, (*buf)->want))==NULL) {
             fatal(Out_of_memory);
@@ -297,7 +297,7 @@ static inline int mcp_check_size_and_read(struct comm_buffer_s **buf)
             return -1;
         }
         if (FD_ISSET((*buf)->comm->fd, &rd))
-            r = read((*buf)->comm->fd, (*buf)->pbuf + (*buf)->len, (*buf)->want - (*buf)->len);
+            r = read((*buf)->comm->fd, (*buf)->p_comm_buf + (*buf)->len, (*buf)->want - (*buf)->len);
         else
             continue;
         if(r <= 0) {
@@ -372,7 +372,7 @@ int mcp_read_worker(struct comm_s *c)
 static read_result_e mcp_r_head( struct comm_buffer_s *b )
 {
     MCPptr_t x;
-    if( (x=((MCPptr_t*)(b->buf))[0])!=0 )
+    if( (x=((MCPptr_t*)(b->comm_buf))[0])!=0 )
     {
         if( (b->event=(struct event_type_s*)hash_find(&(b->comm->events),x))==NULL )
         {	comm_error("comm %s: Unknown access type %p!",b->comm->name,x);
@@ -386,7 +386,7 @@ static read_result_e mcp_r_head( struct comm_buffer_s *b )
         b->completed=mcp_r_query;
         return READ_DONE;
     }
-    else switch( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->buf+sizeof(MCPptr_t)))[0]) )
+    else switch( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->comm_buf+sizeof(MCPptr_t)))[0]) )
     {
     case MEDUSA_COMM_CLASSDEF:
         b->want = b->len + sizeof(struct medusa_comm_class_s)+sizeof(struct medusa_comm_attribute_s);
@@ -412,7 +412,7 @@ static read_result_e mcp_r_head( struct comm_buffer_s *b )
         b->completed=mcp_r_update_answer;
         break;
     default:
-        comm_error("comm %s: Communication protocol error! (%d)",b->comm->name,((unsigned int*)(b->buf+sizeof(MCPptr_t)))[0]);
+        comm_error("comm %s: Communication protocol error! (%d)",b->comm->name,((unsigned int*)(b->comm_buf+sizeof(MCPptr_t)))[0]);
         return READ_ERROR;
     }
     return READ_DONE;
@@ -424,7 +424,7 @@ static read_result_e mcp_r_head( struct comm_buffer_s *b )
  */
 static read_result_e mcp_r_query( struct comm_buffer_s *b )
 {
-    get_event_context(b->comm, &(b->context), b->event, b->buf );
+    get_event_context(b->comm, &(b->context), b->event, b->comm_buf );
     b->ehh_list=EHH_VS_ALLOW;
     pthread_mutex_lock(&b->comm->state_lock);
     printf("ZZZ kim rychla %d\n",b->comm->state);
@@ -529,7 +529,7 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
     {	fatal("Can't alloc buffer for send answer!");
         return(-1);
     }
-    out = (void*)&r->buf;
+    out = (void*)&r->comm_buf;
     // TODO TODO TODO: mY: 'ans' has 64 bits, NOT 32 !!!
     out->ans= byte_reorder_put_int64(c->flags,MEDUSA_COMM_AUTHANSWER);
     /* TODO TODO TODO: mY: 
@@ -538,7 +538,7 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
         'id' is ignored by kernel, is always set to 0
     */
     out->id = 0;
-    out->id = ((MCPptr_t*)(b->buf+sizeof(MCPptr_t)))[0];
+    out->id = ((MCPptr_t*)(b->comm_buf+sizeof(MCPptr_t)))[0];
 #ifdef TRANSLATE_RESULT
     /* TODO TODO TODO: mY:
         WHY access 'out->res' by 'r->buf'
@@ -595,16 +595,16 @@ static void unify_bitmap_types(struct medusa_comm_attribute_s *a)
 static read_result_e mcp_r_classdef_attr( struct comm_buffer_s *b )
 {
     struct class_s *cl;
-    if( ((struct medusa_comm_attribute_s *)(b->buf+b->len-sizeof(struct medusa_comm_attribute_s)))->type!=MED_TYPE_END )
+    if( ((struct medusa_comm_attribute_s *)(b->comm_buf+b->len-sizeof(struct medusa_comm_attribute_s)))->type!=MED_TYPE_END )
     {	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
         return READ_DONE;
     }
-    byte_reorder_class(b->comm->flags,(struct medusa_class_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)));
-    byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s)));
-    unify_bitmap_types((struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s)));
+    byte_reorder_class(b->comm->flags,(struct medusa_class_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(int)));
+    byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s)));
+    unify_bitmap_types((struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s)));
     if( (cl=add_class(b->comm,
-                      (struct medusa_class_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)),
-                      (struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s))))==NULL )
+                      (struct medusa_class_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(int)),
+                      (struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s))))==NULL )
         comm_error("comm %s: Can't add class",b->comm->name);
     b->completed = NULL;
     return READ_FREE;
@@ -612,15 +612,15 @@ static read_result_e mcp_r_classdef_attr( struct comm_buffer_s *b )
 
 static read_result_e mcp_r_acctypedef_attr( struct comm_buffer_s *b )
 {
-    if( ((struct medusa_comm_attribute_s *)(b->buf+b->len-sizeof(struct medusa_comm_attribute_s)))->type!=MED_TYPE_END )
+    if( ((struct medusa_comm_attribute_s *)(b->comm_buf+b->len-sizeof(struct medusa_comm_attribute_s)))->type!=MED_TYPE_END )
     {	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
         return READ_DONE;
     }
-    byte_reorder_acctype(b->comm->flags,(struct medusa_acctype_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)));
-    byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)));
-    unify_bitmap_types((struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)));
-    if( event_type_add(b->comm,(struct medusa_acctype_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)),
-                       (struct medusa_attribute_s*)(b->buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)))<0 )
+    byte_reorder_acctype(b->comm->flags,(struct medusa_acctype_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(unsigned int)));
+    byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)));
+    unify_bitmap_types((struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)));
+    if( event_type_add(b->comm,(struct medusa_acctype_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(unsigned int)),
+                       (struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)))<0 )
         comm_error("comm %s: Can't add acctype",b->comm->name);
     b->completed = NULL;
     return READ_FREE;
@@ -649,7 +649,7 @@ static int mcp_write( struct comm_s *c )
     }
     printf("mcp_write: start writing buffer %u\n", b->id);
     if( b->want < b->len )
-    {	r=write(c->fd,b->pbuf+b->want,b->len-b->want);
+    {	r=write(c->fd,b->p_comm_buf+b->want,b->len-b->want);
         printf("mcp_write: write of buffer %u returned %d\n", b->id, r);
         if( r<=0 )
         {	comm_error("medusa comm %s: Write error",c->name);
@@ -724,6 +724,7 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     pthread_mutex_lock(&c->wait_for_answer.lock);
     if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
     {
+        printf("ZZZZ mcp_fetch_object: lebo kernel\n");
         comm_buf_to_queue(&(c->wait_for_answer.last->buffer->to_wake),wake);
         pthread_mutex_unlock(&c->wait_for_answer.lock);
         return(2);
@@ -738,10 +739,10 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     r->user1=(void*)o;
     object_set_byte_order(o,c->flags);
     r->user2=(void*)(&(wake->user_data));
-    ((MCPptr_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_FETCH_REQUEST);
-    ((MCPptr_t*)(r->buf))[1]= o->class->m.classid;
-    ((MCPptr_t*)(r->buf))[2]= id++;
-    memcpy(((MCPptr_t*)(r->buf))+3, o->data, o->class->m.size);
+    ((MCPptr_t*)(r->comm_buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_FETCH_REQUEST);
+    ((MCPptr_t*)(r->comm_buf))[1]= o->class->m.classid;
+    ((MCPptr_t*)(r->comm_buf))[2]= id++;
+    memcpy(((MCPptr_t*)(r->comm_buf))+3, o->data, o->class->m.size);
     r->len=3*sizeof(MCPptr_t) + o->class->m.size;
     r->want=0;
     r->completed=mcp_do_nothing;
@@ -762,13 +763,13 @@ static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
     #pragma pack(1)
     struct {
         MCPptr_t p1,p2;
-    } * bmask = (void*)( b->buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
+    } * bmask = (void*)( b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
     #pragma pack(pop)
 
     FOR_EACH_LOCKED(item, &(b->comm->wait_for_answer)) {
-        pmask = (void*)(item->buffer->buf + sizeof(MCPptr_t));
+        pmask = (void*)(item->buffer->comm_buf + sizeof(MCPptr_t));
         if( byte_reorder_get_int32(item->buffer->comm->flags,
-                                   ((MCPptr_t*)(item->buffer->buf))[0]) ==
+                                   ((MCPptr_t*)(item->buffer->comm_buf))[0]) ==
                 MEDUSA_COMM_FETCH_REQUEST
                 && pmask->p1==bmask->p1
                 && pmask->p2==bmask->p2) {
@@ -780,7 +781,7 @@ static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
     }
     END_FOR_EACH_LOCKED(&(b->comm->wait_for_answer));
 
-    if( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->buf + sizeof(MCPptr_t)))[0])==MEDUSA_COMM_FETCH_ERROR )
+    if( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->comm_buf + sizeof(MCPptr_t)))[0])==MEDUSA_COMM_FETCH_ERROR )
     {	if( p!=NULL )
             p->free(p);
         b->completed = NULL;
@@ -791,7 +792,7 @@ static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
     {
         b->len = 0;
         b->want=((struct object_s *)(p->user1))->class->m.size;
-        b->pbuf=((struct object_s *)(p->user1))->data;
+        b->p_comm_buf=((struct object_s *)(p->user1))->data;
         b->user1=(void*)p;
         b->completed=mcp_r_fetch_answer_done;
     }
@@ -853,6 +854,7 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     pthread_mutex_lock(&c->wait_for_answer.lock);
     if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
     {	comm_buf_to_queue(&(c->wait_for_answer.last->buffer->to_wake),wake);
+        printf("mcp_update_object: lebo kernel\n");
         pthread_mutex_unlock(&c->wait_for_answer.lock);
         return(2);
     }
@@ -872,12 +874,12 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
 
     r->user1=(void*)o;
     r->user2=(void*)(&(wake->user_data));
-    ((MCPptr_t*)(r->buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_UPDATE_REQUEST);
-    ((MCPptr_t*)(r->buf))[1]= o->class->m.classid;
+    ((MCPptr_t*)(r->comm_buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_UPDATE_REQUEST);
+    ((MCPptr_t*)(r->comm_buf))[1]= o->class->m.classid;
     pthread_mutex_lock(&id_lock);
-    ((MCPptr_t*)(r->buf))[2]= id++;
+    ((MCPptr_t*)(r->comm_buf))[2]= id++;
     pthread_mutex_unlock(&id_lock);
-    memcpy(((MCPptr_t*)(r->buf))+3, o->data, o->class->m.size);
+    memcpy(((MCPptr_t*)(r->comm_buf))+3, o->data, o->class->m.size);
 
     object_set_byte_order(o,r->comm->flags);
     r->len=3*sizeof(MCPptr_t) + o->class->m.size;
@@ -924,13 +926,13 @@ static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
     struct {
         MCPptr_t p1,p2;
         uint32_t user;
-    } * bmask = (void*)(b->buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
+    } * bmask = (void*)(b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
     #pragma pack(pop)
 
     FOR_EACH_LOCKED(item, &(b->comm->wait_for_answer)) {
-        pmask = (void*) (item->buffer->buf + sizeof(MCPptr_t));
+        pmask = (void*) (item->buffer->comm_buf + sizeof(MCPptr_t));
         if( byte_reorder_get_int32(item->buffer->comm->flags,
-                                   *(MCPptr_t*)item->buffer->buf) ==
+                                   *(MCPptr_t*)item->buffer->comm_buf) ==
                 MEDUSA_COMM_UPDATE_REQUEST
                 && pmask->p1==bmask->p1 && pmask->p2==bmask->p2) {
             p = comm_buf_del(&(b->comm->wait_for_answer), prev, item);

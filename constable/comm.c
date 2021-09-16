@@ -48,15 +48,15 @@ int comm_alloc_buf_temp( int size )
 
 static struct comm_buffer_s *comm_malloc_temps( struct comm_buffer_s * b )
 {
-    if( b->pbuf == b->buf )
+    if( b->p_comm_buf == b->comm_buf )
     {   if( (b=comm_buf_resize(b,b->len+comm_temp_size))==NULL )
             return(NULL);
-        b->temp=b->buf+b->len;
+        b->temp=b->comm_buf+b->len;
     }
     else
     {   if( (b=comm_buf_resize(b,comm_temp_size))==NULL )
             return(NULL);
-        b->temp=b->buf;
+        b->temp=b->comm_buf;
     }
     return(b);
 }
