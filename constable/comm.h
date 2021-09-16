@@ -128,7 +128,7 @@ struct comm_s {
     int(*update_object)(struct comm_s*,int cont,struct object_s *o,struct comm_buffer_s *wake);
 
     int(*conf_error)(struct comm_s *,const char *fmt,...);
-    char		user_data[0];
+    char		user_data[0]; /**< TODO change type to `mcp/mcp.c: struct mcp_comm_s` */
 };
 
 #define	comm_user_data(c)	((void *)(&((c)->user_data[0])))
