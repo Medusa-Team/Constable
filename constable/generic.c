@@ -127,7 +127,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
 
     if( (t=find_one(t,n))==NULL )
     {	c->result=RESULT_DENY;
-        *PUPTR_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=*cinfo;
+        *PUPTR_COMM_BUF_VAR_DATA(cb,ch->comm_buf_var_data_offset)=*cinfo;
         return(-1);
     }
     //printf("%s\"\n",t->name);
@@ -149,15 +149,15 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     {	object_get_vs(vse,AT_ENTER,&(c->subject));
 
         if( vs_test(t->vs[AT_MEMBER],vse) ) /*!!! no_vs !!! */
-            *PUPTR_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=(uintptr_t)t;
+            *PUPTR_COMM_BUF_VAR_DATA(cb,ch->comm_buf_var_data_offset)=(uintptr_t)t;
         else
         {	c->result=RESULT_DENY;
             //printf("ZZZ: nevnaram sa, lebo nemam ENTER!\n");
-            *PUPTR_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=*cinfo;
+            *PUPTR_COMM_BUF_VAR_DATA(cb,ch->comm_buf_var_data_offset)=*cinfo;
             return(0);
         }
     }
-    else	*PUPTR_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset)=(uintptr_t)t;
+    else	*PUPTR_COMM_BUF_VAR_DATA(cb,ch->comm_buf_var_data_offset)=(uintptr_t)t;
 
     c->result=RESULT_OK;
     return(0);
@@ -175,7 +175,7 @@ int generic_hierarchy_handler_notify( struct comm_buffer_s *cb, struct event_han
     //printf("generic_hierarchy_handler_notify --- c->result=%d\n",c->result);
     //	if( c->result==RESULT_ALLOW || c->result==RESULT_OK )
     //	{
-    *cinfo=*PUPTR_COMM_BUF_TEMP(cb,ch->comm_buf_temp_offset);
+    *cinfo=*PUPTR_COMM_BUF_VAR_DATA(cb,ch->comm_buf_var_data_offset);
     object_do_sethandler(&(c->subject));
     //	}
     return(0);
@@ -294,7 +294,7 @@ struct class_handler_s *generic_get_new_class_handler_s( struct class_names_s *c
     {	free(ch);
         return(NULL);
     }
-    ch->comm_buf_temp_offset=-1;
+    ch->comm_buf_var_data_offset=-1;
     ch->classname=class;
     ch->flags=0;
     ch->user=NULL;
@@ -318,7 +318,7 @@ int generic_init( char *name, struct event_handler_s *subhandler, struct event_n
     {	init_error(Out_of_memory);
         return(-1);
     }
-    ch->comm_buf_temp_offset=comm_alloc_buf_temp(sizeof(uintptr_t));
+    ch->comm_buf_var_data_offset=comm_alloc_buf_var_data(sizeof(uintptr_t));
     ch->flags=flags;
     ch->user=(void*)event;
 

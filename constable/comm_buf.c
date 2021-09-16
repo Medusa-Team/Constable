@@ -38,7 +38,7 @@ static inline void comm_buf_init(struct comm_buffer_s *b, struct comm_s *comm)
     b->do_phase=0;
     b->ehh_list=EHH_VS_ALLOW;
     b->context.cb=b;
-    b->temp=NULL;
+    b->var_data=NULL;
 }
 
 struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
@@ -77,8 +77,8 @@ struct comm_buffer_s *comm_buf_resize( struct comm_buffer_s *b, int size )
         unsigned int z_id;
         struct comm_buffer_s *z_next,*z_context_cb;
         void(*z_free)(struct comm_buffer_s*);
-        if( b->temp!=NULL )
-        {	fatal("Can't resize comm buffer with temp!");
+        if( b->var_data!=NULL )
+        {	fatal("Can't resize comm buffer with var_data!");
             return(NULL);
         }
         if( (n=comm_buf_get(size,b->comm))==NULL )

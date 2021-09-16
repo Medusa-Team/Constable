@@ -68,7 +68,7 @@ struct comm_buffer_s {
     int			len;		/* for comm */
     int			want;		/* for comm */
     int(*completed)(struct comm_buffer_s*);	/* for comm */
-    void			*temp;
+    void			*var_data;
     char			*p_comm_buf;	/*  for read/write */
     char			comm_buf[0]; 	/* for comm */
 };
@@ -211,9 +211,9 @@ static inline struct comm_buffer_s* comm_buf_get_todo(void) {
 #define END_FOR_EACH_LOCKED(queue) pthread_mutex_unlock(&(queue)->lock)
 
 void *comm_new_array( int size );
-int comm_alloc_buf_temp( int size );
-#define	P_COMM_BUF_TEMP(cb,ofs)	((cb)->temp+(ofs))
-#define	PUPTR_COMM_BUF_TEMP(cb,ofs)  ((uintptr_t*)P_COMM_BUF_TEMP((cb),(ofs))) 
+int comm_alloc_buf_var_data( int size );
+#define	P_COMM_BUF_VAR_DATA(cb,ofs)	((cb)->var_data+(ofs))
+#define	PUPTR_COMM_BUF_VAR_DATA(cb,ofs)  ((uintptr_t*)P_COMM_BUF_VAR_DATA((cb),(ofs)))
 struct comm_s *comm_new( char *name, int user_size );
 struct comm_s *comm_find( char *name );
 

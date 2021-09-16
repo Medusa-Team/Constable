@@ -29,7 +29,8 @@ int comm_nr_connections=0;
 static struct comm_s *first_comm=NULL;
 static struct comm_s *last_comm=NULL;
 
-static int comm_temp_size=0;
+static int comm_var_data_size=0; /**< TODO: is manipulation with this global variable
+				   thread and/or per buffer safe? */
 
 void *comm_new_array( int size )
 { void *v;
@@ -39,24 +40,24 @@ void *comm_new_array( int size )
     return(v);
 }
 
-int comm_alloc_buf_temp( int size )
+int comm_alloc_buf_var_data( int size )
 { int r;
-    r=comm_temp_size;
-    comm_temp_size+=size;
+    r=comm_var_data_size;
+    comm_var_data_size+=size;
     return(r);
 }
 
-static struct comm_buffer_s *comm_malloc_temps( struct comm_buffer_s * b )
+static struct comm_buffer_s *comm_malloc_var_data( struct comm_buffer_s * b )
 {
     if( b->p_comm_buf == b->comm_buf )
-    {   if( (b=comm_buf_resize(b,b->len+comm_temp_size))==NULL )
+    {   if( (b=comm_buf_resize(b,b->len+comm_var_data_size))==NULL )
             return(NULL);
-        b->temp=b->comm_buf+b->len;
+        b->var_data=b->comm_buf+b->len;
     }
     else
-    {   if( (b=comm_buf_resize(b,comm_temp_size))==NULL )
+    {   if( (b=comm_buf_resize(b,comm_var_data_size))==NULL )
             return(NULL);
-        b->temp=b->comm_buf;
+        b->var_data=b->comm_buf;
     }
     return(b);
 }
@@ -160,11 +161,11 @@ void* comm_worker(void *arg)
     while (1) {
         struct comm_buffer_s *b;
         b = comm_buf_get_todo();
-	printf("comm_worker: b->do_phase = %d, b->temp = %p\n",
-			b->do_phase, b->temp);
+	printf("comm_worker: b->do_phase = %d, b->var_data = %p\n",
+			b->do_phase, b->var_data);
         pthread_mutex_lock(&b->lock);
-        if(b->temp == NULL) {
-            b = comm_malloc_temps(b);
+        if(b->var_data == NULL) {
+            b = comm_malloc_var_data(b);
             if( b==NULL ) {
                 pthread_mutex_unlock(&b->lock);
                 return (void*) -1;

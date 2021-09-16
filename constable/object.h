@@ -26,7 +26,7 @@ struct class_handler_s {
     struct class_handler_s *next;	/* for class */
     struct class_names_s	*classname;
     int		*cinfo_offset;
-    int		comm_buf_temp_offset;
+    int		comm_buf_var_data_offset;
     int		flags;
     struct tree_s	*root;
     void		*user;	/* struct event_names_s * for generic */
