@@ -626,7 +626,7 @@ static read_result_e mcp_r_acctypedef_attr( struct comm_buffer_s *b )
     byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)+sizeof(struct medusa_comm_acctype_s)));
     unify_bitmap_types((struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)+sizeof(struct medusa_comm_acctype_s)));
     if( event_type_add(b->comm,(struct medusa_acctype_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)),
-                       (struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)+sizeof(struct medusa_comm_acctype_s)))<0 )
+                       (struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)+sizeof(struct medusa_comm_acctype_s)))==NULL )
         comm_error("comm %s: Can't add acctype",b->comm->name);
     b->completed = NULL;
     return READ_FREE;
