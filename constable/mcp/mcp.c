@@ -522,6 +522,7 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
         {	b->do_phase=i+1000;
             return(i);
         }
+	 /* `b->do_phase` after finished update operation remains 1000 */
         printf("ZZZ: updatnute\n");
     }
     else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
@@ -576,11 +577,16 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
     r->want=0;
     r->completed=NULL;
     comm_buf_output_enqueue(c, r);
+
+    /* `b->do_phase` after finished update operation remains 1000 */
     return(0);
 }
 
 static void unify_bitmap_types(struct medusa_comm_attribute_s *a)
 {
+    /*
+     * kernel bitmap is BITMAP_8 type, which is also default type BITMAP
+     */
     while( a->type!=MED_COMM_TYPE_END ) {
         switch (a->type) {
         case MED_COMM_TYPE_BITMAP_8:
@@ -661,7 +667,17 @@ static int mcp_write( struct comm_s *c )
             return(0);
         }
     }
+    /*
+     * Buffers are inserted into `comm_buf_output` queue only via
+     * `comm_buf_output_enqueue()` in functions:
+     * `mcp_answer()`, `mcp_fetch_object()` and `mcp_update_object()`.
+     *
+     * There are two possible values of `b->completed`:
+     * 1) NULL at the end of `mcp_answer()`
+     * 2) mcp_do_nothing set in `mcp_fetch_object()` and `mcp_update_object()`
+     */
     if( b->completed ) {
+        // never True in actual implementation of Constable
         if (b->completed != mcp_do_nothing)
             r=b->completed(b);
         else {
@@ -797,12 +813,19 @@ static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
         b->completed=mcp_r_fetch_answer_done;
     }
     else
-    { struct class_s *cl;
+    {
+	/*
+	 * Arrived answer to FETCH request, but there is nothing waiting for it;
+	 * there is necessary to read arrived k-object and discard it.
+	 */
+	struct class_s *cl;
         cl=(struct class_s*)hash_find(&(b->comm->classes),bmask->p1);
         if( cl==NULL )
         {	comm_error("comm %s: Can't find class by class id",b->comm->name);
             return READ_ERROR;
         }
+	comm_info("comm %s: Arrived answer to FETCH request, nobody is waiting for it",
+	    b->comm->name);
         b->want = b->len + cl->m.size;
         b->completed=mcp_r_discard;
     }
@@ -811,11 +834,18 @@ static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
 
 static read_result_e mcp_r_fetch_answer_done( struct comm_buffer_s *b )
 { struct comm_buffer_s *p;
+    /*
+     * `p` cannot be NULL, function is called only once from
+     * `mcp_r_fetch_answer()` if `p` != NULL.
+     * Result (always SUCCESS) of the `fetch` operation is written into `p->user2` address.
+     */
     p=(struct comm_buffer_s *)(b->user1);
     if( p!=NULL )
-    {	*((uint32_t*)(p->user2))=0;	/* success */ // Zmenene uintptr_t z na uint32_t - prepisovanie do_phase, by Matus
+    {	*((uint32_t*)(p->user2))=0;	/* success */
         p->free(p);
     }
+    else
+        comm_error("comm %s: mcp_r_fetch_answer_done: p is NULL", b->comm->name);
     b->completed = NULL;
     return READ_FREE;
 }

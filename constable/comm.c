@@ -235,7 +235,12 @@ void* comm_worker(void *arg)
                 b->do_phase=1000;
                 pthread_mutex_unlock(&b->lock);
                 comm_buf_todo(b);
-            } else {
+            }
+	    /*
+	     * `r` is 0 or -1 and `b->do_phase` is 1000 after `b->comm->answer()`
+	     * finished. -1 means an error (can't alloc answer buffer).
+	     */
+	    else {
                 pthread_mutex_unlock(&b->lock);
                 b->free(b);
             }
