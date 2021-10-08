@@ -605,12 +605,12 @@ static read_result_e mcp_r_classdef_attr( struct comm_buffer_s *b )
     {	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
         return READ_DONE;
     }
-    byte_reorder_class(b->comm->flags,(struct medusa_class_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(int)));
-    byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s)));
-    unify_bitmap_types((struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s)));
+    byte_reorder_class(b->comm->flags,(struct medusa_class_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)));
+    byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)+sizeof(struct medusa_comm_class_s)));
+    unify_bitmap_types((struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)+sizeof(struct medusa_comm_class_s)));
     if( (cl=add_class(b->comm,
-                      (struct medusa_class_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(int)),
-                      (struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(int)+sizeof(struct medusa_comm_class_s))))==NULL )
+                      (struct medusa_class_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)),
+                      (struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)+sizeof(struct medusa_comm_class_s))))==NULL )
         comm_error("comm %s: Can't add class",b->comm->name);
     b->completed = NULL;
     return READ_FREE;
@@ -622,11 +622,11 @@ static read_result_e mcp_r_acctypedef_attr( struct comm_buffer_s *b )
     {	b->want = b->len + sizeof(struct medusa_comm_attribute_s);
         return READ_DONE;
     }
-    byte_reorder_acctype(b->comm->flags,(struct medusa_acctype_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(unsigned int)));
-    byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)));
-    unify_bitmap_types((struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)));
-    if( event_type_add(b->comm,(struct medusa_acctype_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(unsigned int)),
-                       (struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(unsigned int)+sizeof(struct medusa_comm_acctype_s)))<0 )
+    byte_reorder_acctype(b->comm->flags,(struct medusa_acctype_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)));
+    byte_reorder_attrs(b->comm->flags,(struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)+sizeof(struct medusa_comm_acctype_s)));
+    unify_bitmap_types((struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)+sizeof(struct medusa_comm_acctype_s)));
+    if( event_type_add(b->comm,(struct medusa_acctype_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)),
+                       (struct medusa_attribute_s*)(b->comm_buf+sizeof(MCPptr_t)+sizeof(uint32_t)+sizeof(struct medusa_comm_acctype_s)))<0 )
         comm_error("comm %s: Can't add acctype",b->comm->name);
     b->completed = NULL;
     return READ_FREE;
