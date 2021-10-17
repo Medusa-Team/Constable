@@ -135,7 +135,7 @@ static struct comm_buffer_s* mcp_opened( struct comm_s *c )
         fatal("Not enough memory for communication buffer");
         return NULL;
     }
-    b->want = sizeof(MCPptr_t);
+    b->want = 2*sizeof(MCPptr_t);
     b->completed = mcp_r_greeting;
     return b;
 }
@@ -272,6 +272,7 @@ static read_result_e mcp_r_greeting( struct comm_buffer_s *b )
         comm_error("comm %s: has some exotic byte order ;-|",b->comm->name);
         return READ_ERROR;
     }
+    comm_info("comm %s: protocol version %llu", b->comm->name, ((MCPptr_t*)(b->comm_buf))[1]);
     b->completed = NULL;
     return READ_FREE;
 }
