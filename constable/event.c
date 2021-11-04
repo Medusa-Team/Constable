@@ -129,13 +129,17 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
         e->op[1]=NULL;
     else	e->op[1]=(struct class_s*)hash_find(&(comm->classes),e->m.op_class[1]);
     event_mask_clear2(&(e->mask[0]));
+    // if event is TRIGERED_AT_OBJECT
     if( e->m.actbit&0x8000 )
         e->object=e->op[1];	/* object */
     else
         e->object=e->op[0];	/* subject */
+    // if event is TRIGGERED_BY_OBJECT_BIT
     if( e->m.actbit&0x4000 )
+        // 0x00ff --> maximum event id number (act bit) is 255
         event_mask_setbit(&(e->mask[1]),(e->m.actbit)&0x00ff);
     else
+        // 0x00ff --> maximum event id number (act bit) is 255
         event_mask_setbit(&(e->mask[0]),(e->m.actbit)&0x00ff);
 
     if( debug_def_out!=NULL )
