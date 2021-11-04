@@ -244,7 +244,7 @@ static BUILDIN_FUNC(cmd_primaryspace)
         char **errstr = (char**) pthread_getspecific(errstr_key);
         if( *errstr==NULL )
             return(0);
-        runtime("primaryspace: %s",errstr);
+        runtime("primaryspace: %s",*errstr);
         return(-1);
     }
     strncpy(ret->data,space->name,MAX_REG_SIZE);
