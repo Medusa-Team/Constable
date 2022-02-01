@@ -562,7 +562,7 @@ for(;;)
 			break;
 	case oJSR:	x=*(e->p)++;
 			x=*((uintptr_t*)x);
-			printf("execute_handler_do: %p JSR %lx\n",(e->p)-2,x);
+			//printf("execute_handler_do: %p JSR %lx\n",(e->p)-2,x);
 			if( x==0 )
 			{	runtime("Call undefined function");
 				push(0);
@@ -576,7 +576,7 @@ for(;;)
 			(e->p)=(uintptr_t*)x;
 			break;
 	case oRET:	
-			printf("execute_handler_do: %p RET\n",(e->p)-1);
+			//printf("execute_handler_do: %p RET\n",(e->p)-1);
 			r_pop(r0);
 			r_imm(r0);	/* POZOR! mohla by byt z local_vars */
 			free_vars((struct object_s**)(execute_stack_pointer(e,e->base)));
@@ -641,7 +641,7 @@ int execute_handler( struct comm_buffer_s *comm_buff, struct event_handler_s *h,
 		execute_push(&comm_buff->execute,comm_buff->execute.base);
 		comm_buff->execute.base=comm_buff->execute.pos;
 		execute_push(&comm_buff->execute,0);	/* local_vars */
-		printf("execute_handler: for %s\n",h->op_name);
+		//printf("execute_handler: for %s\n",h->op_name);
 	}
 	if( (i=execute_handler_do(&comm_buff->execute))<=0 )
 		comm_buff->execute.h=NULL;

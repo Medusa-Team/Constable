@@ -255,7 +255,7 @@ int main( int argc, char *argv[] )
     if( test )
         return(0);
 
-    printf("ZZZ: bude dobre\n");
+    //printf("ZZZ: bude dobre\n");
     //	setsid();
     //	schedpar.sched_priority = sched_get_priority_max(SCHED_FIFO);
     //	sched_setscheduler(0, SCHED_FIFO, &schedpar);

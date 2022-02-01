@@ -1,4 +1,5 @@
 /**
+    irintf("comm_buf_todo: add buffer %u to TODO queue\n", b->id); \
  * @file mcp.c
  * @short Medusa Communication Protocol handler
  *
@@ -428,7 +429,7 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
     get_event_context(b->comm, &(b->context), b->event, b->comm_buf );
     b->ehh_list=EHH_VS_ALLOW;
     pthread_mutex_lock(&b->comm->state_lock);
-    printf("ZZZ kim rychla %d\n",b->comm->state);
+    //printf("ZZZ kim rychla %d\n",b->comm->state);
     //fflush(stdout);
     // TODO Add unlikely directive
     /*
@@ -436,13 +437,13 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
      */
     if( b->comm->state==0 )
     {
-        printf("ZZZ net slunicko\n");
+        //printf("ZZZ net slunicko\n");
         //fflush(stdout);
         if( comm_conn_init(b->comm)<0 ) {
             pthread_mutex_unlock(&b->comm->state_lock);
             return READ_ERROR;
         }
-        printf("ZZZ dan slanina\n");
+        //printf("ZZZ dan slanina\n");
         //fflush(stdout);
 	/*
 	 * If the configuration file defines _init(), it is inserted into the
@@ -508,11 +509,11 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
     #pragma pack(pop)
     int i;
     /* TODO: only if changed */
-    printf("ZZZ: answer\n");
+    //printf("ZZZ: answer\n");
     if( b->context.result >=0 && b->context.subject.class!=NULL )
     {	if( b->do_phase==0 )
             b->do_phase=1000;
-        printf("ZZZ: snazim sa updatnut\n");
+        //printf("ZZZ: snazim sa updatnut\n");
         i=c->update_object(c,b->do_phase-1000,&(b->context.subject),b);
 	/*
          * See documentation of update_object() in `struct comm_s`. Negative
@@ -524,9 +525,9 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
             return(i);
         }
 	 /* `b->do_phase` after finished update operation remains 1000 */
-        printf("ZZZ: updatnute\n");
+        //printf("ZZZ: updatnute\n");
     }
-    else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
+    //else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
     if( (r=comm_buf_get(sizeof(*out),c))==NULL )     //( povodne uintptr_t )Asi to ma byt takto inac dava bludy v mallocu - prepisuje hodnotu user_data, by Matus
     {	fatal("Can't alloc buffer for send answer!");
         return(-1);
@@ -661,16 +662,16 @@ static int mcp_write( struct comm_s *c )
 { int r;
     struct comm_buffer_s *b;
     b = comm_buf_output_dequeue(c);
-    printf("mcp_write: check writing buffer %u\n", b->id);
+    //printf("mcp_write: check writing buffer %u\n", b->id);
     if( b->open_counter != c->open_counter )
     {
         b->free(b);
         return(0);
     }
-    printf("mcp_write: start writing buffer %u\n", b->id);
+    //printf("mcp_write: start writing buffer %u\n", b->id);
     if( b->want < b->len )
     {	r=write(c->fd,b->p_comm_buf+b->want,b->len-b->want);
-        printf("mcp_write: write of buffer %u returned %d\n", b->id, r);
+        //printf("mcp_write: write of buffer %u returned %d\n", b->id, r);
         if( r<=0 )
         {	comm_error("medusa comm %s: Write error",c->name);
             return(-1);
@@ -737,7 +738,7 @@ static int mcp_close( struct comm_s *c )
 static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake )
 { static MCPptr_t id=2;
     struct comm_buffer_s *r;
-    printf("ZZZZ mcp_fetch_object 1\n");
+    //printf("ZZZZ mcp_fetch_object 1\n");
     if( cont==3 )
     {
         if( debug_do_out!=NULL )
@@ -749,23 +750,23 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
         }
         return(wake->user_data);	/* done */
     }
-    printf("ZZZZ mcp_fetch_object 2\n");
+    //printf("ZZZZ mcp_fetch_object 2\n");
     wake->user_data = -1;
     pthread_mutex_lock(&c->wait_for_answer.lock);
     if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
     {
-        printf("ZZZZ mcp_fetch_object: lebo kernel\n");
+        //printf("ZZZZ mcp_fetch_object: lebo kernel\n");
         comm_buf_to_queue(&(c->wait_for_answer.last->buffer->to_wake),wake);
         pthread_mutex_unlock(&c->wait_for_answer.lock);
         return(2);
     }
     pthread_mutex_unlock(&c->wait_for_answer.lock);
-    printf("ZZZZ mcp_fetch_object 3\n");
+    //printf("ZZZZ mcp_fetch_object 3\n");
     if( (r=comm_buf_get(3*sizeof(MCPptr_t) + o->class->m.size,c))==NULL )
     {	fatal("Can't alloc buffer for fetch!");
         return(-1);
     }
-    printf("ZZZZ mcp_fetch_object 4\n");
+    //printf("ZZZZ mcp_fetch_object 4\n");
     r->user1=(void*)o;
     object_set_byte_order(o,c->flags);
     r->user2=(void*)(&(wake->user_data));
@@ -782,7 +783,7 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     comm_buf_to_queue_locked(&(r->comm->wait_for_answer),r);
     comm_buf_to_queue(&(r->to_wake),wake);
     comm_buf_output_enqueue(c, r);
-    printf("ZZZZ mcp_fetch_object 5\n");
+    //printf("ZZZZ mcp_fetch_object 5\n");
     return(3);
 }
 
@@ -898,7 +899,7 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     pthread_mutex_lock(&c->wait_for_answer.lock);
     if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
     {	comm_buf_to_queue(&(c->wait_for_answer.last->buffer->to_wake),wake);
-        printf("mcp_update_object: lebo kernel\n");
+        //printf("mcp_update_object: lebo kernel\n");
         pthread_mutex_unlock(&c->wait_for_answer.lock);
         return(2);
     }
@@ -946,8 +947,8 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
      * to the `comm_todo` queue. Result of the update operation
      * (success/failure) is stored in `wake->user_data`.
      */
-    printf("mcp_update_object: postpone processing of buf %u after finish buf %u\n",
-		    wake->id, r->id);
+    //printf("mcp_update_object: postpone processing of buf %u after finish buf %u\n",
+	//	    wake->id, r->id);
     comm_buf_to_queue(&(r->to_wake),wake);
     comm_buf_output_enqueue(c, r);
     return(3);

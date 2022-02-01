@@ -111,7 +111,7 @@ static void comm_buf_free( struct comm_buffer_s *b )
 { struct comm_buffer_s *q;
     while( (q=comm_buf_from_queue(&(b->to_wake)))!=NULL )
         comm_buf_todo(q);
-    printf("comm_buf_free: free buffer %u\n", b->id);
+    //printf("comm_buf_free: free buffer %u\n", b->id);
     if( b->_n >= 0 )
     {
         pthread_mutex_lock(&buffers_lock);

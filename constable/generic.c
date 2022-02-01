@@ -114,7 +114,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
         *cinfo=(uintptr_t)t; // 64-bit or 32-bit size because a pointer will be stored here
         object_do_sethandler(&(c->subject));
     }
-    printf("ZZZ: riesim generic_hierarchy_handler pre %s\n",t->type->name);
+    //printf("ZZZ: riesim generic_hierarchy_handler pre %s\n",t->type->name);
 
     r=((struct g_event_handler_s*)h)->subhandler->handler(cb,((struct g_event_handler_s*)h)->subhandler,c);
     if( r>0 )
@@ -123,7 +123,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     if( (execute_get_last_attr()->type & 0x0f) != MED_TYPE_STRING )
         n="";
     else	n=execute_get_last_data();
-    printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,n);
+    //printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,n);
 
     if( (t=find_one(t,n))==NULL )
     {	c->result=RESULT_DENY;
@@ -255,7 +255,7 @@ int generic_init_comm( struct class_handler_s *h, struct comm_s *comm )
     struct class_s *class;
     int x;
 
-    printf("generic init\n");
+    //printf("generic init\n");
     h->cinfo_offset[comm->conn]= -1;
     if( (class=h->classname->classes[comm->conn])==NULL )
     {	comm->conf_error(comm,"Undefined class %s",h->classname->name);
@@ -314,7 +314,7 @@ int generic_init( char *name, struct event_handler_s *subhandler, struct event_n
     struct g_event_handler_s *eh;
     struct class_handler_s *ch;
 
-    printf("ZZZZZZ generic_init: idem riesit %s\n",name);
+    //printf("ZZZZZZ generic_init: idem riesit %s\n",name);
     if( (ch=generic_get_new_class_handler_s(class,-1))==NULL )
     {	init_error(Out_of_memory);
         return(-1);
@@ -350,7 +350,7 @@ int generic_init( char *name, struct event_handler_s *subhandler, struct event_n
         return(init_error("Can't add classhandler for %s/",name));
     }
 
-    printf("ZZZZZZZZZZZZZZ name=%s subhandler=%p event=%p\n",name,subhandler,event);
+    //printf("ZZZZZZZZZZZZZZ name=%s subhandler=%p event=%p\n",name,subhandler,event);
     if( subhandler && event )
     {
         if( (eh=malloc(2*sizeof(struct g_event_handler_s)))==NULL )

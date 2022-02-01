@@ -169,7 +169,7 @@ struct comm_buffer_s *comm_buf_peek_last(struct comm_buffer_queue_s *q);
 static inline int comm_buf_output_enqueue(struct comm_s *c, struct comm_buffer_s *b)
 {
     comm_buf_to_queue_locked(&c->output, b);
-    printf("comm_buf_output_enqueue: add buffer %u to OUTPUT queue\n", b->id);
+    //printf("comm_buf_output_enqueue: add buffer %u to OUTPUT queue\n", b->id);
     sem_post(&c->output_sem);
     return 0;
 }
@@ -179,21 +179,28 @@ static inline struct comm_buffer_s* comm_buf_output_dequeue(struct comm_s *c)
     struct comm_buffer_s *ret;
     sem_wait(&c->output_sem);
     ret = comm_buf_from_queue_locked(&c->output);
-    printf("comm_buf_output_dequeue: get buffer %u from OUTPUT queue and write it\n", ret->id);
+    //printf("comm_buf_output_dequeue: get buffer %u from OUTPUT queue and write it\n", ret->id);
     return ret;
 }
 
 #define	comm_buf_todo(b)	do {                                \
     comm_buf_to_queue_locked(&comm_todo, (b));                  \
+    sem_post(&comm_todo_sem);                                   \
+} while (0)
+
+/*
+#define	comm_buf_todo(b)	do {                                \
+    comm_buf_to_queue_locked(&comm_todo, (b));                  \
     printf("comm_buf_todo: add buffer %u to TODO queue\n", b->id); \
     sem_post(&comm_todo_sem);                                   \
 } while (0)
+*/
 
 static inline struct comm_buffer_s* comm_buf_get_todo(void) {
     struct comm_buffer_s *ret;
     sem_wait(&comm_todo_sem);
     ret = comm_buf_from_queue_locked(&comm_todo);
-    printf("comm_buf_get_todo: get buffer %u from TODO queue\n", ret->id);
+    //printf("comm_buf_get_todo: get buffer %u from TODO queue\n", ret->id);
     return ret;
 }
 
