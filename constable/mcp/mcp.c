@@ -577,6 +577,19 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
     r->len=sizeof(*out);
     r->want=0;
     r->completed=NULL;
+
+    int pid = -1;
+    struct medusa_attribute_s *apid = get_attribute(b->context.subject.class, "pid");
+    if (apid)
+      object_get_val(&(b->context.subject), apid, &pid, sizeof(pid));
+    else {
+      apid = get_attribute(b->context.operation.class, "pid");
+      if (apid)
+	object_get_val(&(b->context.operation), apid, &pid, sizeof(pid));
+    }
+    printf("answer 0x%016lx %2d [%s:%d]\n", out->id, (short)out->res,
+	b->context.operation.class->m.name, pid);
+
     comm_buf_output_enqueue(c, r);
 
     /* `b->do_phase` after finished update operation remains 1000 */
