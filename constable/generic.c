@@ -95,7 +95,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
 {
     uintptr_t *cinfo; // 64-bit or 32-bit size because a pointer will be stored here
     struct tree_s *t;
-    char *n;
+    char *searched_node;
     int r;
     struct class_handler_s *ch;
 
@@ -108,6 +108,8 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     if( (t=(struct tree_s *)(*cinfo))==NULL )
     {	if( (ch->flags & GFL_FROM_OBJECT)
                 && c->subject.class == c->object.class )
+            // if clone flag is set, copy cinfo from object (presumably parent
+            // object)
             t= (struct tree_s *)CINFO(&(c->object),ch,cb->comm);
         if( t==NULL )
             t=ch->root;
@@ -121,11 +123,11 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     {	return(r);
     }
     if( (execute_get_last_attr()->type & 0x0f) != MED_TYPE_STRING )
-        n="";
-    else	n=execute_get_last_data();
-    //printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,n);
+        searched_node="";
+    else	searched_node=execute_get_last_data();
+    //printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,searched_node);
 
-    if( (t=find_one(t,n))==NULL )
+    if( (t=find_one(t,searched_node))==NULL )
     {	c->result=RESULT_DENY;
         *PUPTR_COMM_BUF_VAR_DATA(cb,ch->comm_buf_var_data_offset)=*cinfo;
         return(-1);
