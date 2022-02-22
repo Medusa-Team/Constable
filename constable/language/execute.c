@@ -623,7 +623,7 @@ for(;;)
 int execute_handler( struct comm_buffer_s *comm_buff, struct event_handler_s *h, struct event_context_s *c )
 { int i;
 	if( comm_buff->execute.h!=NULL && (comm_buff->execute.h!=h || comm_buff->execute.c!=c) )
-	{	comm_buf_to_queue(&(comm_buff->execute.my_comm_buff->to_wake),comm_buff);
+	{	comm_buf_to_queue_locked(&(comm_buff->execute.my_comm_buff->to_wake),comm_buff);
 		return(2);
 	}
 //	//if( comm_buff->do_phase==0 )

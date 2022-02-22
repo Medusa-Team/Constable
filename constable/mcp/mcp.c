@@ -712,7 +712,7 @@ static int mcp_write( struct comm_s *c )
 
 static int mcp_nowrite( struct comm_s *c )
 { struct comm_buffer_s *b;
-    while( (b=comm_buf_from_queue(&(c->output)))!=NULL )
+    while( (b=comm_buf_from_queue_locked(&(c->output)))!=NULL )
     {	b->free(b);
         return(0);
     }
@@ -780,8 +780,8 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     r->write_finished_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
     r->write_finished_condition = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
     r->write_finished = false;
-    comm_buf_to_queue_locked(&(r->comm->wait_for_answer),r);
     comm_buf_to_queue(&(r->to_wake),wake);
+    comm_buf_to_queue_locked(&(r->comm->wait_for_answer),r);
     comm_buf_output_enqueue(c, r);
     //printf("ZZZZ mcp_fetch_object 5\n");
     return(3);
@@ -934,13 +934,6 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     r->write_finished_condition = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
     r->write_finished = false;
     /*
-     * Enqueue buffer `r` to the queue of buffers waiting for an answer from the
-     * kernel. After the answer is received, the buffer is removed from the
-     * queue in mcp_r_update_answer(). See comments in mcp_r_update_answer() for
-     * information about return value from the kernel.
-     */
-    comm_buf_to_queue_locked(&(r->comm->wait_for_answer),r);
-    /*
      * Enqueue buffer `wake` that initiated `update` operation to the `to_wake`
      * queue of the `r` buffer. After Constable receives answer to the update
      * request, buffer `r` is freed and `wake` buffer is enqueued for processing
@@ -950,6 +943,13 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     //printf("mcp_update_object: postpone processing of buf %u after finish buf %u\n",
 	//	    wake->id, r->id);
     comm_buf_to_queue(&(r->to_wake),wake);
+    /*
+     * Enqueue buffer `r` to the queue of buffers waiting for an answer from the
+     * kernel. After the answer is received, the buffer is removed from the
+     * queue in mcp_r_update_answer(). See comments in mcp_r_update_answer() for
+     * information about return value from the kernel.
+     */
+    comm_buf_to_queue_locked(&(r->comm->wait_for_answer),r);
     comm_buf_output_enqueue(c, r);
     return(3);
 }

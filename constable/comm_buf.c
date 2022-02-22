@@ -109,8 +109,10 @@ struct comm_buffer_s *comm_buf_resize( struct comm_buffer_s *b, int size )
 
 static void comm_buf_free( struct comm_buffer_s *b )
 { struct comm_buffer_s *q;
+    pthread_mutex_lock(&(b->to_wake.lock));
     while( (q=comm_buf_from_queue(&(b->to_wake)))!=NULL )
         comm_buf_todo(q);
+    pthread_mutex_unlock(&(b->to_wake.lock));
     //printf("comm_buf_free: free buffer %u\n", b->id);
     if( b->_n >= 0 )
     {
