@@ -181,8 +181,10 @@ static void debug_fd_write( int arg, char *s )
 
 int tls_create(void)
 {
+#ifdef DEBUG_TRACE
     TLS_CREATE(&runtime_file_key, NULL);
     TLS_CREATE(&runtime_pos_key, NULL);
+#endif
     TLS_CREATE(&errstr_key, NULL);
     return 0;
 }
@@ -190,8 +192,10 @@ int tls_create(void)
 int tls_alloc(void)
 {
     void *data;
+#ifdef DEBUG_TRACE
     TLS_ALLOC(runtime_file_key, RUNTIME_FILE_TYPE);
     TLS_ALLOC(runtime_pos_key, RUNTIME_POS_TYPE);
+#endif
     TLS_ALLOC(errstr_key, char**);
     return 0;
 }
