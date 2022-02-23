@@ -1,5 +1,4 @@
 /**
-    irintf("comm_buf_todo: add buffer %u to TODO queue\n", b->id); \
  * @file mcp.c
  * @short Medusa Communication Protocol handler
  *
