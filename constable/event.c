@@ -101,7 +101,7 @@ int event_free_all_events( struct comm_s *comm )
 
 struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_s *m, struct medusa_attribute_s *a )
 { struct event_type_s *e;
-    struct event_names_s *p;
+    struct event_names_s *evname;
     int l;
     //printf("ZZZ event_from_medusa:\n");
     for(l=0;a[l].type!=MED_TYPE_END;l++);
@@ -109,7 +109,7 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
     l*=sizeof(struct medusa_attribute_s);
     if( (e=malloc(sizeof(struct event_type_s)+l))==NULL )
         return(NULL);
-    memcpy(&(e->m),m,sizeof(struct medusa_acctype_s));
+    memcpy(&(e->acctype),m,sizeof(struct medusa_acctype_s));
     memset(&(e->operation_class),0,sizeof(e->operation_class));
     //	e->operation_class.next=NULL;
     //	e->operation_class.cinfo_offset=e->operation_class.cinfo_size=0;
@@ -117,30 +117,30 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
     //	e->operation_class.set=NULL;
     //	e->operation_class.event_offset=e->operation_class.event_size=0;
     //	e->operation_class.m.classid=0;
-    e->operation_class.m.size=e->m.size;
+    e->operation_class.m.size=e->acctype.size;
     e->operation_class.m.name[0]=0;
-    strncpy(e->operation_class.m.name,e->m.name,MIN(MEDUSA_CLASSNAME_MAX,MEDUSA_OPNAME_MAX));
+    strncpy(e->operation_class.m.name,e->acctype.name,MIN(MEDUSA_CLASSNAME_MAX,MEDUSA_OPNAME_MAX));
     memcpy(e->operation_class.attr,a,l);
     e->operation_class.comm=comm;
 
-    if( (e->op[0]=(struct class_s*)hash_find(&(comm->classes),e->m.op_class[0]))==NULL )
-        init_error("Subject of access %s does not exist!",e->m.name);
-    if( e->m.op_class[0]==e->m.op_class[1] && !strncmp(e->m.op_name[0],e->m.op_name[1],MEDUSA_ATTRNAME_MAX) )
+    if( (e->op[0]=(struct class_s*)hash_find(&(comm->classes),e->acctype.op_class[0]))==NULL )
+        init_error("Subject of access %s does not exist!",e->acctype.name);
+    if( e->acctype.op_class[0]==e->acctype.op_class[1] && !strncmp(e->acctype.op_name[0],e->acctype.op_name[1],MEDUSA_ATTRNAME_MAX) )
         e->op[1]=NULL;
-    else	e->op[1]=(struct class_s*)hash_find(&(comm->classes),e->m.op_class[1]);
+    else	e->op[1]=(struct class_s*)hash_find(&(comm->classes),e->acctype.op_class[1]);
     event_mask_clear2(&(e->mask[0]));
     // if event is TRIGERED_AT_OBJECT
-    if( e->m.actbit&0x8000 )
-        e->object=e->op[1];	/* object */
+    if( e->acctype.actbit&0x8000 )
+        e->monitored_operand=e->op[1];	/* object */
     else
-        e->object=e->op[0];	/* subject */
+        e->monitored_operand=e->op[0];	/* subject */
     // if event is TRIGGERED_BY_OBJECT_BIT
-    if( e->m.actbit&0x4000 )
+    if( e->acctype.actbit&0x4000 )
         // 0x00ff --> maximum event id number (act bit) is 255
-        event_mask_setbit(&(e->mask[1]),(e->m.actbit)&0x00ff);
+        event_mask_setbit(&(e->mask[1]),(e->acctype.actbit)&0x00ff);
     else
         // 0x00ff --> maximum event id number (act bit) is 255
-        event_mask_setbit(&(e->mask[0]),(e->m.actbit)&0x00ff);
+        event_mask_setbit(&(e->mask[0]),(e->acctype.actbit)&0x00ff);
 
     if( debug_def_out!=NULL )
     { char buf[16];
@@ -149,7 +149,7 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
         debug_def_out(debug_def_arg,comm->name);
         debug_def_out(debug_def_arg,"\"] event ");
         if( e->op[0]!=NULL )
-        {	debug_def_out(debug_def_arg,e->m.op_name[0]);
+        {	debug_def_out(debug_def_arg,e->acctype.op_name[0]);
             debug_def_out(debug_def_arg,":");
             debug_def_out(debug_def_arg,e->op[0]->m.name);
         }
@@ -158,22 +158,22 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
         debug_def_out(debug_def_arg,m->name);
         debug_def_out(debug_def_arg," ");
         if( e->op[1]!=NULL )
-        {	debug_def_out(debug_def_arg,e->m.op_name[1]);
+        {	debug_def_out(debug_def_arg,e->acctype.op_name[1]);
             debug_def_out(debug_def_arg,":");
             debug_def_out(debug_def_arg,e->op[1]->m.name);
         }
         else	debug_def_out(debug_def_arg,"-");
 
         debug_def_out(debug_def_arg," (");
-        sprintf(buf,"%d",(e->m.actbit)&0x00ff);
+        sprintf(buf,"%d",(e->acctype.actbit)&0x00ff);
         debug_def_out(debug_def_arg,buf);
         debug_def_out(debug_def_arg,")");
 
-        if( e->m.actbit&0x8000 )
+        if( e->acctype.actbit&0x8000 )
             debug_def_out(debug_def_arg," to object");
         else
             debug_def_out(debug_def_arg," to subject");
-        if( e->m.actbit&0x4000 )
+        if( e->acctype.actbit&0x4000 )
             debug_def_out(debug_def_arg," object's event");
         else
             debug_def_out(debug_def_arg," subject's event");
@@ -183,13 +183,13 @@ struct event_type_s *event_type_add( struct comm_s *comm, struct medusa_acctype_
         pthread_mutex_unlock(&debug_def_lock);
     }
 
-    if( (p=event_type_find_name(e->m.name))==NULL )
+    if( (evname=event_type_find_name(e->acctype.name))==NULL )
     {	free(e);
         return(NULL);
     }
-    p->events[comm->conn]=e;
-    e->evname=p;
-    hash_add(&(comm->events),&(e->hashent),e->m.opid);
+    evname->events[comm->conn]=e;
+    e->evname=evname;
+    hash_add(&(comm->events),&(e->hashent),e->acctype.opid);
     return(e);
 }
 

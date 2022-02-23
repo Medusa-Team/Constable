@@ -29,9 +29,9 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
 {
     c->operation.next=&(c->subject);
     c->operation.attr.offset=0;
-    c->operation.attr.length=t->m.size;
+    c->operation.attr.length=t->acctype.size;
     c->operation.attr.type=MED_TYPE_END;
-    strncpy(c->operation.attr.name,t->m.name,MIN(MEDUSA_ATTRNAME_MAX,MEDUSA_OPNAME_MAX));
+    strncpy(c->operation.attr.name,t->acctype.name,MIN(MEDUSA_ATTRNAME_MAX,MEDUSA_OPNAME_MAX));
     c->operation.flags=comm->flags;
     c->operation.class=&(t->operation_class);
     c->operation.data=(char*)(op);
@@ -39,14 +39,14 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
     c->subject.next=&(c->object);
     c->subject.attr.offset=c->subject.attr.length=0;
     c->subject.attr.type=MED_TYPE_END;
-    strncpy(c->subject.attr.name,t->m.op_name[0],MEDUSA_ATTRNAME_MAX);
+    strncpy(c->subject.attr.name,t->acctype.op_name[0],MEDUSA_ATTRNAME_MAX);
     c->subject.flags=subject->flags;
     c->subject.class=subject->class;
     c->subject.data=subject->data;
     c->object.next=NULL;
     c->object.attr.offset=c->object.attr.length=0;
     c->object.attr.type=MED_TYPE_END;
-    strncpy(c->object.attr.name,t->m.op_name[1],MEDUSA_ATTRNAME_MAX);
+    strncpy(c->object.attr.name,t->acctype.op_name[1],MEDUSA_ATTRNAME_MAX);
     c->object.flags=comm->flags;
     c->object.class=t->op[1];
     c->object.data=(char*)(object);

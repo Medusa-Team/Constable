@@ -34,11 +34,11 @@ struct event_names_s;
 struct event_type_s {
     struct hash_ent_s	hashent;
     struct event_names_s	*evname;
-    struct class_s		*op[2];
-    struct class_s		*object; /* komu sa nastavuje sledovanie */
+    struct class_s		*op[2];  /**< subject and object */
+    struct class_s		*monitored_operand; /**< points to op[0] or op[1] */
     event_mask_t		mask[2];
     //	struct event_type_s	*alt;
-    struct medusa_acctype_s	m;
+    struct medusa_acctype_s	acctype;
     struct class_s		operation_class;
 };
 

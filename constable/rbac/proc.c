@@ -141,7 +141,7 @@ static int rbac_proc_init_comm( struct class_handler_s *h, struct comm_s *comm )
             return(-1);
         }
     }
-    if( (event!=NULL && ((event->m.actbit&0xc000)==0x4000))
+    if( (event!=NULL && ((event->acctype.actbit&0xc000)==0x4000))
             || (x=class_alloc_subject_cinfo(class))<0 )
         x=class_alloc_object_cinfo(class);
     if( x<0 )

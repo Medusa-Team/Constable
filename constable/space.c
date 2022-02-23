@@ -267,7 +267,7 @@ struct tree_add_event_mask_do_s {
 };
 static void tree_add_event_mask_do( struct tree_s *p, struct tree_add_event_mask_do_s *arg )
 {
-    if( arg->type->object==p->type->class_handler->classname->classes[arg->conn] )
+    if( arg->type->monitored_operand==p->type->class_handler->classname->classes[arg->conn] )
         event_mask_or2(p->events[arg->conn].event,arg->type->mask);
 }
 
@@ -378,8 +378,8 @@ static void tree_comm_reinit( struct comm_s *comm, struct tree_s *t )
                 {	comm->conf_error(comm,"Unknown event %s\n",hh->handler->op_name);
                     continue;
                 }
-                if( type->object==type->op[0] )
-                {	if( type->object==t->type->class_handler->classname->classes[comm->conn] )
+                if( type->monitored_operand==type->op[0] )
+                {	if( type->monitored_operand==t->type->class_handler->classname->classes[comm->conn] )
                         event_mask_or2(t->events[comm->conn].event,type->mask);
                     else	comm->conf_error(comm,"event %s subject class mismatch",hh->handler->op_name);
                 }
@@ -390,8 +390,8 @@ static void tree_comm_reinit( struct comm_s *comm, struct tree_s *t )
                 {	comm->conf_error(comm,"Unknown event %s\n",hh->handler->op_name);
                     continue;
                 }
-                if( type->object==type->op[1] )
-                {	if( type->object==t->type->class_handler->classname->classes[comm->conn] )
+                if( type->monitored_operand==type->op[1] )
+                {	if( type->monitored_operand==t->type->class_handler->classname->classes[comm->conn] )
                         event_mask_or2(t->events[comm->conn].event,type->mask);
                     else	comm->conf_error(comm,"event %s object class mismatch",hh->handler->op_name);
                 }
@@ -423,13 +423,13 @@ int space_init_event_mask( struct comm_s *comm )
                     ((type->op[1]==NULL) != (le->object==NULL)) )
             {	comm->conf_error(comm,"Invalid use of event %s\n",le->handler->op_name);
             }
-            if( le->subject!=NULL && le->subject!=ALL_OBJ && type->object==type->op[0] )
+            if( le->subject!=NULL && le->subject!=ALL_OBJ && type->monitored_operand==type->op[0] )
             { struct tree_add_event_mask_do_s arg;
                 arg.conn=comm->conn;
                 arg.type=type;
                 space_for_each_path(le->subject,(fepf_t)tree_add_event_mask_do,&arg);
             }
-            if( le->object!=NULL && le->object!=ALL_OBJ && type->object==type->op[1] )
+            if( le->object!=NULL && le->object!=ALL_OBJ && type->monitored_operand==type->op[1] )
             { struct tree_add_event_mask_do_s arg;
                 arg.conn=comm->conn;
                 arg.type=type;

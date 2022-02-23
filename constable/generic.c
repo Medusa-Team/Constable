@@ -63,7 +63,7 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
 #ifdef USE_ALT
     }
 #endif
-    if( inh && h->user!=NULL && ((struct event_names_s*)(h->user))->events[comm->conn]->object==o->class )
+    if( inh && h->user!=NULL && ((struct event_names_s*)(h->user))->events[comm->conn]->monitored_operand==o->class ) {
         object_add_event(o,((struct event_names_s*)(h->user))->events[comm->conn]->mask);
     //printf("ZZZ: ffffffffffffffff\n");
     return(0);
@@ -266,7 +266,7 @@ int generic_init_comm( struct class_handler_s *h, struct comm_s *comm )
     if( h->user!=NULL )
     {	if( (event=((struct event_names_s*)(h->user))->events[comm->conn])!=NULL )
         {	if( class!=event->op[0] )
-                comm->conf_error(comm,"generic_init_comm: class of tree %s is not a class of subject of operation %s",h->root->type->name,event->m.name);
+                comm->conf_error(comm,"generic_init_comm: class of tree %s is not a class of subject of operation %s",h->root->type->name,event->acctype.name);
         }
         else
         {	comm->conf_error(comm,"Undefined event %s",((struct event_names_s*)(h->user))->name);
@@ -274,7 +274,7 @@ int generic_init_comm( struct class_handler_s *h, struct comm_s *comm )
         }
     }
     // if event is TRIGGERED_AT_SUBJECT | TRIGGERED_BY_OBJECT_BIT
-    if( (event!=NULL && ((event->m.actbit&0xc000)==0x4000))
+    if( (event!=NULL && ((event->acctype.actbit&0xc000)==0x4000))
             || (x=class_alloc_subject_cinfo(class))<0 )
         x=class_alloc_object_cinfo(class);
     if( x<0 )
