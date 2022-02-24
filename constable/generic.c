@@ -66,6 +66,7 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
     if( inh && h->user!=NULL && ((struct event_names_s*)(h->user))->events[comm->conn]->monitored_operand==o->class ) {
         object_add_event(o,((struct event_names_s*)(h->user))->events[comm->conn]->mask);
     //printf("ZZZ: ffffffffffffffff\n");
+    }
     return(0);
 }
 
