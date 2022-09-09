@@ -321,7 +321,7 @@ static int do_event_handler( struct comm_buffer_s *cb )
     return(i);
 }
 
-static int do_handler( struct comm_buffer_s *cb )
+static int do_init_handler( struct comm_buffer_s *cb )
 { int i;
 
     if( cb->do_phase==0 )
@@ -346,7 +346,8 @@ static int do_event_list( struct comm_buffer_s *cb )
     /* This is just for execution of the _init() handler function from the
      * configuration file, see mcp_r_query(). */
     if( cb->event==NULL )
-        return(do_handler(cb));
+        return(do_init_handler(cb));
+
     c=&(cb->context);
     if( debug_do_out!=NULL && cb->do_phase==0 ) {
         pthread_mutex_lock(&debug_do_lock);
