@@ -343,6 +343,8 @@ static int do_event_list( struct comm_buffer_s *cb )
     struct tree_s *t;
     int i;
 
+    /* This is just for execution of the _init() handler function from the
+     * configuration file, see mcp_r_query(). */
     if( cb->event==NULL )
         return(do_handler(cb));
     c=&(cb->context);
@@ -384,8 +386,15 @@ static int do_event_list( struct comm_buffer_s *cb )
     {	if( cb->do_phase==0 )
             evhash_foreach_first(cb->hh,cb->event->evname->handlers_hash[cb->ehh_list]);
         //printf("eeeeeeeeee cb->hh=%p\n",cb->hh);
+
+        /* If handler requires continuation from interrupted activity (operation
+         * fetch or update invoked from the handler), this cycle continues with
+         * the same handler that was interrupted. */
         for(;cb->hh!=NULL;evhash_foreach_next(cb->hh,cb->event->evname->handlers_hash[cb->ehh_list]))
-        {	if( (i=do_event_handler(cb))>0 )
+        {
+            /* If there was an error during the execution of the handler, the
+             * error is ignored and cycle continues with the next handler. */
+            if( (i=do_event_handler(cb))>0 )
             {	cb->do_phase=1;
                 return(i);
             }
@@ -459,6 +468,9 @@ static int do_event_list( struct comm_buffer_s *cb )
 #endif
     cb->do_phase=0;		/* len tak pre istotu */
     if( c->first )
+
+    /* If this is an event that doesn't have any registered handler (event
+     * handler, class handler for object or subject). */
     {
         //printf("do_event_list: No event executed! [%s]\n",cb->event->m.name);
         return(-1);

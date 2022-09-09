@@ -56,12 +56,16 @@ struct comm_buffer_s {
                             finished. */
     /* for do_event & execute ... */
     struct execute_s    execute;
-    int			do_phase;
+    int			do_phase; /**< Saves state between asynchronous calls to
+                                   * handlers. */
     int			ehh_list;
-    struct event_hadler_hash_s *hh;
+    struct event_hadler_hash_s *hh; /**< Stores pointer to the current handler
+                                     * being processed in an asynchronous
+                                     * call. */
     struct class_handler_s	*ch;
     struct event_context_s	context;
-    struct event_type_s	*event;
+    struct event_type_s	*event; /**< Event type of current decision request, see
+                                 * mcp_r_head(). */
     struct event_handler_s	*handler;
 
     struct comm_buffer_queue_s	to_wake;

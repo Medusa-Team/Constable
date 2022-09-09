@@ -10,6 +10,8 @@
 
 int object_is_invalid( struct object_s *o )
 {
+    // TODO: In case of multiple connections, this checks just the first one
+    // ([0]).
     if( o->class->cinfo_size>0 && ((uintptr_t*)(o->data+o->class->cinfo_offset))[0]!=0 )
         return(0);
     if( o->class->subject.cinfo_size>0 && ((uintptr_t*)(o->data+o->class->subject.cinfo_offset))[0]!=0 )
@@ -17,6 +19,8 @@ int object_is_invalid( struct object_s *o )
     return(1);
 }
 
+/* generic_set_handler() returns -1 because cinfo is not set, but RBAC uses
+ * different handlers (see rbac_set_roles(), rbac_set_perm()... */
 int object_do_sethandler( struct object_s *o )
 { struct class_handler_s *h;
     object_clear_all_vs(o);

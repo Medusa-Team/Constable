@@ -375,6 +375,7 @@ static read_result_e mcp_r_head( struct comm_buffer_s *b )
     MCPptr_t x;
     if( (x=((MCPptr_t*)(b->comm_buf))[0])!=0 )
     {
+        // This is a decision request
         if( (b->event=(struct event_type_s*)hash_find(&(b->comm->events),x))==NULL )
         {	comm_error("comm %s: Unknown access type %p!",b->comm->name,x);
             return READ_ERROR;
