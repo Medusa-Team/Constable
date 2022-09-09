@@ -97,7 +97,7 @@ struct event_hadler_hash_s {
 struct event_hadler_hash_s *evhash_add( struct event_hadler_hash_s **hash, struct event_handler_s *handler, struct event_names_s *evname );
 #define	evhash_foreach(ev,hash)	for((ev)=(hash);(ev)!=NULL;(ev)=(ev)->next)
 #define	evhash_foreach_first(ev,hash)	((ev)=(hash))
-#define	evhash_foreach_next(ev,hash)	((ev)=(ev)->next)
+#define	evhash_foreach_next(ev)		((ev)=(ev)->next)
 
 int register_event_handler( struct event_handler_s *h, struct event_names_s *evname, struct event_hadler_hash_s **hash, vs_t *subject_vs, vs_t *object_vs );
 

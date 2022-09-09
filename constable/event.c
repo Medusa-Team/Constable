@@ -391,7 +391,7 @@ static int do_event_list( struct comm_buffer_s *cb )
         /* If handler requires continuation from interrupted activity (operation
          * fetch or update invoked from the handler), this cycle continues with
          * the same handler that was interrupted. */
-        for(;cb->hh!=NULL;evhash_foreach_next(cb->hh,cb->event->evname->handlers_hash[cb->ehh_list]))
+        for(;cb->hh!=NULL;evhash_foreach_next(cb->hh))
         {
             /* If there was an error during the execution of the handler, the
              * error is ignored and cycle continues with the next handler. */
@@ -413,7 +413,7 @@ static int do_event_list( struct comm_buffer_s *cb )
             }
             if( cb->do_phase==0 )
                 evhash_foreach_first(cb->hh,t->subject_handlers[cb->ehh_list]);
-            for(;cb->hh!=NULL;evhash_foreach_next(cb->hh,t->subject_handlers[cb->ehh_list]))
+            for(;cb->hh!=NULL;evhash_foreach_next(cb->hh))
             {	if( cb->hh->evname==cb->event->evname && (i=do_event_handler(cb))>0 )
                 {	cb->do_phase=2;
                     return(i);
@@ -434,7 +434,7 @@ static int do_event_list( struct comm_buffer_s *cb )
             }
             if( cb->do_phase==0 )
                 evhash_foreach_first(cb->hh,t->object_handlers[cb->ehh_list]);
-            for(;cb->hh!=NULL;evhash_foreach_next(cb->hh,t->object_handlers[cb->ehh_list]))
+            for(;cb->hh!=NULL;evhash_foreach_next(cb->hh))
             {	if( cb->hh->evname==cb->event->evname && (i=do_event_handler(cb))>0 )
                 {	cb->do_phase=3;
                     return(i);
