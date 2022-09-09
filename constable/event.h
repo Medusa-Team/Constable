@@ -107,7 +107,7 @@ struct event_context_s {
     struct object_s object;
     int		result;
     struct comm_buffer_s *cb;	/* ??? asi zbytocne ??? */
-    int		first;
+    int		unhandled;      /**< 1 if event wasn't handled */
     struct object_s *local_vars;
 };
 

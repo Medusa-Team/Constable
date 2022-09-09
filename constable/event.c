@@ -314,7 +314,7 @@ static int do_event_handler( struct comm_buffer_s *cb )
     result=cb->context.result;
     if( (i=h->handler(cb,h,&(cb->context)))==0 )
     {	cb->context.result=evaluate_result(result,cb->context.result);
-        cb->context.first=0;
+        cb->context.unhandled=0;
     }
     else	cb->context.result=result;
     //printf("do_event_handler: event result=%d B\n",cb->context.result);
@@ -326,7 +326,7 @@ static int do_init_handler( struct comm_buffer_s *cb )
 
     if( cb->do_phase==0 )
     {	cb->context.result=RESULT_UNKNOWN;
-        cb->context.first=1;
+        cb->context.unhandled=1;
         //		cb->context.local_vars=NULL;	/* ???? */
     }
     if( (i=cb->handler->handler(cb,cb->handler,&(cb->context)))>0 )
@@ -374,7 +374,7 @@ static int do_event_list( struct comm_buffer_s *cb )
 
     if( cb->do_phase==0 && (cb->ehh_list==EHH_VS_ALLOW||cb->ehh_list==EHH_VS_DENY) )
     {	c->result=RESULT_UNKNOWN;
-        c->first=1;
+        c->unhandled=1;
         //		c->local_vars=NULL;	/* ???? */
         if( object_is_invalid(&(c->subject)) )
             object_do_sethandler(&(c->subject));	/* !!! ??? ZZZ */
@@ -468,10 +468,10 @@ static int do_event_list( struct comm_buffer_s *cb )
     }
 #endif
     cb->do_phase=0;		/* len tak pre istotu */
-    if( c->first )
 
     /* If this is an event that doesn't have any registered handler (event
      * handler, class handler for object or subject). */
+    if( c->unhandled )
     {
         //printf("do_event_list: No event executed! [%s]\n",cb->event->m.name);
         return(-1);
