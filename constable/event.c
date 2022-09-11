@@ -329,7 +329,7 @@ static int do_init_handler( struct comm_buffer_s *cb )
         cb->context.unhandled=1;
         //		cb->context.local_vars=NULL;	/* ???? */
     }
-    if( (i=cb->handler->handler(cb,cb->handler,&(cb->context)))>0 )
+    if( (i=cb->init_handler->handler(cb,cb->init_handler,&(cb->context)))>0 )
     {	cb->do_phase=1;
         return(i);
     }

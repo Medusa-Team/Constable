@@ -185,9 +185,9 @@ void* comm_worker(void *arg)
             r=do_event(b);
 	} else { // mY : ak bola udalost vybavena, odosiela sa ANSWER
           // mY : to vsak neplati pre umelo vyvolany event funkcie _init  
-            if( function_init && (b->handler == function_init) ) {
-                //printf("comm_worker: answer for function init, buf id = %u, b->handler = %p\n",
-		//		b->id, b->handler);
+            if( function_init && (b->init_handler == function_init) ) {
+                //printf("comm_worker: answer for function init, buf id = %u, b->init_handler = %p\n",
+		//		b->id, b->init_handler);
                 r = 0;
 		pthread_mutex_lock(&b->comm->state_lock);
                 pthread_mutex_unlock(&b->lock);
@@ -220,11 +220,12 @@ void* comm_worker(void *arg)
         else if(r <= 0) {   
             /*
 	     * `r` is 0 and `b->do_phase` is 0 too if do_event() finished
-	     * execution of a `b->handler` (i.e., the code of virtual machine
-	     * executed RET instruction of the handler). Answer of buffer `b`
-	     * should be handled in the next iteration of `comm_buf_todo` queue.
-	     * As do_event() is executed if `b->do_phase` < 1000, the value of
-	     * `do_phase` is changed here to prevent its execution.
+	     * execution of a `b->init_handler` (i.e., the code of virtual
+	     * machine executed RET instruction of the handler). Answer of
+	     * buffer `b` should be handled in the next iteration of
+	     * `comm_buf_todo` queue. As do_event() is executed if `b->do_phase`
+	     * < 1000, the value of `do_phase` is changed here to prevent its
+	     * execution.
 	     *
 	     * TODO: I think `b` should precede all buffers in `comm_buf_todo`,
 	     * so it has to be added at the head of the queue. But first, we
