@@ -63,7 +63,7 @@ struct space_s *space_create( char *name, int primary )
     if( name!=NULL )
     {	if( space_find(name)!=NULL )
         {	char **errstr = (char**) pthread_getspecific(errstr_key);
-            *errstr=Out_of_memory;
+            *errstr=Space_already_defined;
             return(NULL);
         }
     }

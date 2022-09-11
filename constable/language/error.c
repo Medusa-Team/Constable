@@ -19,6 +19,7 @@ extern compiler_class_t *global_compiler;
 
 pthread_key_t errstr_key;
 char *Out_of_memory="Out of memory";
+char *Space_already_defined="Space already defined";
 
 int error( const char *fmt, ... )
 { va_list ap;
