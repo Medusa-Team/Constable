@@ -473,7 +473,7 @@ static int do_event_list( struct comm_buffer_s *cb )
      * handler, class handler for object or subject). */
     if( c->unhandled )
     {
-        //printf("do_event_list: No event executed! [%s]\n",cb->event->m.name);
+        //printf("do_event_list: No event executed! [%s]\n",cb->event->evname->name);
         return(-1);
     }
     //printf("do_event_list: return 0, event result is %d\n",c->result);
