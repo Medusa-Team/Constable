@@ -45,7 +45,7 @@ struct vs_s *vs_alloc( char *name )
     for(p=&vs_tab;p->next!=NULL;p=p->next)
     {	if( name[0]!=ANON_SPACE_NAME[0] && !strcmp(name,p->next->name) )
         {	char **errstr = (char**) pthread_getspecific(errstr_key);
-            *errstr=Out_of_memory;
+            *errstr=Space_already_defined;
             return(NULL);
         }
     }
