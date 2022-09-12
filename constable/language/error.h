@@ -14,6 +14,7 @@
 extern pthread_key_t errstr_key;
 extern char *Out_of_memory;
 extern char *Space_already_defined;
+extern char *Out_of_vs;
 
 int error( const char *fmt, ... );
 int warning( const char *fmt, ... );

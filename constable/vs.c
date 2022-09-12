@@ -6,12 +6,11 @@
 
 #include "constable.h"
 #include "vs.h"
-#include "space.h" // only for ANON_SPACE_NAME
 #include <pthread.h>
 
 //static int number_of_vs=MAX_NUM_OF_VS/32;
 static struct vs_s vs_tab;
-static int vs;
+static int next_vs_id;
 
 //int vs_init( int max_vs )
 int vs_init( void )
@@ -34,36 +33,23 @@ int vs_init( void )
     }
     number_of_vs= max_vs/32;
 */
-    vs=0;
+    next_vs_id=0;
     return(0);
 }
 
 /* ---------- vs alloc/free ---------- */
-struct vs_s *vs_alloc( char *name )
-{ struct vs_s *p;
-    if( vs >= MAX_NUM_OF_VS )
+int vs_alloc( vs_t *id )
+{
+    if( next_vs_id >= MAX_NUM_OF_VS )
     {
         char **errstr = (char**) pthread_getspecific(errstr_key);
-        *errstr=Out_of_memory;
-        return(NULL);
+        *errstr=Out_of_vs;
+        return(-1);
     }
-    for(p=&vs_tab;p->next!=NULL;p=p->next)
-    {	if( name[0]!=ANON_SPACE_NAME[0] && !strcmp(name,p->next->name) )
-        {	char **errstr = (char**) pthread_getspecific(errstr_key);
-            *errstr=Space_already_defined;
-            return(NULL);
-        }
-    }
-    if( (p->next=calloc(1,sizeof(struct vs_s)+strlen(name)+1))==NULL )
-    {	char **errstr = (char**) pthread_getspecific(errstr_key);
-        *errstr=Out_of_memory;
-        return(NULL);
-    }
-    p->next->next=NULL;
-    strcpy(p->next->name,name);
-    p->next->vs[vs/BITS_PER_VS_WORD] |= 1 << (vs % BITS_PER_VS_WORD);
-    vs += 1;
-    return(p->next);
+    vs_clear(id);
+    id[next_vs_id/BITS_PER_VS_WORD] |= 1 << (next_vs_id % BITS_PER_VS_WORD);
+    next_vs_id += 1;
+    return(0);
 }
 
 int vs_is_enough( int bites )

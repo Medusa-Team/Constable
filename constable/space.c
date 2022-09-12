@@ -461,13 +461,13 @@ vs_t *space_get_vs( struct space_s *space )
 {
     if( space==NULL || space==ALL_OBJ)
         return((vs_t*)space);
-    if( space->my_vs!=NULL )
-        return(space->my_vs->vs);
-    if( (space->my_vs=vs_alloc(space->name))==NULL )
+    if( !vs_isclear(space->vs_id) )
+        return(space->vs_id);
+    if( vs_alloc(space->vs_id)<0 )
         return(NULL);
-    //printf("ZZZ:space_get_vs %s 0x%08x\n",space->name,*(space->my_vs->vs));
-    vs_add(space->my_vs->vs,space->vs[AT_MEMBER]);
-    return(space->my_vs->vs);
+    //printf("ZZZ:space_get_vs %s 0x%08x\n",space->name,*(space->vs_id));
+    vs_add(space->vs_id,space->vs[AT_MEMBER]);
+    return(space->vs_id);
 }
 
 /* ----------------------------------- */

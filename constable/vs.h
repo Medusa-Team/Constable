@@ -22,7 +22,7 @@ struct vs_s {
 };
 
 int vs_init( void );
-struct vs_s *vs_alloc( char *name );
+int vs_alloc( vs_t *id );
 int vs_is_enough( int bites );
 
 void vs_clear( vs_t *to );
