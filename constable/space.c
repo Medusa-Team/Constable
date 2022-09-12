@@ -21,8 +21,9 @@ struct space_s *global_spaces=NULL;
  * Create a new path and append it to the end of \p prev.
  * \param prev tree node to append to
  * \param path_or_space tree node to append
+ * \param type type of the node to append: LTREE_T_TREE or LTREE_T_SPACE
  */
-static ltree_t *new_path( ltree_t *prev, void *path_or_space )
+static ltree_t *new_path( ltree_t *prev, void *path_or_space, int type )
 { ltree_t *l;
     if( (l=malloc(sizeof(ltree_t)))==NULL )
     {	char **errstr = (char**) pthread_getspecific(errstr_key);
@@ -31,6 +32,7 @@ static ltree_t *new_path( ltree_t *prev, void *path_or_space )
     }
     l->prev=prev;
     l->path_or_space=path_or_space;
+    l->type=type;
     return(l);
 }
 
@@ -295,9 +297,8 @@ static void tree_add_vs_do( struct tree_s *p, struct tree_add_vs_do_s *arg )
 int space_add_path( struct space_s *space, int type, void *path_or_space )
 {
     if( path_or_space==NULL )	return(-1);
-    if( (space->ltree=new_path(space->ltree,path_or_space))==NULL )
+    if( (space->ltree=new_path(space->ltree,path_or_space,type))==NULL )
         return(-1);
-    space->ltree->type=type;
     return(0);
 }
 
