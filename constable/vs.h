@@ -11,13 +11,13 @@
 
 typedef __u32	vs_t;
 
-#define MAX_VS_BITS	64
-#define BITS_PER_VS	(sizeof(vs_t) << 3)
-#define	NUMBER_OF_VS	(MAX_VS_BITS/BITS_PER_VS)
+#define MAX_NUM_OF_VS 64
+#define BITS_PER_VS_WORD	(sizeof(vs_t) << 3)
+#define VS_WORDS		(MAX_NUM_OF_VS/BITS_PER_VS_WORD)
 
 struct vs_s {
     struct vs_s	*next;
-    vs_t vs[NUMBER_OF_VS];
+    vs_t vs[VS_WORDS];
     char name[0];
 };
 

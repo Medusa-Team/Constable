@@ -96,7 +96,7 @@ int object_get_vs( vs_t *vs, int n, struct object_s *o )
         return(-1);
     }
     if( o->class->vs_attr[n]!=NULL )
-    {	object_get_val(o,o->class->vs_attr[n],vs,NUMBER_OF_VS*4);
+    {	object_get_val(o,o->class->vs_attr[n],vs,VS_WORDS*4);
         return(0);
     }
     vs_clear(vs);
@@ -109,12 +109,12 @@ int object_get_vs( vs_t *vs, int n, struct object_s *o )
 
 int object_cmp_vs( vs_t *vs, int n, struct object_s *o )
 { struct class_handler_s *h;
-    vs_t vs_tmp[NUMBER_OF_VS];
+    vs_t vs_tmp[VS_WORDS];
     int i;
     if( n<0 || n>=NR_ACCESS_TYPES )
         return(0);
     if( o->class->vs_attr[n]!=NULL )
-    {	i=MIN(o->class->vs_attr[n]->length/sizeof(vs_t),NUMBER_OF_VS);
+    {	i=MIN(o->class->vs_attr[n]->length/sizeof(vs_t),VS_WORDS);
         while(i>0)
         {	i--;
             if( ((vs_t *)(o->data+o->class->vs_attr[n]->offset))[i]
@@ -150,7 +150,7 @@ int object_add_vs( struct object_s *o, int n, vs_t *vs )
     if( n<0 || n>=NR_ACCESS_TYPES )
         return(-1);
     if( o->class->vs_attr[n]!=NULL )
-    {	i=MIN(o->class->vs_attr[n]->length/sizeof(vs_t),NUMBER_OF_VS);
+    {	i=MIN(o->class->vs_attr[n]->length/sizeof(vs_t),VS_WORDS);
         while(i>0)
         {	i--;
             ((vs_t *)(o->data+o->class->vs_attr[n]->offset))[i]

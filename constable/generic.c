@@ -72,8 +72,8 @@ int generic_set_handler( struct class_handler_s *h, struct comm_s *comm, struct 
 
 int generic_test_vs( int acctype, struct event_context_s *c )
 {
-    vs_t vs_s[NUMBER_OF_VS];
-    vs_t vs_o[NUMBER_OF_VS];
+    vs_t vs_s[VS_WORDS];
+    vs_t vs_o[VS_WORDS];
     if( c->object.class==NULL )
         return(0);
     if( object_is_invalid(&(c->object)) )
@@ -85,7 +85,7 @@ int generic_test_vs( int acctype, struct event_context_s *c )
 
 int generic_test_vs_tree( int acctype, struct event_context_s *c, struct tree_s *t )
 {
-    vs_t vs_s[NUMBER_OF_VS];
+    vs_t vs_s[VS_WORDS];
     object_get_vs(vs_s,acctype,&(c->subject));
     if( vs_test(t->vs[AT_MEMBER],vs_s) ) /*!!! no_vs !!!*/
         return(1);
@@ -100,7 +100,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     int r;
     struct class_handler_s *ch;
 
-    vs_t vse[NUMBER_OF_VS];
+    vs_t vse[VS_WORDS];
 
     ch=((struct g_event_handler_s*)h)->class_handler;
     //printf("generic_hierarchy_handler_decide %s\n",ch->root->type->name);
@@ -197,7 +197,7 @@ int generic_get_vs( struct class_handler_s *h, struct comm_s *comm, struct objec
 
 int generic_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, struct tree_s *node )
 { int perm;
-    vs_t vse[NUMBER_OF_VS];
+    vs_t vse[VS_WORDS];
     if( node->type->class_handler!=h )
     {	char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;

@@ -9,7 +9,7 @@
 #include "space.h" // only for ANON_SPACE_NAME
 #include <pthread.h>
 
-//static int number_of_vs=MAX_VS_BITS/32;
+//static int number_of_vs=MAX_NUM_OF_VS/32;
 static struct vs_s vs_tab;
 static int vs;
 
@@ -23,11 +23,11 @@ int vs_init( void )
     }
 */
     vs_tab.next=NULL;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         vs_tab.vs[i]=0;
     /*
-    if( max_vs > MAX_VS_BITS )
-    {	number_of_vs=MAX_VS_BITS/32;
+    if( max_vs > MAX_NUM_OF_VS )
+    {	number_of_vs=MAX_NUM_OF_VS/32;
         char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
         return(1);
@@ -41,7 +41,7 @@ int vs_init( void )
 /* ---------- vs alloc/free ---------- */
 struct vs_s *vs_alloc( char *name )
 { struct vs_s *p;
-    if( vs >= MAX_VS_BITS )
+    if( vs >= MAX_NUM_OF_VS )
     {
         char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
@@ -61,7 +61,7 @@ struct vs_s *vs_alloc( char *name )
     }
     p->next->next=NULL;
     strcpy(p->next->name,name);
-    p->next->vs[vs/BITS_PER_VS] |= 1 << (vs % BITS_PER_VS);
+    p->next->vs[vs/BITS_PER_VS_WORD] |= 1 << (vs % BITS_PER_VS_WORD);
     vs += 1;
     return(p->next);
 }
@@ -69,9 +69,9 @@ struct vs_s *vs_alloc( char *name )
 int vs_is_enough( int bites )
 { struct vs_s *p;
     int i,n;
-    n=bites/BITS_PER_VS;
+    n=bites/BITS_PER_VS_WORD;
     for(p=&vs_tab;p->next!=NULL;p=p->next);
-    for(i=0;i<NUMBER_OF_VS;i++,n--)
+    for(i=0;i<VS_WORDS;i++,n--)
     {	if( n<=0 && p->vs[i]!=0 )
             return(0);
     }
@@ -80,25 +80,25 @@ int vs_is_enough( int bites )
 
 void vs_clear( vs_t *to )
 { int i;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         to[i]= 0;
 }
 
 void vs_fill( vs_t *to )
 { int i;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         to[i]= ~((vs_t)0);
 }
 
 void vs_invert( vs_t *to )
 { int i;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         to[i]= ~(to[i]);
 }
 
 void vs_set( const vs_t *from, vs_t *to )
 { int i;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         to[i]= from[i];
 }
 
@@ -109,26 +109,26 @@ void vs_set( const vs_t *from, vs_t *to )
  */
 void vs_add( const vs_t *from, vs_t *to )
 { int i;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         to[i]|= from[i];
 }
 
 void vs_sub( const vs_t *from, vs_t *to )
 { int i;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         to[i]&= ~(from[i]);
 }
 
 void vs_mask( const vs_t *from, vs_t *to )
 { int i;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         to[i]&= from[i];
 }
 
 int vs_test( const vs_t *test, const vs_t *vs )
 { int i;
     /* ATENTION, see also object_cmp_vs() in object.c */
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         if( vs[i] & test[i] )
             return(1);
     return(0);
@@ -136,7 +136,7 @@ int vs_test( const vs_t *test, const vs_t *vs )
 
 int vs_issub( const vs_t *test, vs_t *vs )
 { int i;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         if( (vs[i] & test[i]) != test[i] )
             return(0);
     return(1);
@@ -145,7 +145,7 @@ int vs_issub( const vs_t *test, vs_t *vs )
 
 int vs_isclear( const vs_t *vs )
 { int i;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         if( vs[i] )
             return(0);
     return(1);
@@ -153,7 +153,7 @@ int vs_isclear( const vs_t *vs )
 
 int vs_isfull( const vs_t *vs )
 { int i;
-    for(i=0;i<NUMBER_OF_VS;i++)
+    for(i=0;i<VS_WORDS;i++)
         if( vs[i]!=~((vs_t)0) )
             return(0);
     return(1);

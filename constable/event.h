@@ -90,8 +90,8 @@ struct event_hadler_hash_s {
     struct event_hadler_hash_s	*next;
     struct event_handler_s		*handler;
     struct event_names_s		*evname;
-    vs_t				subject_vs[NUMBER_OF_VS];
-    vs_t				object_vs[NUMBER_OF_VS];
+    vs_t				subject_vs[VS_WORDS];
+    vs_t				object_vs[VS_WORDS];
 };
 
 struct event_hadler_hash_s *evhash_add( struct event_hadler_hash_s **hash, struct event_handler_s *handler, struct event_names_s *evname );

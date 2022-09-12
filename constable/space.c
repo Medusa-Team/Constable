@@ -474,7 +474,7 @@ vs_t *space_get_vs( struct space_s *space )
 
 int space_vs_to_str( vs_t *vs, char *out, int size )
 { struct space_s *space;
-    vs_t tvs[NUMBER_OF_VS];
+    vs_t tvs[VS_WORDS];
     int pos,l;
     vs_set(vs,tvs);
     pos=0;

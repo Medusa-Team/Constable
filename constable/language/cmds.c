@@ -104,7 +104,7 @@ static BUILDIN_FUNC(cmd_spaces)
 { 
     struct register_s r;
     struct object_s o;
-    vs_t vs[NUMBER_OF_VS];
+    vs_t vs[VS_WORDS];
 
     ret->attr=&(execute_attr_str);
     ret->data[0]=0;

@@ -38,7 +38,8 @@ typedef struct levent_s {
 struct space_s {
     struct space_s	*next;
     struct vs_s	*my_vs;
-    vs_t		vs[NR_ACCESS_TYPES][NUMBER_OF_VS];
+    vs_t		vs[NR_ACCESS_TYPES][VS_WORDS];
+    vs_t		vs_id[VS_WORDS];
     levent_t	*levent;
     ltree_t		*ltree;
     int		primary;
