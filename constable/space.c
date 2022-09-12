@@ -67,7 +67,7 @@ struct space_s *space_create( char *name, int primary )
             return(NULL);
         }
     }
-    else	name=" _";
+    else	name=ANON_SPACE_NAME;
     if( (t=malloc(sizeof(struct space_s)+strlen(name)+1))==NULL )
     {	char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
@@ -481,7 +481,7 @@ int space_vs_to_str( vs_t *vs, char *out, int size )
     for(space=global_spaces;space!=NULL;space=space->next)
     {	if( !vs_isclear(space->vs[AT_MEMBER])
                 && vs_issub(space->vs[AT_MEMBER],tvs)
-                && space->name[0]!=0 && space->name[0]!=' ' )
+                && space->name[0]!=0 && space->name[0]!=ANON_SPACE_NAME[0] )
         {	vs_sub(space->vs[AT_MEMBER],tvs);
             if( (l=strlen(space->name))+2>=size )
                 return(-1);

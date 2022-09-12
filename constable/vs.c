@@ -6,6 +6,7 @@
 
 #include "constable.h"
 #include "vs.h"
+#include "space.h" // only for ANON_SPACE_NAME
 #include <pthread.h>
 
 //static int number_of_vs=MAX_VS_BITS/32;
@@ -42,7 +43,7 @@ struct vs_s *vs_alloc( char *name )
     int i;
     vs_t x;
     for(p=&vs_tab;p->next!=NULL;p=p->next)
-    {	if( name[0]!=' ' && !strcmp(name,p->next->name) )
+    {	if( name[0]!=ANON_SPACE_NAME[0] && !strcmp(name,p->next->name) )
         {	char **errstr = (char**) pthread_getspecific(errstr_key);
             *errstr=Out_of_memory;
             return(NULL);

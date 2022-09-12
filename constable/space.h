@@ -13,6 +13,8 @@
 
 extern struct space_s *global_spaces;
 
+#define ANON_SPACE_NAME "\x1A" // name of an internal anonymous space
+
 typedef struct ltree_s {
     struct ltree_s	*prev;
     void		*path_or_space;
