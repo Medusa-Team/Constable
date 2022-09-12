@@ -168,7 +168,6 @@ int tree_init( void )
             return(NULL);
         memset(p,0,type->size+l+1);
         p->type=type;
-        p->name=((char*)p)+(type->size);
         strncpy(p->name,name,l);
         p->name[l]=0;
         p->parent=base;

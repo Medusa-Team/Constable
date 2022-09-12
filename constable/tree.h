@@ -33,7 +33,6 @@ struct tree_s {
     struct tree_s	*next;
     struct tree_s	*alt;		/* alternative */
     struct tree_type_s *type;
-    char		*name;
     void		*compiled_regex;
     struct space_s	*primary_space;
     struct tree_event_s	*events;
@@ -41,6 +40,7 @@ struct tree_s {
     vs_t	no_vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];  /**< not used */
     struct event_hadler_hash_s	*subject_handlers[EHH_LISTS];
     struct event_hadler_hash_s	*object_handlers[EHH_LISTS];
+    char		name[0];
 };
 
 typedef struct tree_type_s tree_type_t;
