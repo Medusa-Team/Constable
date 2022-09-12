@@ -79,7 +79,6 @@ struct space_s *space_create( char *name, int primary )
         vs_clear(t->vs[a]);
     t->levent=NULL;
     t->ltree=NULL;
-    t->ltree_exclude=NULL;
     t->primary=primary;
     t->next=global_spaces;
     global_spaces=t;

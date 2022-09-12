@@ -182,7 +182,7 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
     case Ppspace:	i=1;
     case Pspace:	if( c->l.data != 0 )
         {	space=space_find((char*)(c->l.data));
-            if( space!=NULL && space->ltree==NULL && space->ltree_exclude==NULL && (!i == !(space->primary)) )
+            if( space!=NULL && space->ltree==NULL && (!i == !(space->primary)) )
                 break;
         }
         space=space_create((char*)(c->l.data),i);

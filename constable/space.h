@@ -41,7 +41,6 @@ struct space_s {
     vs_t		vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];
     levent_t	*levent;
     ltree_t		*ltree;
-    ltree_t		*ltree_exclude;
     int		primary;
     char		name[0];
 };
