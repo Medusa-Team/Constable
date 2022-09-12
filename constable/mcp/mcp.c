@@ -460,7 +460,7 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
             }
             get_empty_context(&(p->context));
             p->event=NULL;
-            p->handler=function_init;
+            p->init_handler=function_init;
             comm_buf_to_queue(&(p->to_wake),b);
             p->ehh_list=EHH_NOTIFY_ALLOW;
 	    // _init() is inserted here

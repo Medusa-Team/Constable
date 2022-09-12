@@ -66,7 +66,8 @@ struct comm_buffer_s {
     struct event_context_s	context;
     struct event_type_s	*event; /**< Event type of current decision request, see
                                  * mcp_r_head(). */
-    struct event_handler_s	*handler;
+    struct event_handler_s	*init_handler; /**< _init() handler from
+                                                * config */
 
     struct comm_buffer_queue_s	to_wake;
     int			len;		/* for comm */

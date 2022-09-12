@@ -56,7 +56,7 @@ struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
             b->p_comm_buf=b->comm_buf;
             b->completed=NULL;
             b->to_wake.first=b->to_wake.last=NULL;
-            b->handler=NULL;
+            b->init_handler=NULL;
             b->id=id;
             comm_buf_init(b, comm);
             return(b);

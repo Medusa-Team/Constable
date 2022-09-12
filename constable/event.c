@@ -329,7 +329,7 @@ static int do_init_handler( struct comm_buffer_s *cb )
         cb->context.unhandled=1;
         //		cb->context.local_vars=NULL;	/* ???? */
     }
-    if( (i=cb->handler->handler(cb,cb->handler,&(cb->context)))>0 )
+    if( (i=cb->init_handler->handler(cb,cb->init_handler,&(cb->context)))>0 )
     {	cb->do_phase=1;
         return(i);
     }
@@ -357,9 +357,9 @@ static int do_event_list( struct comm_buffer_s *cb )
 
 #if 0
     //printf("ZZZ cb->ehh_list=%d\n",cb->ehh_list);
-    if( strcmp(cb->event->m.name,"getfile") /* nie iget na subory */ )
+    if( strcmp(cb->event->acctype.name,"getfile") /* nie iget na subory */ )
     {
-        printf("ZZZ: event: op=%s (%d) ",cb->event->m.name,cb->do_phase);
+        printf("ZZZ: event: op=%s (%d) ",cb->event->acctype.name,cb->do_phase);
         if( c->subject.class!=NULL )
             printf("subject=%s ",c->subject.class->m.name);
         else
@@ -473,7 +473,7 @@ static int do_event_list( struct comm_buffer_s *cb )
      * handler, class handler for object or subject). */
     if( c->unhandled )
     {
-        //printf("do_event_list: No event executed! [%s]\n",cb->event->evname->name);
+        //printf("do_event_list: No event executed! [%s]\n",cb->event->acctype->name);
         return(-1);
     }
     //printf("do_event_list: return 0, event result is %d\n",c->result);
