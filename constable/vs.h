@@ -9,13 +9,15 @@
 
 #include <asm/types.h>
 
-#define MAX_VS_BITS	64
-
 typedef __u32	vs_t;
+
+#define MAX_VS_BITS	64
+#define BITS_PER_VS	(sizeof(vs_t) << 3)
+#define	NUMBER_OF_VS	(MAX_VS_BITS/BITS_PER_VS)
 
 struct vs_s {
     struct vs_s	*next;
-    vs_t vs[MAX_VS_BITS/32];
+    vs_t vs[NUMBER_OF_VS];
     char name[0];
 };
 

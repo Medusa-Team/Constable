@@ -18,7 +18,7 @@
 #define	AT_ENTER	6
 #define	AT_CONTROL	7
 
-//	vs_t		vs[NR_ACCESS_TYPES][MAX_VS_BITS/32];
+//	vs_t		vs[NR_ACCESS_TYPES][NUMBER_OF_VS];
 
 extern char *access_names[NR_ACCESS_TYPES];
 

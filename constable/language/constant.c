@@ -30,7 +30,7 @@ int load_constant( struct register_s *r , uintptr_t typ, char * name )
 			return(0);
 		}
 		r->data= (char*)(t->my_vs->vs);
-		r->attr->length=(MAX_VS_BITS/32)*4;
+		r->attr->length=(NUMBER_OF_VS)*4;
 		r->attr->type=MED_TYPE_BITMAP|MED_TYPE_READ_ONLY;
 		return(1);
 	}
