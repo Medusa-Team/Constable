@@ -69,7 +69,7 @@ struct vs_s *vs_alloc( char *name )
 int vs_is_enough( int bites )
 { struct vs_s *p;
     int i,n;
-    n=bites/32;
+    n=bites/BITS_PER_VS;
     for(p=&vs_tab;p->next!=NULL;p=p->next);
     for(i=0;i<NUMBER_OF_VS;i++,n--)
     {	if( n<=0 && p->vs[i]!=0 )
