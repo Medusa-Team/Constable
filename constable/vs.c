@@ -83,17 +83,6 @@ int vs_is_enough( int bites )
     return(1);
 }
 
-struct vs_s *vs_find( char *name )
-{ struct vs_s *p;
-    for(p=vs_tab.next;p!=NULL;p=p->next)
-    {	if( !strcmp(name,p->name) )
-            return(p);
-    }
-    char **errstr = (char**) pthread_getspecific(errstr_key);
-    *errstr=Out_of_memory;
-    return(NULL);
-}
-
 void vs_clear( vs_t *to )
 { int i;
     for(i=0;i<NUMBER_OF_VS;i++)
