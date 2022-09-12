@@ -332,7 +332,6 @@ int generic_init( char *name, struct event_handler_s *subhandler, struct event_n
         free(ch);
         return(-1);
     }
-    type->name= (char*)(type+1);
     strcpy(type->name,name);
     type->size= sizeof(struct tree_s);
     type->class_handler= ch;

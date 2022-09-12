@@ -410,7 +410,7 @@ int space_init_event_mask( struct comm_s *comm )
     struct event_names_s *en;
     struct event_type_s *type;
 
-    tree_comm_reinit(comm,&global_root);
+    tree_comm_reinit(comm,global_root);
     for( space=global_spaces;space!=NULL;space=space->next)
     {	for(le=space->levent;le!=NULL;le=le->prev)
         {

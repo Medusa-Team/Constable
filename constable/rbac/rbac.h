@@ -89,7 +89,7 @@ struct hierarchy_s {			/* H - hierarchy */
 /* Funkcie */
 
 extern struct class_s *rbac_user_class,*rbac_perm_class,*rbac_role_class,*rbac_ROLE_class;
-extern struct tree_type_s rbac_t_user,rbac_t_perm,rbac_t_role,rbac_t_ROLE;
+extern struct tree_type_s *rbac_t_user,*rbac_t_perm,*rbac_t_role,*rbac_t_ROLE;
 extern struct user_s *rbac_users;
 extern pthread_rwlock_t rbac_roles_lock;
 extern struct role_s *rbac_roles;

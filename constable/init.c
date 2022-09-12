@@ -92,6 +92,8 @@ int init_all( char *filename )
         return(-1);
     if( vs_init()<0 )
         return(-1);
+    if( tree_init()<0 )
+        return(-1);
     if( cmds_init()<0 )
         return(-1);
 //    if( force_init()<0 )
@@ -254,7 +256,7 @@ int main( int argc, char *argv[] )
         return(-1);
 
     if( debug_fd>=0 )
-        tree_print_node(&global_root,0,debug_fd_write,debug_fd);
+        tree_print_node(global_root,0,debug_fd_write,debug_fd);
 
     if( test )
         return(0);

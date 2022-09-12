@@ -208,9 +208,9 @@ int rbac_roles_reinit( void )
             vs_clear(r->vs[i]);
         vs_clear(r->vs_sub);
         r->object.class=rbac_ROLE_class;
-        generic_set_handler(rbac_t_ROLE.class_handler,rbac_comm,&(r->object));
+        generic_set_handler(rbac_t_ROLE->class_handler,rbac_comm,&(r->object));
         r->object.class=rbac_role_class;
-        generic_set_handler(rbac_t_role.class_handler,rbac_comm,&(r->object));
+        generic_set_handler(rbac_t_role->class_handler,rbac_comm,&(r->object));
     }
     for(r=rbac_roles;r!=NULL;r=r->next)
     {	for(p=r->perm;p!=NULL;p=p->next)

@@ -14,21 +14,32 @@
  * FIXME: Ak niekto chce vytvorit .*, mala by sa pod nou vytvorit este jedna .*
  */
 
+#define GLOBAL_ROOT_NAME "/"
+
 static char *default_path=NULL;
 
-static struct tree_type_s global_root_type={
-    "/",
-    sizeof(struct tree_s),
-            NULL,
-            NULL,
-            NULL
-};
+static struct tree_type_s *global_root_type;
+struct tree_s *global_root;
 
-    /* FIXME: global_root by chcelo v ramci inicializacie nulovat */
-    struct tree_s global_root={NULL,NULL,NULL,NULL,NULL,&global_root_type,
-                               NULL,NULL,NULL,NULL};
+/* ----------------------------- */
 
-    /* ----------------------------- */
+int tree_init( void )
+{
+	global_root_type = calloc(1, sizeof(struct tree_type_s)+strlen(GLOBAL_ROOT_NAME)+1);
+	if (!global_root_type)
+		return -1;
+	strncpy(global_root_type->name, GLOBAL_ROOT_NAME, strlen(GLOBAL_ROOT_NAME)+1);
+
+	global_root = calloc(1, sizeof(struct tree_s));
+	if (!global_root) {
+		free(global_root_type);
+		global_root_type = NULL;
+		return -1;
+	}
+	global_root->type = global_root_type;
+
+	return 0;
+}
 
     int tree_set_default_path( char *new )
     {
@@ -223,16 +234,16 @@ static struct tree_type_s global_root_type={
     struct tree_s *register_tree_type( tree_type_t *type )
     { char *path;
         struct tree_s *t;
-        global_root.type->child_type=type;	/* !!! POZOR !!! */
+        global_root->type->child_type=type;	/* !!! POZOR !!! */
         path=type->name;
-        t=create_one(&global_root,&path);
-        global_root.type->child_type=NULL;
+        t=create_one(global_root,&path);
+        global_root->type->child_type=NULL;
         return(t);
     }
 
     struct tree_s *create_path( char *path )
     { struct tree_s *p;
-        p=&global_root;
+        p=global_root;
         if( *path=='/' )
         { char *d;
             if( (d=default_path)==NULL )
@@ -289,7 +300,7 @@ static struct tree_type_s global_root_type={
 
     struct tree_s *find_path( char *path )
     { struct tree_s *p;
-        p=&global_root;
+        p=global_root;
         if( *path=='/' )
         { char *d;
             if( (d=default_path)==NULL )
@@ -446,7 +457,7 @@ static struct tree_type_s global_root_type={
 
     int tree_expand_alternatives( void )
     {
-        tree_apply_alts( &global_root );
+        tree_apply_alts( global_root );
         return(0);
     }
 

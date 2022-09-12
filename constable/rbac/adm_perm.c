@@ -17,8 +17,8 @@
 
 static int rbac_h_create_role( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
 {
-    if( !generic_test_vs_tree(AT_CREATE,c,rbac_t_role.class_handler->root) &&
-            !generic_test_vs_tree(AT_CREATE,c,rbac_t_ROLE.class_handler->root) )
+    if( !generic_test_vs_tree(AT_CREATE,c,rbac_t_role->class_handler->root) &&
+            !generic_test_vs_tree(AT_CREATE,c,rbac_t_ROLE->class_handler->root) )
         c->result=RESULT_DENY;
     else	c->result=RESULT_OK;
     return(0);

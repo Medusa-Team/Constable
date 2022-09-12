@@ -130,7 +130,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                         return(-1);
                     if( (s=space_find(space))==NULL )
                         return(-1);
-                    if( (t=find_one(rbac_t_perm.class_handler->root,s->name))==NULL )
+                    if( (t=find_one(rbac_t_perm->class_handler->root,s->name))==NULL )
                         return(0);
                     if( (t=find_one(t,access_names[access]))==NULL )
                         return(0);
@@ -189,7 +189,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                     return(0);
                 }
 
-                struct tree_type_s rbac_t_user,rbac_t_perm,rbac_t_role,rbac_t_ROLE;
+                struct tree_type_s *rbac_t_user,*rbac_t_perm,*rbac_t_role,*rbac_t_ROLE;
 
                 int rbac_object_init( void )
                 {
@@ -201,12 +201,17 @@ static struct medusa_comm_class_s rbac_user_mclass={
                     }
                     //	ch->set_handler=rbac_set_roles;
                     ch->enter_tree_node=rbac_enter_tree_node;
-                    rbac_t_user.name="user";
-                    rbac_t_user.size=sizeof(struct tree_s);
-                    rbac_t_user.class_handler=ch;
-                    rbac_t_user.init=NULL;
-                    rbac_t_user.child_type=&rbac_t_user;
-                    if( (ch->root=register_tree_type(&rbac_t_user))==NULL )
+                    if( (rbac_t_user=calloc(1, sizeof(struct tree_type_s)+strlen("user")+1))==NULL )
+                    {
+                        init_error(Out_of_memory);
+                        return(-1);
+                    }
+                    strncpy(rbac_t_user->name, "user", strlen("user")+1);
+                    rbac_t_user->size=sizeof(struct tree_s);
+                    rbac_t_user->class_handler=ch;
+                    rbac_t_user->init=NULL;
+                    rbac_t_user->child_type=rbac_t_user;
+                    if( (ch->root=register_tree_type(rbac_t_user))==NULL )
                     {	free(ch->cinfo_offset);
                         free(ch);
                         return(init_error("Can't register tree user"));
@@ -223,12 +228,17 @@ static struct medusa_comm_class_s rbac_user_mclass={
                     }
                     ch->set_handler=rbac_set_perm;
                     ch->enter_tree_node=rbac_enter_tree_node;
-                    rbac_t_perm.name="perm";
-                    rbac_t_perm.size=sizeof(struct tree_s);
-                    rbac_t_perm.class_handler=ch;
-                    rbac_t_perm.init=NULL;
-                    rbac_t_perm.child_type=&rbac_t_perm;
-                    if( (ch->root=register_tree_type(&rbac_t_perm))==NULL )
+                    if( (rbac_t_user=calloc(1, sizeof(struct tree_type_s)+strlen("perm")+1))==NULL )
+                    {
+                        init_error(Out_of_memory);
+                        return(-1);
+                    }
+                    strncpy(rbac_t_user->name, "perm", strlen("perm")+1);
+                    rbac_t_perm->size=sizeof(struct tree_s);
+                    rbac_t_perm->class_handler=ch;
+                    rbac_t_perm->init=NULL;
+                    rbac_t_perm->child_type=rbac_t_perm;
+                    if( (ch->root=register_tree_type(rbac_t_perm))==NULL )
                     {	free(ch->cinfo_offset);
                         free(ch);
                         return(init_error("Can't register tree perm"));
@@ -245,12 +255,17 @@ static struct medusa_comm_class_s rbac_user_mclass={
                     }
                     ch->set_handler=rbac_set_roles;
                     ch->enter_tree_node=rbac_enter_tree_node;
-                    rbac_t_role.name="role";
-                    rbac_t_role.size=sizeof(struct tree_s);
-                    rbac_t_role.class_handler=ch;
-                    rbac_t_role.init=NULL;
-                    rbac_t_role.child_type=&rbac_t_role;
-                    if( (ch->root=register_tree_type(&rbac_t_role))==NULL )
+                    if( (rbac_t_user=calloc(1, sizeof(struct tree_type_s)+strlen("role")+1))==NULL )
+                    {
+                        init_error(Out_of_memory);
+                        return(-1);
+                    }
+                    strncpy(rbac_t_user->name, "role", strlen("role")+1);
+                    rbac_t_role->size=sizeof(struct tree_s);
+                    rbac_t_role->class_handler=ch;
+                    rbac_t_role->init=NULL;
+                    rbac_t_role->child_type=rbac_t_role;
+                    if( (ch->root=register_tree_type(rbac_t_role))==NULL )
                     {	free(ch->cinfo_offset);
                         free(ch);
                         return(init_error("Can't register tree role"));
@@ -267,12 +282,17 @@ static struct medusa_comm_class_s rbac_user_mclass={
                     }
                     ch->set_handler=rbac_set_roles;
                     ch->enter_tree_node=rbac_enter_tree_node;
-                    rbac_t_ROLE.name="ROLE";
-                    rbac_t_ROLE.size=sizeof(struct tree_s);
-                    rbac_t_ROLE.class_handler=ch;
-                    rbac_t_ROLE.init=NULL;
-                    rbac_t_ROLE.child_type=&rbac_t_ROLE;
-                    if( (ch->root=register_tree_type(&rbac_t_ROLE))==NULL )
+                    if( (rbac_t_user=calloc(1, sizeof(struct tree_type_s)+strlen("ROLE")+1))==NULL )
+                    {
+                        init_error(Out_of_memory);
+                        return(-1);
+                    }
+                    strncpy(rbac_t_user->name, "ROLE", strlen("ROLE")+1);
+                    rbac_t_ROLE->size=sizeof(struct tree_s);
+                    rbac_t_ROLE->class_handler=ch;
+                    rbac_t_ROLE->init=NULL;
+                    rbac_t_ROLE->child_type=rbac_t_ROLE;
+                    if( (ch->root=register_tree_type(rbac_t_ROLE))==NULL )
                     {	free(ch->cinfo_offset);
                         free(ch);
                         return(init_error("Can't register tree ROLE"));

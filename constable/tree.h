@@ -15,11 +15,11 @@ struct tree_s;
 struct space_s;
 
 struct tree_type_s {
-    char	*name;
     int	size;		/* size of node */
     struct class_handler_s *class_handler;
     int(*init)(struct tree_s*);
     struct tree_type_s *child_type;
+    char	name[0];
 };
 
 struct tree_event_s {
@@ -45,7 +45,7 @@ struct tree_s {
 
 typedef struct tree_type_s tree_type_t;
 
-extern struct tree_s global_root;
+extern struct tree_s *global_root;
 
 int tree_set_default_path( char *new );
 
@@ -64,6 +64,8 @@ int tree_expand_alternatives( void );
 
 char *tree_get_path( struct tree_s *t );
 void tree_print_node( struct tree_s *t, int level, void(*out)(int arg, char *), int arg );
+
+int tree_init( void );
 
 #endif
 
