@@ -11,6 +11,7 @@
 
 //static int number_of_vs=MAX_VS_BITS/32;
 static struct vs_s vs_tab;
+static int vs;
 
 //int vs_init( int max_vs )
 int vs_init( void )
@@ -33,14 +34,19 @@ int vs_init( void )
     }
     number_of_vs= max_vs/32;
 */
+    vs=0;
     return(0);
 }
 
 /* ---------- vs alloc/free ---------- */
 struct vs_s *vs_alloc( char *name )
 { struct vs_s *p;
-    int i;
-    vs_t x;
+    if( vs >= MAX_VS_BITS )
+    {
+        char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
+        return(NULL);
+    }
     for(p=&vs_tab;p->next!=NULL;p=p->next)
     {	if( name[0]!=ANON_SPACE_NAME[0] && !strcmp(name,p->next->name) )
         {	char **errstr = (char**) pthread_getspecific(errstr_key);
@@ -48,26 +54,15 @@ struct vs_s *vs_alloc( char *name )
             return(NULL);
         }
     }
-    if( (p->next=malloc(sizeof(struct vs_s)+strlen(name)+1))==NULL )
+    if( (p->next=calloc(1,sizeof(struct vs_s)+strlen(name)+1))==NULL )
     {	char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
         return(NULL);
     }
     p->next->next=NULL;
     strcpy(p->next->name,name);
-    x=0;
-    if( p == &vs_tab )	x=1;
-    for(i=0;i<NUMBER_OF_VS;i++)
-    {	p->next->vs[i]= (p->vs[i]<<1) | x ;
-        x=(p->vs[i])>>31;
-    }
-    if( x )
-    {	free(p->next);
-        p->next=NULL;
-        char **errstr = (char**) pthread_getspecific(errstr_key);
-        *errstr=Out_of_memory;
-        return(NULL);
-    }
+    p->next->vs[vs/BITS_PER_VS] |= 1 << (vs % BITS_PER_VS);
+    vs += 1;
     return(p->next);
 }
 
