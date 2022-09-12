@@ -134,7 +134,7 @@ static struct tree_type_s global_root_type={
 
     static struct tree_s *create_one_i( struct tree_s *base, char *name, int regexp )
     { struct tree_s *p;
-        struct tree_type_s *type,*ctype;
+        struct tree_type_s *type;
         int l;
 
         if( *name==0 )		return(base);
@@ -153,8 +153,6 @@ static struct tree_type_s global_root_type={
         }
         if( (type=base->type->child_type)==NULL )
             type=base->type;
-        if( (ctype=type->child_type)==NULL )
-            ctype=type;
         if( (p=malloc(type->size+l+1))==NULL )
             return(NULL);
         memset(p,0,type->size+l+1);
