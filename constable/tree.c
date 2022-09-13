@@ -282,7 +282,8 @@ int tree_init( void )
         for(p=base->child;p!=NULL;p=p->next)
             if( !pathcmp(p->name,name) )
                 return(p);
-        for(b=*name;*b!=0 && *b!='/';b++);
+        for(b=*name;*b!=0 && *b!='/';b++)
+            ;
         { char s[b-(*name)+1];
             strncpy(s,*name,b-(*name));
             s[b-(*name)]=0;
