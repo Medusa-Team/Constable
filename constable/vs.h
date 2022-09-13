@@ -28,7 +28,7 @@ void vs_sub( const vs_t *from, vs_t *to );
 void vs_mask( const vs_t *from, vs_t *to );
 
 int vs_test( const vs_t *test, const vs_t *vs );
-int vs_issub( const vs_t *test, vs_t *vs );
+int vs_issub( const vs_t *test, const vs_t *vs );
 int vs_isclear( const vs_t *vs );
 int vs_isfull( const vs_t *vs );
 

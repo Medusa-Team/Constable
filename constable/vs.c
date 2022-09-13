@@ -54,14 +54,14 @@ void vs_fill( vs_t *to )
 }
 
 void vs_invert( vs_t *to )
-{ int i;
-    for(i=0;i<VS_WORDS;i++)
+{
+    for(int i=0;i<VS_WORDS;i++)
         to[i]= ~(to[i]);
 }
 
 void vs_set( const vs_t *from, vs_t *to )
-{ int i;
-    for(i=0;i<VS_WORDS;i++)
+{
+    for(int i=0;i<VS_WORDS;i++)
         to[i]= from[i];
 }
 
@@ -71,55 +71,53 @@ void vs_set( const vs_t *from, vs_t *to )
  * \param to Set of virtual spaces that will be changed
  */
 void vs_add( const vs_t *from, vs_t *to )
-{ int i;
-    for(i=0;i<VS_WORDS;i++)
+{
+    for(int i=0;i<VS_WORDS;i++)
         to[i]|= from[i];
 }
 
 void vs_sub( const vs_t *from, vs_t *to )
-{ int i;
-    for(i=0;i<VS_WORDS;i++)
+{
+    for(int i=0;i<VS_WORDS;i++)
         to[i]&= ~(from[i]);
 }
 
 void vs_mask( const vs_t *from, vs_t *to )
-{ int i;
-    for(i=0;i<VS_WORDS;i++)
+{
+    for(int i=0;i<VS_WORDS;i++)
         to[i]&= from[i];
 }
 
 int vs_test( const vs_t *test, const vs_t *vs )
-{ int i;
+{
     /* ATENTION, see also object_cmp_vs() in object.c */
-    for(i=0;i<VS_WORDS;i++)
+    for(int i=0;i<VS_WORDS;i++)
         if( vs[i] & test[i] )
             return(1);
     return(0);
 }
 
-int vs_issub( const vs_t *test, vs_t *vs )
-{ int i;
-    for(i=0;i<VS_WORDS;i++)
-        if( (vs[i] & test[i]) != test[i] )
+int vs_issub( const vs_t *subset, const vs_t *set )
+{
+    for(int i=0;i<VS_WORDS;i++)
+        if( (set[i] & subset[i]) != subset[i] )
             return(0);
     return(1);
 }
 
 
 int vs_isclear( const vs_t *vs )
-{ int i;
-    for(i=0;i<VS_WORDS;i++)
+{
+    for(int i=0;i<VS_WORDS;i++)
         if( vs[i] )
             return(0);
     return(1);
 }
 
 int vs_isfull( const vs_t *vs )
-{ int i;
-    for(i=0;i<VS_WORDS;i++)
+{
+    for(int i=0;i<VS_WORDS;i++)
         if( vs[i]!=~((vs_t)0) )
             return(0);
     return(1);
 }
-
-
