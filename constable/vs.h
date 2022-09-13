@@ -15,12 +15,6 @@ typedef __u32	vs_t;
 #define BITS_PER_VS_WORD	(sizeof(vs_t) << 3)
 #define VS_WORDS		(MAX_NUM_OF_VS/BITS_PER_VS_WORD)
 
-struct vs_s {
-    struct vs_s	*next;
-    vs_t vs[VS_WORDS];
-    char name[0];
-};
-
 int vs_init( void );
 int vs_alloc( vs_t *id );
 int vs_is_enough( int bites );

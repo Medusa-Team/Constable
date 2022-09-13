@@ -29,7 +29,7 @@ int load_constant( struct register_s *r , uintptr_t typ, char * name )
 		{	runtime("Undefined space %s",name);
 			return(0);
 		}
-		r->data= (char*)(t->my_vs->vs);
+		r->data= (char*)(t->vs_id);
 		r->attr->length=(VS_WORDS)*4;
 		r->attr->type=MED_TYPE_BITMAP|MED_TYPE_READ_ONLY;
 		return(1);

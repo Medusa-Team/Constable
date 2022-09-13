@@ -8,31 +8,10 @@
 #include "vs.h"
 #include <pthread.h>
 
-//static int number_of_vs=MAX_NUM_OF_VS/32;
-static struct vs_s vs_tab;
 static int next_vs_id;
 
-//int vs_init( int max_vs )
 int vs_init( void )
-{ int i;
-    /*	if( (max_vs % 32) !=0 )
-    {	char **errstr = (char**) pthread_getspecific(errstr_key);
-        *errstr=Out_of_memory;
-        return(-1);
-    }
-*/
-    vs_tab.next=NULL;
-    for(i=0;i<VS_WORDS;i++)
-        vs_tab.vs[i]=0;
-    /*
-    if( max_vs > MAX_NUM_OF_VS )
-    {	number_of_vs=MAX_NUM_OF_VS/32;
-        char **errstr = (char**) pthread_getspecific(errstr_key);
-        *errstr=Out_of_memory;
-        return(1);
-    }
-    number_of_vs= max_vs/32;
-*/
+{
     next_vs_id=0;
     return(0);
 }
