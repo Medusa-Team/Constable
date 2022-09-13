@@ -52,15 +52,15 @@ int vs_alloc( vs_t *id )
     return(0);
 }
 
+/**
+ * Check whether a bit array of the size \param bites
+ * can hold all of the allocated virtual spaces.
+ * \param bites The available number of bits to be tested.
+ */
 int vs_is_enough( int bites )
-{ struct vs_s *p;
-    int i,n;
-    n=bites/BITS_PER_VS_WORD;
-    for(p=&vs_tab;p->next!=NULL;p=p->next);
-    for(i=0;i<VS_WORDS;i++,n--)
-    {	if( n<=0 && p->vs[i]!=0 )
-            return(0);
-    }
+{
+    if ( next_vs_id > bites )
+	    return(0);
     return(1);
 }
 
