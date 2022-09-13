@@ -44,15 +44,13 @@ int vs_is_enough( int bites )
 }
 
 void vs_clear( vs_t *to )
-{ int i;
-    for(i=0;i<VS_WORDS;i++)
-        to[i]= 0;
+{
+    memset((char*)to, 0x00, sizeof(vs_t)*VS_WORDS);
 }
 
 void vs_fill( vs_t *to )
-{ int i;
-    for(i=0;i<VS_WORDS;i++)
-        to[i]= ~((vs_t)0);
+{
+    memset((char*)to, 0xff, sizeof(vs_t)*VS_WORDS);
 }
 
 void vs_invert( vs_t *to )
