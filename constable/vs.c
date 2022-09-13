@@ -135,7 +135,7 @@ void vs_mask( const vs_t *from, vs_t *to )
  */
 int vs_test( const vs_t *test, const vs_t *vs )
 {
-    /* ATENTION, see also object_cmp_vs() in object.c */
+    /* ATTENTION, see also object_cmp_vs() in object.c */
     for(int i=0;i<VS_WORDS;i++)
         if( vs[i] & test[i] )
             return(1);
@@ -151,7 +151,8 @@ int vs_issub( const vs_t *subset, const vs_t *set )
 }
 
 /**
- * Test whether the set of virtual spaces is empty.
+ * Test whether the set of virtual spaces is empty (there is no virtual
+ * space set).
  * \param vs Set of virtual spaces that will be tested.
  */
 int vs_isclear( const vs_t *vs )
@@ -163,7 +164,8 @@ int vs_isclear( const vs_t *vs )
 }
 
 /**
- * Test whether the set of virtual spaces is full.
+ * Test whether the set of virtual spaces is full (all virtual spaces are
+ * set).
  * \param vs Set of virtual spaces that will be tested.
  */
 int vs_isfull( const vs_t *vs )
