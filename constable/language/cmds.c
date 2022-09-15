@@ -113,6 +113,7 @@ static BUILDIN_FUNC(cmd_spaces)
     {	runtime("spaces: 1st argument must be bitmap");
         return(-1);
     }
+    vs_clear(vs);
     object_get_val(r2o(&r, &o),r.attr,vs,sizeof(vs));
     if( getarg(e,&r) )
     {	runtime("spaces: too many arguments");
