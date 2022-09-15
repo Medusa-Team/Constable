@@ -408,7 +408,17 @@ static int do_event_list( struct comm_buffer_s *cb )
             cb->ch=c->subject.class->classname->class_handler;
         for(;cb->ch!=NULL;cb->ch=cb->ch->next)
         {	if( (t=cb->ch->get_tree_node(cb->ch,cb->comm,&(c->subject)))==NULL )
-            {	cb->do_phase=0;
+            {
+                /*
+		 * Setting `do_phase` to zero means, that the inner `for` cycle
+		 * will be restarted. But this is ok because `get_tree_node`
+		 * returned NULL for the subject and its class handler from the
+		 * previous run of this code. So if the tree node is NULL, the
+		 * inner `for` cycle shouldn't continue and we try to found
+		 * another valid tree node for the same subject, but different
+		 * class handler.
+		 */
+                cb->do_phase=0;
                 continue;
             }
             if( cb->do_phase==0 )
@@ -429,7 +439,9 @@ static int do_event_list( struct comm_buffer_s *cb )
             cb->ch=c->object.class->classname->class_handler;
         for(;cb->ch!=NULL;cb->ch=cb->ch->next)
         {	if( (t=cb->ch->get_tree_node(cb->ch,cb->comm,&(c->object)))==NULL )
-            {	cb->do_phase=0;
+            {
+                /* See comments for the corresponding subject code above. */
+                cb->do_phase=0;
                 continue;
             }
             if( cb->do_phase==0 )

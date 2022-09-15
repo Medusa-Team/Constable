@@ -511,24 +511,33 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
     /* TODO: only if changed */
     //printf("ZZZ: answer\n");
     if( b->context.result >=0 && b->context.subject.class!=NULL )
-    {	if( b->do_phase==0 )
+    {
+        /*
+	 * The value od `do_phase` can't be zero, because the function
+	 * `mcp_answer()` is called only once from `comm_worker()` when
+	 * `do_phase` >= 1000. So the following expression shouldn't be
+	 * true. */
+        if( b->do_phase==0 )
             b->do_phase=1000;
         //printf("ZZZ: snazim sa updatnut\n");
         i=c->update_object(c,b->do_phase-1000,&(b->context.subject),b);
 	/*
          * See documentation of update_object() in `struct comm_s`. Negative
          * return values of update_object() are silently ignored (including
-         * FAILURE of update operation).
+         * FAILURE of update operation). Values greather than zero indicate
+	 * unfinished operation (i.e. waiting for kernel response about success
+	 * or failure of the update operation). Value 0 of the variable `i`
+	 * means successfully finished update operation.
 	 */
         if( i>0 )
         {	b->do_phase=i+1000;
             return(i);
         }
-	 /* `b->do_phase` after finished update operation remains 1000 */
+	/* `b->do_phase` after finished update operation remains 1000 */
         //printf("ZZZ: updatnute\n");
     }
     //else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
-    if( (r=comm_buf_get(sizeof(*out),c))==NULL )     //( povodne uintptr_t )Asi to ma byt takto inac dava bludy v mallocu - prepisuje hodnotu user_data, by Matus
+    if( (r=comm_buf_get(sizeof(*out),c))==NULL )
     {	fatal("Can't alloc buffer for send answer!");
         return(-1);
     }

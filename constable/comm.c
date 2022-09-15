@@ -209,9 +209,13 @@ void* comm_worker(void *arg)
         //printf("ZZZ: do_event()=%d\n",r);
 
 	/*
+	 * If a handler returns value 1, processing of the buffer should
+	 * continue; the buffer is moved to the end of the `todo` queue.
+	 * See comments in event.h.
+	 *
          * See documentation of answer() function in `struct comm_s`. answer()
 	 * returns values -1, 0, 2 and 3. Return value `r == 1` doesn't
-	 * originate from b->comm->answer()
+	 * originate from b->comm->answer().
 	 */
         if(r == 1) {
             pthread_mutex_unlock(&b->lock);
@@ -220,16 +224,21 @@ void* comm_worker(void *arg)
         else if(r <= 0) {   
             /*
 	     * `r` is 0 and `b->do_phase` is 0 too if do_event() finished
-	     * execution of a `b->init_handler` (i.e., the code of virtual
-	     * machine executed RET instruction of the handler). Answer of
-	     * buffer `b` should be handled in the next iteration of
-	     * `comm_buf_todo` queue. As do_event() is executed if `b->do_phase`
-	     * < 1000, the value of `do_phase` is changed here to prevent its
-	     * execution.
+	     * execution of a `b->init_handler` or a handler (i.e., the code
+	     * of virtual machine executed RET instruction of the handler).
+	     * Answer of buffer `b` should be handled in the next iteration of
+	     * `comm_buf_todo` queue.
+	     *
+	     * As do_event() is executed if `b->do_phase` < 1000, the value of
+	     * `do_phase` is changed to prevent its execution.
+	     *
+	     * `r` is -1 in case of an error during handler execution. If an
+	     * error occurs, information about it should be reported to the
+	     * kernel in the corresponding answer.
 	     *
 	     * TODO: I think `b` should precede all buffers in `comm_buf_todo`,
 	     * so it has to be added at the head of the queue. But first, we
-	     * have to analyse the code of do_phase() and answer() functions, if
+	     * have to analyse the code of `do_phase` and answer() function, if
 	     * this case of setting `b->do_phase`=1000 is only for this case.
              */
             if( b->do_phase<1000 ) {   
@@ -247,8 +256,9 @@ void* comm_worker(void *arg)
             }
         } else
 	    /*
-	     * If `b->comm->answer()` returns 2 or 3, operation `answer` wasn't
-	     * finished. Constable has to wait for an answer to the `update`
+	     * If a handler in `do_event(b)` or `b->comm->answer()` returns 2 or
+	     * 3, operation of the event or `answer` wasn't finished yet.
+	     * Constable has to wait for an answer to the `update`/`fetch`
 	     * request from the kernel. Buffer `b` is returned back to the queue
 	     * using comm_buf_todo() in the comm_buf_free() function when buffer
 	     * used for the `update` operation is freed.
