@@ -126,14 +126,16 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     if( (execute_get_last_attr()->type & 0x0f) != MED_TYPE_STRING )
         searched_node="";
     else	searched_node=execute_get_last_data();
-    //printf("ZZZ: %s/ hladam podla \"%s\" -\"%s\"-> \"",t->type->name,t->name,searched_node);
+    //printf("ZZZ: strom \"%s\": hladam pod uzlom \"%s\" potomka \"%s\"",
+    //    t->type->name,t->name,searched_node);
 
     if( (t=find_one(t,searched_node))==NULL )
     {	c->result=RESULT_DENY;
+        //printf(", nenasiel som NIC\n");
         *PUPTR_COMM_BUF_VAR_DATA(cb,ch->comm_buf_var_data_offset)=*cinfo;
         return(-1);
     }
-    //printf("%s\"\n",t->name);
+    //printf(", nasiel som \"%s\"\n",t->name);
     //{ int ino;
     //  struct medusa_attribute_s *a;
     //   a=get_attribute(c->subject.class,"dev");
