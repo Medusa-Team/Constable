@@ -76,7 +76,6 @@ struct space_s *space_create( char *name, int primary )
         return(NULL);
     }
     strcpy(t->name,name);
-    t->my_vs=NULL;
     for(a=0;a<NR_ACCESS_TYPES;a++)
         vs_clear(t->vs[a]);
     t->levent=NULL;
