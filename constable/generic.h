@@ -34,8 +34,6 @@ struct g_event_handler_s {
 #define GFL_USE_VSE	0x01
 #define GFL_FROM_OBJECT	0x02
 
-int generic_hierarchy_handler( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c );
-
 int generic_init_comm( struct class_handler_s *h, struct comm_s *comm );
 
 struct class_handler_s *generic_get_new_class_handler_s( struct class_names_s *class, int size );
