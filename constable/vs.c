@@ -8,7 +8,7 @@
 #include "vs.h"
 #include <pthread.h>
 
-static int next_vs_id;
+static int vs_cnt;
 
 /**
  * Initialize the module responsible for virtual spaces handling.
@@ -17,7 +17,7 @@ static int next_vs_id;
  */
 int vs_init( void )
 {
-    next_vs_id=0;
+    vs_cnt = 0;
     return(0);
 }
 
@@ -28,15 +28,15 @@ int vs_init( void )
  */
 int vs_alloc( vs_t *id )
 {
-    if( next_vs_id >= MAX_NUM_OF_VS )
+    if( vs_cnt >= MAX_NUM_OF_VS )
     {
         char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_vs;
         return(-1);
     }
     vs_clear(id);
-    id[next_vs_id/BITS_PER_VS_WORD] |= 1 << (next_vs_id % BITS_PER_VS_WORD);
-    next_vs_id += 1;
+    id[vs_cnt/BITS_PER_VS_WORD] |= 1 << (vs_cnt % BITS_PER_VS_WORD);
+    vs_cnt += 1;
     return(0);
 }
 
@@ -47,7 +47,7 @@ int vs_alloc( vs_t *id )
  */
 int vs_is_enough( int bites )
 {
-    if ( next_vs_id > bites )
+    if ( vs_cnt > bites )
 	    return(0);
     return(1);
 }
