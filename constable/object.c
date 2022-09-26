@@ -96,7 +96,7 @@ int object_get_vs( vs_t *vs, int n, struct object_s *o )
         return(-1);
     }
     if( o->class->vs_attr[n]!=NULL )
-    {	object_get_val(o,o->class->vs_attr[n],vs,VS_WORDS*4);
+    {	object_get_val(o,o->class->vs_attr[n],vs,VS_WORDS*sizeof(vs_t));
         return(0);
     }
     vs_clear(vs);
