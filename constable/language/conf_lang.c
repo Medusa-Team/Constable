@@ -39,6 +39,8 @@ compiler_class_t *global_compiler;
 #define	SSP	N|0x0a12
 #define	SPSP	N|0x0a13
 
+#define BYTECODE_CHUNK_SIZE 8
+
 /*
 
     tree "meno" [test_enter|clone ...] of <class> [by <op> <exp>] ;
@@ -126,7 +128,7 @@ void canf_lang_out( struct compiler_out_class *o, sym_t s, uintptr_t d )
         return;
     }
     if( handler_pos >= handler_size )
-    {	handler_size= handler_pos + 8;
+    {	handler_size= handler_pos + BYTECODE_CHUNK_SIZE;
         if( (handler=realloc(handler,sizeof(struct event_handler_s)+handler_size*sizeof(uintptr_t)))==NULL )
         {	error(Out_of_memory);
             return;
@@ -267,7 +269,7 @@ void conf_lang_param_out( struct compiler_class *c, sym_t s )
         break;
     case Pprogstart:
         ehh_list=EHH_VS_ALLOW;
-        handler_size=8;
+        handler_size=BYTECODE_CHUNK_SIZE;
         handler_pos=0;
         if( (handler=malloc(sizeof(struct event_handler_s)+handler_size*sizeof(uintptr_t)))==NULL )
         {	error(Out_of_memory);
