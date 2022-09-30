@@ -745,7 +745,9 @@ static int mcp_close( struct comm_s *c )
 }
 
 static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake )
-{ static MCPptr_t id=2;
+{
+    static MCPptr_t id=2;
+    static pthread_mutex_t id_lock = PTHREAD_MUTEX_INITIALIZER;
     struct comm_buffer_s *r;
     //printf("ZZZZ mcp_fetch_object 1\n");
     if( cont==3 )
@@ -781,7 +783,9 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     r->user2=(void*)(&(wake->user_data));
     ((MCPptr_t*)(r->comm_buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_FETCH_REQUEST);
     ((MCPptr_t*)(r->comm_buf))[1]= o->class->m.classid;
+    pthread_mutex_lock(&id_lock);
     ((MCPptr_t*)(r->comm_buf))[2]= id++;
+    pthread_mutex_unlock(&id_lock);
     memcpy(((MCPptr_t*)(r->comm_buf))+3, o->data, o->class->m.size);
     r->len=3*sizeof(MCPptr_t) + o->class->m.size;
     r->want=0;
@@ -865,7 +869,18 @@ static read_result_e mcp_r_fetch_answer_done( struct comm_buffer_s *b )
      */
     p=(struct comm_buffer_s *)(b->user1);
     if( p!=NULL )
-    {	*((uint32_t*)(p->user2))=0;	/* success */
+    {
+	/*
+         * Don't free the buffer until mcp_write() stopped working with it.
+	 */
+        pthread_mutex_lock(&p->write_finished_lock);
+        while (!p->write_finished) {
+            pthread_cond_wait(&p->write_finished_condition,
+                    &p->write_finished_lock);
+        }
+        pthread_mutex_unlock(&p->write_finished_lock);
+
+        *((uint32_t*)(p->user2))=0;	/* success */
         p->free(p);
     }
     else
