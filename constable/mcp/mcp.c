@@ -430,22 +430,16 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
     get_event_context(b->comm, &(b->context), b->event, b->comm_buf );
     b->ehh_list=EHH_VS_ALLOW;
     pthread_mutex_lock(&b->comm->state_lock);
-    //printf("ZZZ kim rychla %d\n",b->comm->state);
-    //fflush(stdout);
     // TODO Add unlikely directive
     /*
      * If this is the first decision request from the kernel.
      */
     if( b->comm->state==0 )
     {
-        //printf("ZZZ net slunicko\n");
-        //fflush(stdout);
         if( comm_conn_init(b->comm)<0 ) {
             pthread_mutex_unlock(&b->comm->state_lock);
             return READ_ERROR;
         }
-        //printf("ZZZ dan slanina\n");
-        //fflush(stdout);
 	/*
 	 * If the configuration file defines _init(), it is inserted into the
 	 * queue first and decision request that came from the kernel is
@@ -509,8 +503,9 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
     } * out;
     #pragma pack(pop)
     int i;
+
     /* TODO: only if changed */
-    //printf("ZZZ: answer\n");
+
     if( b->context.result >=0 && b->context.subject.class!=NULL )
     {
         /*
@@ -520,7 +515,6 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
 	 * true. */
         if( b->do_phase==0 )
             b->do_phase=1000;
-        //printf("ZZZ: snazim sa updatnut\n");
         i=c->update_object(c,b->do_phase-1000,&(b->context.subject),b);
 	/*
          * See documentation of update_object() in `struct comm_s`. Negative
@@ -535,22 +529,14 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
             return(i);
         }
 	/* `b->do_phase` after finished update operation remains 1000 */
-        //printf("ZZZ: updatnute\n");
     }
-    //else printf("ZZZ: b->context.result=%d b->context.subject.class=%p\n",b->context.result,b->context.subject.class);
+
     if( (r=comm_buf_get(sizeof(*out),c))==NULL )
     {	fatal("Can't alloc buffer for send answer!");
         return(-1);
     }
     out = (void*)&r->comm_buf;
-    // TODO TODO TODO: mY: 'ans' has 64 bits, NOT 32 !!!
     out->ans= byte_reorder_put_int64(c->flags,MEDUSA_COMM_AUTHANSWER);
-    /* TODO TODO TODO: mY: 
-        'id' has 32 bits within an 'authrequest' cmd
-        but... big&little endians problem...
-        'id' is ignored by kernel, is always set to 0
-    */
-    out->id = 0;
     out->id = ((MCPptr_t*)(b->comm_buf+sizeof(MCPptr_t)))[0];
 #ifdef TRANSLATE_RESULT
     switch( b->context.result )
@@ -725,7 +711,7 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     static MCPptr_t id=2;
     static pthread_mutex_t id_lock = PTHREAD_MUTEX_INITIALIZER;
     struct comm_buffer_s *r;
-    //printf("ZZZZ mcp_fetch_object 1\n");
+
     if( cont==3 )
     {
         if( debug_do_out!=NULL )
@@ -737,14 +723,12 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
         }
         return(wake->user_data);	/* done */
     }
-    //printf("ZZZZ mcp_fetch_object 2\n");
+
     wake->user_data = -1;
-    //printf("ZZZZ mcp_fetch_object 3\n");
     if( (r=comm_buf_get(3*sizeof(MCPptr_t) + o->class->m.size,c))==NULL )
     {	fatal("Can't alloc buffer for fetch!");
         return(-1);
     }
-    //printf("ZZZZ mcp_fetch_object 4\n");
     wake->user1=(void*)o;
     object_set_byte_order(o,c->flags);
     ((MCPptr_t*)(r->comm_buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_FETCH_REQUEST);
@@ -865,10 +849,10 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
 #ifdef TRANSLATE_RESULT
         if( wake->user_data==MED_ALLOW )
 #else
-        if( wake->user_data==RESULT_ALLOW )/* ma byt vzdy len MED_ALLOW !!! */
+        if( wake->user_data==RESULT_ALLOW )
 #endif
             return(0);	/* done */
-        return(-1);		/* done */
+        return(-1);	/* done */
     }
 
     /*
@@ -878,7 +862,7 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
 #ifdef TRANSLATE_RESULT
     wake->user_data = MED_ERR;
 #else
-    wake->user_data = RESULT_ERR;  /* ma byt vzdy len MED_ERR !!! */
+    wake->user_data = RESULT_ERR;
 #endif
     if( (r=comm_buf_get(3*sizeof(MCPptr_t) + ((struct object_s *)((void*)o))->class->m.size,c))==NULL )
     {	fatal("Can't alloc buffer for update!");
