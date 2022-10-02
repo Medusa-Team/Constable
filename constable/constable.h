@@ -13,6 +13,9 @@
 #include "types.h"
 #include "language/error.h"
 
+#define likely(x)	(__builtin_expect((bool)!!(x), true) != 0L)
+#define unlikely(x)	(__builtin_expect((bool)!!(x), false) != 0L)
+
 //#define MAX(a,b)	((a)>(b)?(a):(b))
 //#define MIN(a,b)	((a)<(b)?(a):(b))
 
