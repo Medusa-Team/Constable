@@ -804,13 +804,14 @@ static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
 	 * there is necessary to read arrived k-object and discard it.
 	 */
 	struct class_s *cl;
+	char *errmsg = "Arrived answer to FETCH request, nobody is waiting for it!";
         cl=(struct class_s*)hash_find(&(b->comm->classes),bmask->cid);
         if( cl==NULL )
-        {	comm_error("comm %s: Can't find class by class id",b->comm->name);
+        {
+            fatal("comm %s: Can't find class by class id. %s", b->comm->name, errmsg);
             return READ_ERROR;
         }
-	comm_info("comm %s: Arrived answer to FETCH request, nobody is waiting for it",
-	    b->comm->name);
+	fatal("comm %s: %s", b->comm->name, errmsg);
         b->want = b->len + cl->m.size;
         b->completed=mcp_r_discard;
     }
@@ -940,7 +941,10 @@ static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
         p->waiting.to = 0;
         comm_buf_todo(p);
     }
-    /* TODO: error on update answer for nobody in the wait queue */
+    else
+	fatal("comm %s: Arrived answer to UPDATE request, nobody is waiting for it!",
+	    b->comm->name);
+
     b->completed = NULL;
     return READ_FREE;
 }
