@@ -111,19 +111,19 @@ struct event_context_s {
     struct object_s *local_vars;
 };
 
-#define	RESULT_UNKNOWN	-1
-#define	RESULT_ALLOW	0	/* YES */
+#define	RESULT_ERR	-1
+#define	RESULT_FORCE_ALLOW	0	/* YES */
 #define	RESULT_DENY	1	/* NO */
-#define	RESULT_SKIP	2	/* SKIP */
-#define	RESULT_OK	3	/* OK */
+#define	RESULT_FAKE_ALLOW	2	/* SKIP */
+#define	RESULT_ALLOW	3	/* OK */
 #define	RESULT_RETRY	4	/* RETRY */
 
 /*
-RESULT_UNKNOWN -> *
-RESULT_ALLOW -> RESULT_DENY | RESULT_SKIP
+RESULT_ERR -> *
+RESULT_FORCE_ALLOW -> RESULT_DENY | RESULT_FAKE_ALLOW
 RESULT_DENY -> -
-RESULT_SKIP -> RESULT_DENY
-RESULT_OK -> RESULT_ALLOW | RESULT_DENY | RESULT_SKIP
+RESULT_FAKE_ALLOW -> RESULT_DENY
+RESULT_ALLOW -> RESULT_FORCE_ALLOW | RESULT_DENY | RESULT_FAKE_ALLOW
 */
 int evaluate_result( int old, int new );
 int do_event( struct comm_buffer_s *cb );

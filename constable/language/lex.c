@@ -108,10 +108,10 @@ lextab_t keywords[]={
     {"ENTER",Taccess,AT_ENTER},
     {"CONTROL",Taccess,AT_CONTROL},
 
-    {"ALLOW",T_num,RESULT_ALLOW},
+    {"FORCE_ALLOW",T_num,RESULT_FORCE_ALLOW},
     {"DENY",T_num,RESULT_DENY},
-    {"SKIP",T_num,RESULT_SKIP},
-    {"OK",T_num,RESULT_OK},
+    {"FAKE_ALLOW",T_num,RESULT_FAKE_ALLOW},
+    {"ALLOW",T_num,RESULT_ALLOW},
 
     {"VS_ALLOW",Tehhlist,EHH_VS_ALLOW},
     {"VS_DENY",Tehhlist,EHH_VS_DENY},

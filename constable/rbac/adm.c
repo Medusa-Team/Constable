@@ -63,8 +63,8 @@ int rbac_comm_answer( struct comm_s *c, struct comm_buffer_s *b)
     ((struct comm_buffer_s*)(b->user1))->user_data=b->context.result;
     switch( b->context.result )
     {
+    case RESULT_FORCE_ALLOW:
     case RESULT_ALLOW:
-    case RESULT_OK:
         return( b->completed(b) );
     }
     return(0);
@@ -328,8 +328,8 @@ int rbac_adm( struct comm_buffer_s *to_wait, char *op, char *s1, char *s2, char 
     if( to_wait->do_phase>0 )
     {
         switch( to_wait->user_data )
-        {	case RESULT_ALLOW:
-        case RESULT_OK:
+        {	case RESULT_FORCE_ALLOW:
+        case RESULT_ALLOW:
             return(0);
         }
         char **errstr = (char**) pthread_getspecific(errstr_key);

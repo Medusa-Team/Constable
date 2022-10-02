@@ -24,6 +24,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include "mcp.h"
+
 extern struct event_handler_s *function_init;
 
 /**
@@ -556,29 +558,29 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
         see '#else' statement
     */
     switch( b->context.result )
-    {	case RESULT_ALLOW:
-        *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))
-                = MED_YES;
+    {	case RESULT_FORCE_ALLOW:
+        *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))
+                = MED_FORCE_ALLOW;
         break;
     case RESULT_DENY:
-        *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))
-                = MED_NO;
+        *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))
+                = MED_DENY;
         break;
-    case RESULT_SKIP:
-        *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))
-                = MED_SKIP;
+    case RESULT_FAKE_ALLOW:
+        *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))
+                = MED_FAKE_ALLOW;
         break;
-    case RESULT_OK:
-        *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))
-                = MED_OK;
+    case RESULT_ALLOW:
+        *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))
+                = MED_ALLOW;
         break;
     default:
-        *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))
+        *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))
                 = MED_ERR;
     }
-    *((uint16_t*)(r->buf+2*sizeof(MCPptr_t)))=
+    *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))=
             byte_reorder_put_int16(c->flags,
-                                   *((uint16_t*)(r->buf+2*sizeof(MCPptr_t))));
+                                   *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t))));
 #else
     out->res =
             byte_reorder_put_int16(c->flags,b->context.result);
@@ -872,9 +874,9 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     if( cont==3 )
     {
 #ifdef TRANSLATE_RESULT
-        if( wake->user_data==MED_OK )
+        if( wake->user_data==MED_ALLOW )
 #else
-        if( wake->user_data==RESULT_OK )/* ma byt vzdy len MED_OK !!! */
+        if( wake->user_data==RESULT_ALLOW )/* ma byt vzdy len MED_ALLOW !!! */
 #endif
             return(0);	/* done */
         return(-1);		/* done */
@@ -887,7 +889,7 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
 #ifdef TRANSLATE_RESULT
     wake->user_data = MED_ERR;
 #else
-    wake->user_data = RESULT_UNKNOWN;  /* ma byt vzdy len MED_ERR !!! */
+    wake->user_data = RESULT_ERR;  /* ma byt vzdy len MED_ERR !!! */
 #endif
     if( (r=comm_buf_get(3*sizeof(MCPptr_t) + ((struct object_s *)((void*)o))->class->m.size,c))==NULL )
     {	fatal("Can't alloc buffer for update!");
