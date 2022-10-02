@@ -464,10 +464,10 @@ static read_result_e mcp_r_query( struct comm_buffer_s *b )
             p->init_handler=function_init;
             comm_buf_to_queue(&(p->to_wake),b);
             p->ehh_list=EHH_NOTIFY_ALLOW;
-	    // _init() is inserted here
-            comm_buf_todo(p);
             b->comm->state=1;
             b->comm->init_buffer = p;
+	    // _init() is inserted here
+            comm_buf_todo(p);
             pthread_mutex_unlock(&b->comm->state_lock);
             b->completed = NULL;
             return READ_DONE;
