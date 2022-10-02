@@ -553,38 +553,27 @@ static int mcp_answer( struct comm_s *c, struct comm_buffer_s *b)
     out->id = 0;
     out->id = ((MCPptr_t*)(b->comm_buf+sizeof(MCPptr_t)))[0];
 #ifdef TRANSLATE_RESULT
-    /* TODO TODO TODO: mY:
-        WHY access 'out->res' by 'r->buf'
-        see '#else' statement
-    */
     switch( b->context.result )
-    {	case RESULT_FORCE_ALLOW:
-        *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))
-                = MED_FORCE_ALLOW;
+    {
+    case RESULT_FORCE_ALLOW:
+        out->res = MED_FORCE_ALLOW;
         break;
     case RESULT_DENY:
-        *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))
-                = MED_DENY;
+        out->res = MED_DENY;
         break;
     case RESULT_FAKE_ALLOW:
-        *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))
-                = MED_FAKE_ALLOW;
+        out->res = MED_FAKE_ALLOW;
         break;
     case RESULT_ALLOW:
-        *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))
-                = MED_ALLOW;
+        out->res = MED_ALLOW;
         break;
     default:
-        *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))
-                = MED_ERR;
+        out->res = MED_ERR;
     }
-    *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t)))=
-            byte_reorder_put_int16(c->flags,
-                                   *((uint16_t*)(r->comm_buf+2*sizeof(MCPptr_t))));
 #else
-    out->res =
-            byte_reorder_put_int16(c->flags,b->context.result);
+    out->res = b->context.result;
 #endif
+    out->res = byte_reorder_put_int16(c->flags,out->res);
     r->len=sizeof(*out);
     r->want=0;
     r->completed=NULL;
