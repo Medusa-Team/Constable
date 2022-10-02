@@ -49,7 +49,6 @@ static read_result_e mcp_r_acctypedef_attr( struct comm_buffer_s *b );
 static read_result_e mcp_r_discard( struct comm_buffer_s *b );
 static int mcp_write( struct comm_s *c );
 static int mcp_nowrite( struct comm_s *c );
-static int mcp_do_nothing(struct comm_buffer_s *b);
 static int mcp_close( struct comm_s *c );
 static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake );
 static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b );
@@ -662,61 +661,47 @@ static read_result_e mcp_r_discard( struct comm_buffer_s *b )
     return READ_FREE;
 }
 
-static int mcp_do_nothing(struct comm_buffer_s *b)
-{
-    return 0;
-}
-
+/*
+ * Each comm has its own thread performing `mcp_write` function.
+ * A buffer is inserted into output queue of the comm interface `c`
+ * from three operations:
+ * 1) answer (at the end of the processing of the kernel request)
+ * 2) update (when updating an object on the kernel site)
+ * 3) fetch (when requesting an object from the kernel site)
+ *
+ * Using of this function requires that the buffers in the output queue are
+ * not used from another threads of Constable. Why? This function always
+ * destroyes the processed buffers.
+ */
 static int mcp_write( struct comm_s *c )
-{ int r;
+{
+    int r;
     struct comm_buffer_s *b;
+
     b = comm_buf_output_dequeue(c);
-    //printf("mcp_write: check writing buffer %u\n", b->id);
+
+    /* Ignore buffers incoming from another comm interfaces. */
     if( b->open_counter != c->open_counter )
     {
         b->free(b);
-        return(0);
+        return(1);
     }
-    //printf("mcp_write: start writing buffer %u\n", b->id);
-    if( b->want < b->len )
-    {	r=write(c->fd,b->p_comm_buf+b->want,b->len-b->want);
-        //printf("mcp_write: write of buffer %u returned %d\n", b->id, r);
+
+    while ( b->want < b->len )
+    {
+        r=write(c->fd,b->p_comm_buf+b->want,b->len-b->want);
         if( r<=0 )
-        {	comm_error("medusa comm %s: Write error",c->name);
-            return(-1);
+        {
+            comm_error("medusa comm %s: Write error %d",c->name,r);
+            return(r);
         }
         b->want+=r;
-        if( b->want < b->len ) {
-            comm_buf_output_enqueue(c, b);
-            return(0);
-        }
+        if( b->want < b->len )
+            comm_info("medusa comm %s: Non-atomic write",c->name);
     }
-    /*
-     * Buffers are inserted into `comm_buf_output` queue only via
-     * `comm_buf_output_enqueue()` in functions:
-     * `mcp_answer()`, `mcp_fetch_object()` and `mcp_update_object()`.
-     *
-     * There are two possible values of `b->completed`:
-     * 1) NULL at the end of `mcp_answer()`
-     * 2) mcp_do_nothing set in `mcp_fetch_object()` and `mcp_update_object()`
-     */
-    if( b->completed ) {
-        // never True in actual implementation of Constable
-        if (b->completed != mcp_do_nothing)
-            r=b->completed(b);
-        else {
-            // This can happen only with fetch or update requests
-            pthread_mutex_lock(&b->write_finished_lock);
-            b->write_finished = true;
-            pthread_cond_signal(&b->write_finished_condition);
-            pthread_mutex_unlock(&b->write_finished_lock);
-        }
-    }
-    else
-    {	r=0;
-        b->free(b);
-    }
-    return(r);
+
+    b->free(b);
+    return(1);
 }
 
 static int mcp_nowrite( struct comm_s *c )
@@ -778,9 +763,8 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
         return(-1);
     }
     //printf("ZZZZ mcp_fetch_object 4\n");
-    r->user1=(void*)o;
+    wake->user1=(void*)o;
     object_set_byte_order(o,c->flags);
-    r->user2=(void*)(&(wake->user_data));
     ((MCPptr_t*)(r->comm_buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_FETCH_REQUEST);
     ((MCPptr_t*)(r->comm_buf))[1]= o->class->m.classid;
     pthread_mutex_lock(&id_lock);
@@ -789,14 +773,22 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     memcpy(((MCPptr_t*)(r->comm_buf))+3, o->data, o->class->m.size);
     r->len=3*sizeof(MCPptr_t) + o->class->m.size;
     r->want=0;
-    r->completed=mcp_do_nothing;
-    r->write_finished_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
-    r->write_finished_condition = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
-    r->write_finished = false;
-    comm_buf_to_queue(&(r->to_wake),wake);
-    comm_buf_to_queue_locked(&(r->comm->wait_for_answer),r);
+    r->completed=NULL;
+
+    /*
+     * Enqueue buffer `wake` to the queue of buffers waiting for an answer from the
+     * kernel. After the answer is received, the buffer is removed from the
+     * queue in mcp_r_fetch_answer().
+     */
+    wake->waiting.to = MEDUSA_COMM_FETCH_REQUEST;
+    wake->waiting.cid = ((MCPptr_t*)(r->comm_buf))[1];
+    wake->waiting.seq = ((MCPptr_t*)(r->comm_buf))[2];
+    comm_buf_to_queue_locked(&(wake->comm->wait_for_answer),wake);
+    /*
+     * Send buffer `r` to the output. Buffer is destroyed in the `mcp_write`
+     * function.
+     */
     comm_buf_output_enqueue(c, r);
-    //printf("ZZZZ mcp_fetch_object 5\n");
     return(3);
 }
 
@@ -806,17 +798,14 @@ static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
     #pragma pack(push)
     #pragma pack(1)
     struct {
-        MCPptr_t p1,p2;
-    } * bmask = (void*)( b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
+        MCPptr_t cid,seq;
+    } * bmask = (void*)( b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t));
     #pragma pack(pop)
 
     FOR_EACH_LOCKED(item, &(b->comm->wait_for_answer)) {
-        pmask = (void*)(item->buffer->comm_buf + sizeof(MCPptr_t));
-        if( byte_reorder_get_int32(item->buffer->comm->flags,
-                                   ((MCPptr_t*)(item->buffer->comm_buf))[0]) ==
-                MEDUSA_COMM_FETCH_REQUEST
-                && pmask->p1==bmask->p1
-                && pmask->p2==bmask->p2) {
+        if (item->buffer->waiting.to == MEDUSA_COMM_FETCH_REQUEST &&
+		item->buffer->waiting.cid == bmask->cid &&
+		item->buffer->waiting.seq == bmask->seq) {
             p = comm_buf_del(&(b->comm->wait_for_answer), prev, item);
             break;
         }
@@ -826,8 +815,10 @@ static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
     END_FOR_EACH_LOCKED(&(b->comm->wait_for_answer));
 
     if( byte_reorder_get_int32(b->comm->flags,((unsigned int*)(b->comm_buf + sizeof(MCPptr_t)))[0])==MEDUSA_COMM_FETCH_ERROR )
-    {	if( p!=NULL )
-            p->free(p);
+    {
+        /* the return value is preset to -1 (p->user_data) in `mcp_fetch_object()` */
+        if( p!=NULL )
+            comm_buf_todo(p);
         b->completed = NULL;
         return READ_FREE;
     }
@@ -847,7 +838,7 @@ static read_result_e mcp_r_fetch_answer( struct comm_buffer_s *b )
 	 * there is necessary to read arrived k-object and discard it.
 	 */
 	struct class_s *cl;
-        cl=(struct class_s*)hash_find(&(b->comm->classes),bmask->p1);
+        cl=(struct class_s*)hash_find(&(b->comm->classes),bmask->cid);
         if( cl==NULL )
         {	comm_error("comm %s: Can't find class by class id",b->comm->name);
             return READ_ERROR;
@@ -865,26 +856,13 @@ static read_result_e mcp_r_fetch_answer_done( struct comm_buffer_s *b )
     /*
      * `p` cannot be NULL, function is called only once from
      * `mcp_r_fetch_answer()` if `p` != NULL.
-     * Result (always SUCCESS) of the `fetch` operation is written into `p->user2` address.
      */
     p=(struct comm_buffer_s *)(b->user1);
-    if( p!=NULL )
-    {
-	/*
-         * Don't free the buffer until mcp_write() stopped working with it.
-	 */
-        pthread_mutex_lock(&p->write_finished_lock);
-        while (!p->write_finished) {
-            pthread_cond_wait(&p->write_finished_condition,
-                    &p->write_finished_lock);
-        }
-        pthread_mutex_unlock(&p->write_finished_lock);
+    p->user_data=0;	/* success */
+    p->waiting.to = 0;
+    p->user1 = NULL;
+    comm_buf_todo(p);
 
-        *((uint32_t*)(p->user2))=0;	/* success */
-        p->free(p);
-    }
-    else
-        comm_error("comm %s: mcp_r_fetch_answer_done: p is NULL", b->comm->name);
     b->completed = NULL;
     return READ_FREE;
 }
@@ -941,8 +919,6 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
         pthread_mutex_unlock(&debug_do_lock);
     }
 
-    r->user1=(void*)o;
-    r->user2=(void*)(&(wake->user_data));
     ((MCPptr_t*)(r->comm_buf))[0]= byte_reorder_put_int32(c->flags,MEDUSA_COMM_UPDATE_REQUEST);
     ((MCPptr_t*)(r->comm_buf))[1]= o->class->m.classid;
     pthread_mutex_lock(&id_lock);
@@ -953,27 +929,21 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
     object_set_byte_order(o,r->comm->flags);
     r->len=3*sizeof(MCPptr_t) + o->class->m.size;
     r->want=0;
-    r->completed=mcp_do_nothing;
-    r->write_finished_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
-    r->write_finished_condition = (pthread_cond_t) PTHREAD_COND_INITIALIZER;
-    r->write_finished = false;
+    r->completed=NULL;
+
     /*
-     * Enqueue buffer `wake` that initiated `update` operation to the `to_wake`
-     * queue of the `r` buffer. After Constable receives answer to the update
-     * request, buffer `r` is freed and `wake` buffer is enqueued for processing
-     * to the `comm_todo` queue. Result of the update operation
-     * (success/failure) is stored in `wake->user_data`.
-     */
-    //printf("mcp_update_object: postpone processing of buf %u after finish buf %u\n",
-	//	    wake->id, r->id);
-    comm_buf_to_queue(&(r->to_wake),wake);
-    /*
-     * Enqueue buffer `r` to the queue of buffers waiting for an answer from the
+     * Enqueue buffer `wake` to the queue of buffers waiting for an answer from the
      * kernel. After the answer is received, the buffer is removed from the
-     * queue in mcp_r_update_answer(). See comments in mcp_r_update_answer() for
-     * information about return value from the kernel.
+     * queue in mcp_r_update_answer().
      */
-    comm_buf_to_queue_locked(&(r->comm->wait_for_answer),r);
+    wake->waiting.to = MEDUSA_COMM_UPDATE_ANSWER;
+    wake->waiting.cid = ((MCPptr_t*)(r->comm_buf))[1];
+    wake->waiting.seq = ((MCPptr_t*)(r->comm_buf))[2];
+    comm_buf_to_queue_locked(&(wake->comm->wait_for_answer),wake);
+    /*
+     * Send buffer `r` to the output. Buffer is destroyed in the `mcp_write`
+     * function.
+     */
     comm_buf_output_enqueue(c, r);
     return(3);
 }
@@ -981,10 +951,6 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
 /**
  * Reads an update answer message from the kernel.
  *
- * This function uses condition variable write_finished_condition to wait until
- * the write function for update request buffer is finished. Otherwise the
- * buffer would be freed before the write finishes causing unexpected behaviour
- * because of the completed function.
  * \param b received buffer with the update answer message
  */
 static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
@@ -993,17 +959,15 @@ static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
     #pragma pack(push)
     #pragma pack(1)
     struct {
-        MCPptr_t p1,p2;
-        uint32_t user;
-    } * bmask = (void*)(b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t)), *pmask;
+        MCPptr_t cid,seq;
+        uint32_t update_result;
+    } * bmask = (void*)(b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t));
     #pragma pack(pop)
 
     FOR_EACH_LOCKED(item, &(b->comm->wait_for_answer)) {
-        pmask = (void*) (item->buffer->comm_buf + sizeof(MCPptr_t));
-        if( byte_reorder_get_int32(item->buffer->comm->flags,
-                                   *(MCPptr_t*)item->buffer->comm_buf) ==
-                MEDUSA_COMM_UPDATE_REQUEST
-                && pmask->p1==bmask->p1 && pmask->p2==bmask->p2) {
+        if (item->buffer->waiting.to == MEDUSA_COMM_UPDATE_ANSWER &&
+		item->buffer->waiting.cid == bmask->cid &&
+		item->buffer->waiting.seq == bmask->seq) {
             p = comm_buf_del(&(b->comm->wait_for_answer), prev, item);
             break;
         }
@@ -1014,29 +978,11 @@ static read_result_e mcp_r_update_answer( struct comm_buffer_s *b )
 
     if( p!=NULL )
     {
-	/*
-         * Don't free the buffer until mcp_write() stopped working with it.
-	 */
-        pthread_mutex_lock(&p->write_finished_lock);
-        while (!p->write_finished) {
-            pthread_cond_wait(&p->write_finished_condition,
-                    &p->write_finished_lock);
-        }
-        pthread_mutex_unlock(&p->write_finished_lock);
-	/*
-	 * Return value (success/failure) of the `update` operation from the
-	 * kernel is stored here. See comment at the end of mcp_update_object().
-	 */
-        *((uint32_t*)(p->user2))=
-                byte_reorder_put_int32(b->comm->flags,bmask->user);
-	/* Buffer used to request `update` operation from the kernel can be
-	 * freed after the answer from the kernel was received. Function
-	 * comm_buf_free() is called and the buffer that's waiting for the
-	 * result (one that invoked the update operation) is scheduled for
-	 * processing.
-	 */
-        p->free(p);
+        p->user_data = byte_reorder_put_int32(b->comm->flags,bmask->update_result);
+        p->waiting.to = 0;
+        comm_buf_todo(p);
     }
+    /* TODO: error on update answer for nobody in the wait queue */
     b->completed = NULL;
     return READ_FREE;
 }

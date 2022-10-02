@@ -32,6 +32,12 @@ struct queue_item_s {
     struct comm_buffer_s *buffer;
 };
 
+struct wait_info_s {
+    uint32_t to;	/**< Wait for result of update or fetch operation */
+    MCPptr_t cid;	/**< Identification of update/fetch request by class id */
+    MCPptr_t seq;	/**< Identification of update/fetch request by sequence number */
+};
+
 struct comm_buffer_s {
     struct comm_buffer_s	*next; /**< Used only for the buffers free
                                         * list */
@@ -46,14 +52,6 @@ struct comm_buffer_s {
     void			*user2;
     int	    user_data; // Matus mozno to ma byt intptr_t
     pthread_mutex_t lock; /**< lock for comm_worker */
-    pthread_mutex_t write_finished_lock; /**< lock for guarding the
-                                           write_finished predicate */
-    pthread_cond_t write_finished_condition; /**< condition variable for the
-                                                write_finished predicate */
-    bool write_finished; /**< Predicate used for fetch and update operations.
-                            If false, write operation on this buffer has not
-                            been completed. If true, write has already
-                            finished. */
     /* for do_event & execute ... */
     struct execute_s    execute;
     int			do_phase; /**< Saves state between asynchronous calls to
@@ -70,6 +68,7 @@ struct comm_buffer_s {
                                                 * config */
 
     struct comm_buffer_queue_s	to_wake;
+    struct wait_info_s		waiting;	/**< Info about asynchronous fetch/update request */
     int			len;		/* for comm */
     int			want;		/* for comm */
     int(*completed)(struct comm_buffer_s*);	/* for comm */
