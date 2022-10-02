@@ -748,15 +748,6 @@ static int mcp_fetch_object( struct comm_s *c, int cont, struct object_s *o, str
     }
     //printf("ZZZZ mcp_fetch_object 2\n");
     wake->user_data = -1;
-    pthread_mutex_lock(&c->wait_for_answer.lock);
-    if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
-    {
-        //printf("ZZZZ mcp_fetch_object: lebo kernel\n");
-        comm_buf_to_queue(&(c->wait_for_answer.last->buffer->to_wake),wake);
-        pthread_mutex_unlock(&c->wait_for_answer.lock);
-        return(2);
-    }
-    pthread_mutex_unlock(&c->wait_for_answer.lock);
     //printf("ZZZZ mcp_fetch_object 3\n");
     if( (r=comm_buf_get(3*sizeof(MCPptr_t) + o->class->m.size,c))==NULL )
     {	fatal("Can't alloc buffer for fetch!");
@@ -898,14 +889,6 @@ static int mcp_update_object( struct comm_s *c, int cont, struct object_s *o, st
 #else
     wake->user_data = RESULT_UNKNOWN;  /* ma byt vzdy len MED_ERR !!! */
 #endif
-    pthread_mutex_lock(&c->wait_for_answer.lock);
-    if( c->wait_for_answer.last!=NULL )	/* lebo kernel ;-( */
-    {	comm_buf_to_queue(&(c->wait_for_answer.last->buffer->to_wake),wake);
-        //printf("mcp_update_object: lebo kernel\n");
-        pthread_mutex_unlock(&c->wait_for_answer.lock);
-        return(2);
-    }
-    pthread_mutex_unlock(&c->wait_for_answer.lock);
     if( (r=comm_buf_get(3*sizeof(MCPptr_t) + ((struct object_s *)((void*)o))->class->m.size,c))==NULL )
     {	fatal("Can't alloc buffer for update!");
         return(-1);
