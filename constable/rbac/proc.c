@@ -105,7 +105,7 @@ static int rbac_proc_setuid_handler_notify( struct comm_buffer_s *cb, struct eve
 {
     CINFO(&(c->subject),rbac_proc_ch,cb->comm)=~(uintptr_t)0;
     object_do_sethandler(&(c->subject));
-    c->result=RESULT_OK;
+    c->result=RESULT_ALLOW;
     return(0);
 }
 

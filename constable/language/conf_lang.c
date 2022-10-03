@@ -105,7 +105,7 @@ struct compile_tab_s conf_lang[]={
 {SA,{END},{SGT,Pobject,Paddvs,S3,END}},
 {S3,{T|',',END},{T|',',SA,END}},
 {S3,{END},{T|';',END}},
-{SRET0,{END},{oLDI,VAL|RESULT_OK,OUT_VAL,oLTI,END}},
+{SRET0,{END},{oLDI,VAL|RESULT_ALLOW,OUT_VAL,oLTI,END}},
 {START,{Ttree,END},{Ttree,T_str,Ptreetype,S5,END}},
 {S5,{T_id,END},{T_id,Ptreeflags,S5,END}},
 {S5,{END},{Tof,T_id,Pid2class,Psetclass,S6,END}},

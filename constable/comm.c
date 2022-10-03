@@ -272,7 +272,8 @@ void* comm_worker(void *arg)
 void* write_loop(void *arg) {
     struct comm_s *c = (struct comm_s*) arg;
     while (1) {
-        if (c->write(c) < 0) {
+        /* c->write() returns 1 on success */
+        if (c->write(c) <= 0) {
             c->close(c);
             break;
         }

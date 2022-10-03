@@ -268,24 +268,24 @@ int register_event_handler( struct event_handler_s *h, struct event_names_s *evn
 int evaluate_result( int old, int new )
 {
     /*
-    if( new==RESULT_ALLOW && (old==RESULT_UNKNOWN || old==RESULT_OK) )
+    if( new==RESULT_FORCE_ALLOW && (old==RESULT_ERR || old==RESULT_ALLOW) )
         return(new);
     else if( new==RESULT_DENY )
         return(new);
-    else if( new==RESULT_SKIP && old!=RESULT_DENY )
+    else if( new==RESULT_FAKE_ALLOW && old!=RESULT_DENY )
         return(new);
-    else if( new==RESULT_OK && old==RESULT_UNKNOWN )
+    else if( new==RESULT_ALLOW && old==RESULT_ERR )
         return(new);
 */
-    if( new!=RESULT_OK && new!=RESULT_DENY
-            && new!=RESULT_SKIP && new!=RESULT_ALLOW )
+    if( new!=RESULT_ALLOW && new!=RESULT_DENY
+            && new!=RESULT_FAKE_ALLOW && new!=RESULT_FORCE_ALLOW )
         new=RESULT_DENY;
 
     if( old==RESULT_DENY || new==RESULT_DENY )
         return(RESULT_DENY);
-    if( old==RESULT_UNKNOWN || new==RESULT_SKIP )
+    if( old==RESULT_ERR || new==RESULT_FAKE_ALLOW )
         return(new);
-    if( old==RESULT_OK && new==RESULT_ALLOW )
+    if( old==RESULT_ALLOW && new==RESULT_FORCE_ALLOW )
         return(new);
     return(old);
 }
@@ -325,7 +325,7 @@ static int do_init_handler( struct comm_buffer_s *cb )
 { int i;
 
     if( cb->do_phase==0 )
-    {	cb->context.result=RESULT_UNKNOWN;
+    {	cb->context.result=RESULT_ERR;
         cb->context.unhandled=1;
         //		cb->context.local_vars=NULL;	/* ???? */
     }
@@ -373,7 +373,7 @@ static int do_event_list( struct comm_buffer_s *cb )
 #endif 
 
     if( cb->do_phase==0 && (cb->ehh_list==EHH_VS_ALLOW||cb->ehh_list==EHH_VS_DENY) )
-    {	c->result=RESULT_UNKNOWN;
+    {	c->result=RESULT_ERR;
         c->unhandled=1;
         //		c->local_vars=NULL;	/* ???? */
         if( object_is_invalid(&(c->subject)) )
@@ -504,13 +504,13 @@ int do_event( struct comm_buffer_s *cb )
     }
     if( cb->ehh_list==EHH_VS_ALLOW )
     {	switch( cb->context.result )
-        {	case RESULT_ALLOW:
-        case RESULT_OK:
+        {	case RESULT_FORCE_ALLOW:
+        case RESULT_ALLOW:
         default:
             cb->ehh_list=EHH_NOTIFY_ALLOW;
             break;
         case RESULT_DENY:
-        case RESULT_SKIP:
+        case RESULT_FAKE_ALLOW:
             cb->ehh_list=EHH_NOTIFY_DENY;
             break;
         case RESULT_RETRY:
@@ -525,12 +525,12 @@ int do_event( struct comm_buffer_s *cb )
     }
     else if( cb->ehh_list==EHH_VS_DENY )
     {	switch( cb->context.result )
-        {	case RESULT_ALLOW:
+        {	case RESULT_FORCE_ALLOW:
             //				cb->ehh_list=EHH_NOTIFY_ALLOW;
             //				break;
         case RESULT_DENY:
-        case RESULT_SKIP:
-        case RESULT_OK:
+        case RESULT_FAKE_ALLOW:
+        case RESULT_ALLOW:
         default:
             cb->ehh_list=EHH_NOTIFY_DENY;
             break;

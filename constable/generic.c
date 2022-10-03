@@ -164,7 +164,7 @@ int generic_hierarchy_handler_decide( struct comm_buffer_s *cb, struct event_han
     }
     else	*PUPTR_COMM_BUF_VAR_DATA(cb,ch->comm_buf_var_data_offset)=(uintptr_t)t;
 
-    c->result=RESULT_OK;
+    c->result=RESULT_ALLOW;
     return(0);
 }
 
@@ -178,7 +178,7 @@ int generic_hierarchy_handler_notify( struct comm_buffer_s *cb, struct event_han
     cinfo=PCINFO(&(c->subject),ch,cb->comm);
 
     //printf("generic_hierarchy_handler_notify --- c->result=%d\n",c->result);
-    //	if( c->result==RESULT_ALLOW || c->result==RESULT_OK )
+    //	if( c->result==RESULT_ALLOW || c->result==RESULT_ALLOW )
     //	{
     *cinfo=*PUPTR_COMM_BUF_VAR_DATA(cb,ch->comm_buf_var_data_offset);
     object_do_sethandler(&(c->subject));

@@ -11,6 +11,13 @@
 #include "../comm.h"
 #include <netinet/in.h>
 
+/* For MED_* constants see <kernel_sources>/security/medusa/include/l3/constants.h */
+#define MED_ERR -1
+#define MED_FORCE_ALLOW 0
+#define MED_DENY 1
+#define MED_FAKE_ALLOW 2
+#define MED_ALLOW 3
+
 int mcp_receive_greeting(struct comm_s *c);
 struct comm_s *mcp_alloc_comm( char *name );
 int mcp_open( struct comm_s *c, char *filename );

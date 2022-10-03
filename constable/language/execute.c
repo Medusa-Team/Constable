@@ -633,7 +633,7 @@ int execute_handler( struct comm_buffer_s *comm_buff, struct event_handler_s *h,
 		comm_buff->execute.comm=comm_buff->comm;
 		comm_buff->execute.my_comm_buff=comm_buff;
 
-		comm_buff->execute.c->result=RESULT_OK;
+		comm_buff->execute.c->result=RESULT_ALLOW;
 		comm_buff->execute.p=(uintptr_t *)(comm_buff->execute.h->data);
 		comm_buff->execute.cont=0;
 		comm_buff->execute.keep_stack=0;

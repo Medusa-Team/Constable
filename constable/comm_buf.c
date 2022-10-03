@@ -39,6 +39,10 @@ static inline void comm_buf_init(struct comm_buffer_s *b, struct comm_s *comm)
     b->ehh_list=EHH_VS_ALLOW;
     b->context.cb=b;
     b->var_data=NULL;
+
+    b->waiting.to=0;
+    b->waiting.cid=0;
+    b->waiting.seq=0;
 }
 
 struct comm_buffer_s *comm_buf_get( int size, struct comm_s *comm )
