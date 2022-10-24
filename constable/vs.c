@@ -1,7 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Constable: vs.c
  * (c)2002 by Marek Zelem <marek@terminus.sk>
- * $Id: vs.c,v 1.2 2002/10/23 10:25:43 marek Exp $
  */
 
 #include "constable.h"
@@ -15,10 +15,10 @@ static int vs_cnt;
  * Return value less than zero means that the initialization wasn't
  * executed successfully.
  */
-int vs_init( void )
+int vs_init(void)
 {
-    vs_cnt = 0;
-    return(0);
+	vs_cnt = 0;
+	return 0;
 }
 
 /**
@@ -26,18 +26,21 @@ int vs_init( void )
  * Return value less than zero is indicating a failure.
  * \param id Output variable storing the virtual space identifier.
  */
-int vs_alloc( vs_t *id )
+int vs_alloc(vs_t *id)
 {
-    if( vs_cnt >= MAX_NUM_OF_VS )
-    {
-        char **errstr = (char**) pthread_getspecific(errstr_key);
-        *errstr=Out_of_vs;
-        return(-1);
-    }
-    vs_clear(id);
-    id[vs_cnt/BITS_PER_VS_WORD] |= 1 << (vs_cnt % BITS_PER_VS_WORD);
-    vs_cnt += 1;
-    return(0);
+	char **errstr;
+
+	if (vs_cnt >= MAX_NUM_OF_VS) {
+		errstr = (char **) pthread_getspecific(errstr_key);
+		*errstr = Out_of_vs;
+		return -1;
+	}
+
+	vs_clear(id);
+	id[vs_cnt/BITS_PER_VS_WORD] |= 1 << (vs_cnt % BITS_PER_VS_WORD);
+	vs_cnt += 1;
+
+	return 0;
 }
 
 /**
@@ -45,39 +48,39 @@ int vs_alloc( vs_t *id )
  * allocated virtual spaces. Return 1 if it can, 0 otherwise.
  * \param bites The available number of bits to be tested.
  */
-int vs_is_enough( int bites )
+int vs_is_enough(int bites)
 {
-    if ( vs_cnt > bites )
-	    return(0);
-    return(1);
+	if (vs_cnt > bites)
+		return 0;
+	return 1;
 }
 
 /**
  * Remove all virtual spaces from the set.
  * \param to Set of virtual spaces that will be affected.
  */
-void vs_clear( vs_t *to )
+void vs_clear(vs_t *to)
 {
-    memset((char*)to, 0x00, sizeof(vs_t)*VS_WORDS);
+	memset((char *)to, 0x00, sizeof(vs_t) * VS_WORDS);
 }
 
 /**
  * Set each virtual space in the set.
  * \param to Set of virtual spaces that will be affected.
  */
-void vs_fill( vs_t *to )
+void vs_fill(vs_t *to)
 {
-    memset((char*)to, 0xff, sizeof(vs_t)*VS_WORDS);
+	memset((char *)to, 0xff, sizeof(vs_t) * VS_WORDS);
 }
 
 /**
  * Set the opposite value of each virtual space in the set.
  * \param to Set of virtual spaces that will be affected.
  */
-void vs_invert( vs_t *to )
+void vs_invert(vs_t *to)
 {
-    for(int i=0;i<VS_WORDS;i++)
-        to[i]= ~(to[i]);
+	for (int i = 0; i < VS_WORDS; i++)
+		to[i] = ~(to[i]);
 }
 
 /**
@@ -85,10 +88,10 @@ void vs_invert( vs_t *to )
  * \param from Set of virtual spaces that will be copied.
  * \param to Set of virtual spaces that will be set according to the \param from.
  */
-void vs_set( const vs_t *from, vs_t *to )
+void vs_set(const vs_t *from, vs_t *to)
 {
-    for(int i=0;i<VS_WORDS;i++)
-        to[i]= from[i];
+	for (int i = 0; i < VS_WORDS; i++)
+		to[i] = from[i];
 }
 
 /**
@@ -96,10 +99,10 @@ void vs_set( const vs_t *from, vs_t *to )
  * \param from Set of virtual spaces that will be added.
  * \param to Set of virtual spaces that will be affected.
  */
-void vs_add( const vs_t *from, vs_t *to )
+void vs_add(const vs_t *from, vs_t *to)
 {
-    for(int i=0;i<VS_WORDS;i++)
-        to[i]|= from[i];
+	for (int i = 0; i < VS_WORDS; i++)
+		to[i] |= from[i];
 }
 
 /**
@@ -108,10 +111,10 @@ void vs_add( const vs_t *from, vs_t *to )
  * set \param to.
  * \param to Set of virtual spaces that will be affected.
  */
-void vs_sub( const vs_t *from, vs_t *to )
+void vs_sub(const vs_t *from, vs_t *to)
 {
-    for(int i=0;i<VS_WORDS;i++)
-        to[i]&= ~(from[i]);
+	for (int i = 0; i < VS_WORDS; i++)
+		to[i] &= ~(from[i]);
 }
 
 /**
@@ -122,10 +125,10 @@ void vs_sub( const vs_t *from, vs_t *to )
  * \param to Set of virtual spaces that will be affected: all virtual
  * spaces that are not in the set \param from, are removed.
  */
-void vs_mask( const vs_t *from, vs_t *to )
+void vs_mask(const vs_t *from, vs_t *to)
 {
-    for(int i=0;i<VS_WORDS;i++)
-        to[i]&= from[i];
+	for (int i = 0; i < VS_WORDS; i++)
+		to[i] &= from[i];
 }
 
 /**
@@ -133,21 +136,21 @@ void vs_mask( const vs_t *from, vs_t *to )
  * intersection, return 0, 1 otherwise (there is at least one common virtual
  * space).
  */
-int vs_test( const vs_t *test, const vs_t *vs )
+int vs_test(const vs_t *test, const vs_t *vs)
 {
-    /* ATTENTION, see also object_cmp_vs() in object.c */
-    for(int i=0;i<VS_WORDS;i++)
-        if( vs[i] & test[i] )
-            return(1);
-    return(0);
+	/* ATTENTION, see also object_cmp_vs() in object.c */
+	for (int i = 0; i < VS_WORDS; i++)
+		if (vs[i] & test[i])
+			return 1;
+	return 0;
 }
 
-int vs_issub( const vs_t *subset, const vs_t *set )
+int vs_issub(const vs_t *subset, const vs_t *set)
 {
-    for(int i=0;i<VS_WORDS;i++)
-        if( (set[i] & subset[i]) != subset[i] )
-            return(0);
-    return(1);
+	for (int i = 0; i < VS_WORDS; i++)
+		if ((set[i] & subset[i]) != subset[i])
+			return 0;
+	return 1;
 }
 
 /**
@@ -155,12 +158,12 @@ int vs_issub( const vs_t *subset, const vs_t *set )
  * space set).
  * \param vs Set of virtual spaces that will be tested.
  */
-int vs_isclear( const vs_t *vs )
+int vs_isclear(const vs_t *vs)
 {
-    for(int i=0;i<VS_WORDS;i++)
-        if( vs[i] )
-            return(0);
-    return(1);
+	for (int i = 0; i < VS_WORDS; i++)
+		if (vs[i])
+			return 0;
+	return 1;
 }
 
 /**
@@ -168,10 +171,10 @@ int vs_isclear( const vs_t *vs )
  * set).
  * \param vs Set of virtual spaces that will be tested.
  */
-int vs_isfull( const vs_t *vs )
+int vs_isfull(const vs_t *vs)
 {
-    for(int i=0;i<VS_WORDS;i++)
-        if( vs[i]!=~((vs_t)0) )
-            return(0);
-    return(1);
+	for (int i = 0; i < VS_WORDS; i++)
+		if (vs[i] != ~((vs_t)0))
+			return 0;
+	return 1;
 }

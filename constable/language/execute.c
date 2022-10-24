@@ -718,8 +718,8 @@ int execute_handler(struct comm_buffer_s *comm_buff, struct event_handler_s *h, 
 int execute_init(int n)
 {
 	execute_init_stacks(n);
-	TLS_CREATE(&r0_key, NULL);
-	TLS_CREATE(&r1_key, NULL);
+	tls_create(&r0_key);
+	tls_create(&r1_key);
 	return 0;
 }
 
@@ -728,9 +728,9 @@ int execute_init(int n)
  */
 int execute_registers_init(void)
 {
-	void *data;
-
-	TLS_ALLOC(r0_key, struct register_s);
-	TLS_ALLOC(r1_key, struct register_s);
+	if (!tls_alloc(r0_key, sizeof(struct register_s)))
+		return -1;
+	if (!tls_alloc(r1_key, sizeof(struct register_s)))
+		return -1;
 	return 0;
 }

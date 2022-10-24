@@ -1,7 +1,7 @@
+/* SPDX-License-Identifier: GPL-2.0 */
 /*
  * Constable: medusa_object.h
  * (c)2002 by Marek Zelem <marek@terminus.sk>
- * $Id: medusa_object.h,v 1.2 2002/10/23 10:25:43 marek Exp $
  */
 
 #ifndef _MEDUSA_COMM_H
@@ -48,10 +48,10 @@ typedef uint64_t Mptr_t; // medusa pointer if you want to run effectivly medusa 
 
 #pragma pack(push, 1)
 struct medusa_comm_attribute_s {
-    u_int16_t offset;			/* offset of attribute in object */
-    u_int16_t length;			/* bytes consumed by data */
-    u_int8_t type;				/* data type (MED_COMM_TYPE_xxx) */
-    char name[MEDUSA_COMM_ATTRNAME_MAX];	/* string: attribute name */
+	u_int16_t offset;			/* offset of attribute in object */
+	u_int16_t length;			/* bytes consumed by data */
+	u_int8_t type;				/* data type (MED_COMM_TYPE_xxx) */
+	char name[MEDUSA_COMM_ATTRNAME_MAX];	/* string: attribute name */
 };
 #pragma pack(pop)
 
@@ -69,20 +69,20 @@ struct medusa_comm_attribute_s {
 
 #pragma pack(push, 1)
 struct medusa_comm_class_s {
-    MCPptr_t	classid;	/* (1,2,...): unique identifier of this class */
-    u_int16_t	size;		/* size of object */
-    char		name[MEDUSA_COMM_CLASSNAME_MAX];
+	MCPptr_t	classid;	/* (1,2,...): unique identifier of this class */
+	u_int16_t	size;		/* size of object */
+	char		name[MEDUSA_COMM_CLASSNAME_MAX];
 };
 #pragma pack(pop)
 
 #pragma pack(push, 1)
 struct medusa_comm_acctype_s {
-    MCPptr_t	opid;
-    u_int16_t	size;
-    u_int16_t	actbit;	/* 0x8000 - means subject */
-    MCPptr_t	op_class[2];
-    char		name[MEDUSA_COMM_OPNAME_MAX];
-    char		op_name[2][MEDUSA_COMM_ATTRNAME_MAX];
+	MCPptr_t	opid;
+	u_int16_t	size;
+	u_int16_t	actbit;	/* 0x8000 - means subject */
+	MCPptr_t	op_class[2];
+	char		name[MEDUSA_COMM_OPNAME_MAX];
+	char		op_name[2][MEDUSA_COMM_ATTRNAME_MAX];
 };
 #pragma pack(pop)
 
@@ -90,7 +90,7 @@ struct medusa_comm_acctype_s {
 #define	MEDUSA_ATTRNAME_MAX	MEDUSA_COMM_ATTRNAME_MAX
 #define	MEDUSA_CLASSNAME_MAX	MEDUSA_COMM_CLASSNAME_MAX
 #define	MEDUSA_OPNAME_MAX	MEDUSA_COMM_OPNAME_MAX
-#define	medusa_attribute_s	medusa_comm_attribute_s	
+#define	medusa_attribute_s	medusa_comm_attribute_s
 #define	medusa_class_s		medusa_comm_class_s
 #define	medusa_acctype_s	medusa_comm_acctype_s
 #define	MED_TYPE_END		MED_COMM_TYPE_END
@@ -102,12 +102,12 @@ struct medusa_comm_acctype_s {
 #define	MED_TYPE_READ_ONLY	MED_COMM_TYPE_READ_ONLY
 #define	MED_TYPE_PRIMARY_KEY	MED_COMM_TYPE_PRIMARY_KEY
 
-#define MED_ATTR_END			{0,0,MED_TYPE_END,""}
-#define	MED_ATTR_x(c,attr,name,type)	{ (u_int16_t)(uintptr_t)(&(((c*)(0))->attr)), sizeof(((c*)(0))->attr), type, name }
-#define	MED_ATTR_UNSIGNED(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_UNSIGNED)
-#define	MED_ATTR_SIGNED(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_SIGNED)
-#define	MED_ATTR_STRING(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_STRING)
-#define	MED_ATTR_BITMAP(c,attr,name)	MED_ATTR_x(c,attr,name,MED_TYPE_BITMAP)
+#define MED_ATTR_END			{0, 0, MED_TYPE_END, ""}
+#define	MED_ATTR_x(c, attr, name, type)	{ (u_int16_t)(uintptr_t)(&(((c *)(0))->attr)), sizeof(((c *)(0))->attr), type, name }
+#define	MED_ATTR_UNSIGNED(c, attr, name)	MED_ATTR_x(c, attr, name, MED_TYPE_UNSIGNED)
+#define	MED_ATTR_SIGNED(c, attr, name)	MED_ATTR_x(c, attr, name, MED_TYPE_SIGNED)
+#define	MED_ATTR_STRING(c, attr, name)	MED_ATTR_x(c, attr, name, MED_TYPE_STRING)
+#define	MED_ATTR_BITMAP(c, attr, name)	MED_ATTR_x(c, attr, name, MED_TYPE_BITMAP)
 /* end of Constable internal */
 
 #endif
