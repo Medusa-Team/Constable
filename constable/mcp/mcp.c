@@ -375,7 +375,7 @@ int mcp_read_worker(struct comm_s *c)
 {
 	struct comm_buffer_s *buf;
 
-	if (unlikely(tls_alloc()))
+	if (unlikely(tls_alloc_init()))
 		return -1;
 
 	while (1) {
@@ -808,7 +808,9 @@ static enum read_result mcp_r_fetch_answer(struct comm_buffer_s *b)
 	} *bmask = (void *)(b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t));
 	#pragma pack(pop)
 
-	FOR_EACH_LOCKED(item, &(b->comm->wait_for_answer)) {
+	pthread_mutex_lock(&(b->comm->wait_for_answer.lock));
+	item = b->comm->wait_for_answer.first;
+	while (item) {
 		if (item->buffer->waiting.to == MEDUSA_COMM_FETCH_REQUEST &&
 		item->buffer->waiting.cid == bmask->cid &&
 		item->buffer->waiting.seq == bmask->seq) {
@@ -816,9 +818,9 @@ static enum read_result mcp_r_fetch_answer(struct comm_buffer_s *b)
 			break;
 		}
 		prev = item;
-		NEXT_ITEM(item);
+		item = item->next;
 	}
-	END_FOR_EACH_LOCKED(&(b->comm->wait_for_answer));
+	pthread_mutex_unlock(&(b->comm->wait_for_answer.lock));
 
 	if (byte_reorder_get_int32(b->comm->flags, ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0]) == MEDUSA_COMM_FETCH_ERROR) {
 		/* the return value is preset to -1 (p->user_data) in `mcp_fetch_object()` */
@@ -960,7 +962,9 @@ static enum read_result mcp_r_update_answer(struct comm_buffer_s *b)
 	} *bmask = (void *)(b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t));
 	#pragma pack(pop)
 
-	FOR_EACH_LOCKED(item, &(b->comm->wait_for_answer)) {
+	pthread_mutex_lock(&(b->comm->wait_for_answer.lock));
+	item = b->comm->wait_for_answer.first;
+	while (item) {
 		if (item->buffer->waiting.to == MEDUSA_COMM_UPDATE_ANSWER &&
 		item->buffer->waiting.cid == bmask->cid &&
 		item->buffer->waiting.seq == bmask->seq) {
@@ -968,9 +972,9 @@ static enum read_result mcp_r_update_answer(struct comm_buffer_s *b)
 			break;
 		}
 		prev = item;
-		NEXT_ITEM(item);
+		item = item->next;
 	}
-	END_FOR_EACH_LOCKED(&(b->comm->wait_for_answer));
+	pthread_mutex_unlock(&(b->comm->wait_for_answer.lock));
 
 	if (likely(p != NULL)) {
 		p->user_data = byte_reorder_put_int32(b->comm->flags, bmask->update_result);

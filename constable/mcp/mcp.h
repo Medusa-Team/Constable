@@ -26,4 +26,3 @@ struct comm_s *mcp_listen(in_port_t port);
 int mcp_to_accept(struct comm_s *c, struct comm_s *listen, in_addr_t ip, in_addr_t mask, in_port_t port);
 
 #endif /* _MCP_H */
-
