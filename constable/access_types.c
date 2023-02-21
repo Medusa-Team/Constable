@@ -8,8 +8,8 @@
 
 char *access_names[NR_ACCESS_TYPES] = {
 	"MEMBER",
-	"RECEIVE",
-	"SEND",
+	"READ",
+	"WRITE",
 	"SEE",
 	"CREATE",
 	"ERASE",
