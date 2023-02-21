@@ -646,9 +646,9 @@ void tree_print_node(struct tree_s *t, int level, void(*out)(int arg, char *), i
 		}
 	}
 
-	for (a = 0; a < 4; a++)
+	for (a = 0; a < EHH_LISTS; a++)
 		tree_print_handlers(t->subject_handlers[a], (char *)list_name_s[a], out, arg);
-	for (a = 0; a < 4; a++)
+	for (a = 0; a < EHH_LISTS; a++)
 		tree_print_handlers(t->object_handlers[a], (char *)list_name_o[a], out, arg);
 	out(arg, "\n");
 
