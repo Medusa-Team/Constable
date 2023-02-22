@@ -99,6 +99,7 @@ struct space_s *space_create(char *name, int primary)
 	strcpy(t->name, name);
 	for (a = 0; a < NR_ACCESS_TYPES; a++)
 		vs_clear(t->vs[a]);
+        vs_clear(t->vs_id);
 	t->levent = NULL;
 	t->ltree = NULL;
 	t->primary = primary;
