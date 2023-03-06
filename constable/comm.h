@@ -162,6 +162,7 @@ int comm_do(void);
 void *comm_worker(void *arg);
 void *write_loop(void *arg);
 
+int comm_open_skip_stdfds(const char *filename, int flags, mode_t mode);
 int comm_error(const char *fmt, ...);
 int comm_info(const char *fmt, ...);
 

@@ -150,11 +150,9 @@ static struct comm_buffer_s *mcp_opened(struct comm_s *c)
  */
 int mcp_open(struct comm_s *c, char *filename)
 {
-	c->fd = open(filename, O_RDWR);
-	if (unlikely(c->fd < 0)) {
-		init_error("Can't open %s", filename);
+	c->fd = comm_open_skip_stdfds(filename, O_RDWR, 0);
+	if (unlikely(c->fd < 0))
 		return -1;
-	}
 	return 0;
 }
 

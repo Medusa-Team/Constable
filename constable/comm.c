@@ -11,7 +11,10 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <errno.h>
+#include <fcntl.h>
 
+#include "constable.h"
 #include "comm.h"
 #include "language/execute.h"
 #include "space.h"
@@ -340,5 +343,44 @@ int comm_info(const char *fmt, ...)
 	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 
+	return -1;
+}
+
+/**
+ * Opens a file descriptor for given @filename and @flags.
+ * On success, returned file descriptor will be greather than 2,
+ * i.e. descriptors 0, 1 and 2 are skipped.
+ * On failure, return -1.
+ *
+ * This behavior prevents interleaving of writes (stdout and stderr
+ * used by fprintf() with a communication device write, for example /dev/medusa).
+ */
+int comm_open_skip_stdfds(const char *filename, int flags, mode_t mode)
+{
+	int err;
+	int fd = open(filename, flags, mode);
+
+	if (unlikely(fd < 0)) {
+		err = errno;
+		goto bad_fd;
+	}
+
+	// skip STDIN, STDOUT, STDERR fds
+	while (fd < 3) {
+		int fd_tmp;
+
+		fd_tmp = dup(fd);
+		err = errno;
+		close(fd);
+		fd = fd_tmp;
+		if (fd < 0)
+			goto bad_fd;
+	}
+	//comm_error("FD %d", fd);
+
+	return fd;
+
+bad_fd:
+	comm_error("Can't open '%s': %s", filename, strerror(err));
 	return -1;
 }

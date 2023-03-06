@@ -208,12 +208,12 @@ int main(int argc, char *argv[])
 				test = 1;
 			else if (argv[a][1] == 'd' && a+1 < argc) {
 				a++;
-				debug_fd = open(argv[a], O_WRONLY|O_CREAT|O_TRUNC, 0600);
+				debug_fd = comm_open_skip_stdfds(argv[a], O_WRONLY|O_CREAT|O_TRUNC, 0600);
 				test = 1;
 			} else if (argv[a][1] == 'D' && a+1 < argc) {
 				a++;
 				debug_def_out = debug_fd_write;
-				debug_def_arg = open(argv[a], O_WRONLY|O_CREAT|O_TRUNC, 0600);
+				debug_def_arg = comm_open_skip_stdfds(argv[a], O_WRONLY|O_CREAT|O_TRUNC, 0600);
 				if (argv[a-1][2] == 'D') {
 					debug_do_out = debug_fd_write;
 					debug_do_arg = debug_def_arg;
