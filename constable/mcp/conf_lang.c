@@ -389,7 +389,8 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		}
 		free(name);
 		name = NULL;
-		mcp_open(comm, (char *)(c->l.data));
+		if (mcp_open(comm, (char *)(c->l.data)) < 0)
+			mcp_error("Cannot open communication device '%s'\n", (char *)(c->l.data));
 		break;
 	case Pcommbind:
 		comm = mcp_alloc_comm(name);
