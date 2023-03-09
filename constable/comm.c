@@ -366,17 +366,15 @@ int comm_open_skip_stdfds(const char *filename, int flags, mode_t mode)
 	}
 
 	// skip STDIN, STDOUT, STDERR fds
-	while (fd < 3) {
-		int fd_tmp;
+	if (fd < 3) {
+		int fd_orig = fd;
 
-		fd_tmp = dup(fd);
+		fd = fcntl(fd_orig, F_DUPFD, 3);
 		err = errno;
-		close(fd);
-		fd = fd_tmp;
+		close(fd_orig);
 		if (fd < 0)
 			goto bad_fd;
 	}
-	//comm_error("FD %d", fd);
 
 	return fd;
 
