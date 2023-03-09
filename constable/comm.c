@@ -132,7 +132,7 @@ int comm_do(void)
 			return -1;
 		}
 		if (pthread_create(&c->write_thread, NULL, write_loop, c)) {
-			puts("Cannot create read thread");
+			puts("Cannot create write thread");
 			return -1;
 		}
 	}
@@ -140,7 +140,7 @@ int comm_do(void)
 	// CREATE WORKER THREADS
 	for (int i = 0; i < N_WORKER_THREADS; i++) {
 		if (pthread_create(comm_workers + i, &attr, comm_worker, NULL)) {
-			puts("Cannot create read thread");
+			puts("Cannot create worker thread");
 			return -1;
 		}
 	}
