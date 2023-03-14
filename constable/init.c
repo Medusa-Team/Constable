@@ -36,7 +36,7 @@ int add_module(struct module_s *module)
 {
 	struct module_s **p;
 
-	for (p = &first_module; *p != NULL; p = &((*p)->next))
+	for (p = &first_module; *p; p = &((*p)->next))
 		if (!strcmp((*p)->name, module->name))
 			return -1;
 
@@ -50,16 +50,16 @@ struct module_s *activate_module(char *name)
 {
 	struct module_s *module, **p;
 
-	for (p = &first_module; *p != NULL; p = &((*p)->next))
+	for (p = &first_module; *p; p = &((*p)->next))
 		if (!strcmp((*p)->name, name))
 			break;
 	module = *p;
 
-	if (module == NULL)
+	if (!module)
 		return NULL;
 	*p = module->next;
 
-	for (p = &active_modules; *p != NULL; p = &((*p)->next))
+	for (p = &active_modules; *p; p = &((*p)->next))
 		;
 	module->next = NULL;
 	*p = module;
@@ -81,7 +81,7 @@ int init_all(char *filename)
 		return -1;
 
 	/* Here initialize all comm interfaces */
-	for (m = active_modules; m != NULL; m = m->next) {
+	for (m = active_modules; m; m = m->next) {
 		if (m->create_comm && m->create_comm(m) < 0)
 			return -1;
 	}
@@ -97,13 +97,13 @@ int init_all(char *filename)
 	//if (force_init() < 0)
 	//	return -1;
 
-	for (m = active_modules; m != NULL; m = m->next) {
+	for (m = active_modules; m; m = m->next) {
 		if (m->init_comm && m->init_comm(m) < 0)
 			return -1;
 	}
 
 	/* Here initialize all modules */
-	for (m = active_modules; m != NULL; m = m->next) {
+	for (m = active_modules; m; m = m->next) {
 		if (m->init_namespace && m->init_namespace(m) < 0)
 			return -1;
 	}
@@ -116,7 +116,7 @@ int init_all(char *filename)
 		return -1;
 	//printf("ZZZ: All initialized\n");
 
-	for (m = active_modules; m != NULL; m = m->next) {
+	for (m = active_modules; m; m = m->next) {
 		if (m->init_rules && m->init_rules(m) < 0)
 			return -1;
 	}
@@ -126,8 +126,10 @@ int init_all(char *filename)
 
 int usage(char *me)
 {
-	fprintf(stderr, "Usage: %s [-t] [-d <tree debug file>] [-D[D] <class/events debug file>] [<config. file>]\n\n"
-		   "    -t and/or -d causes Constable to shut down before initiating communication\n", me);
+	fprintf(stderr,
+		"Usage: %s [-t] [-d <tree debug file>] [-D[D] <class/events debug file>] [<config. file>]\n\n"
+		"    -t and/or -d causes Constable to shut down before initiating communication\n",
+		me);
 	return 0;
 }
 
@@ -204,27 +206,33 @@ int main(int argc, char *argv[])
 
 	for (a = 1; a < argc; a++) {
 		if (argv[a][0] == '-') {
-			if (argv[a][1] == 't')
+			if (argv[a][1] == 't') {
 				test = 1;
-			else if (argv[a][1] == 'd' && a+1 < argc) {
+			} else if (argv[a][1] == 'd' && a + 1 < argc) {
 				a++;
-				debug_fd = comm_open_skip_stdfds(argv[a], O_WRONLY|O_CREAT|O_TRUNC, 0600);
+				debug_fd = comm_open_skip_stdfds(argv[a],
+								 O_WRONLY | O_CREAT | O_TRUNC,
+								 0600);
 				test = 1;
-			} else if (argv[a][1] == 'D' && a+1 < argc) {
+			} else if (argv[a][1] == 'D' && a + 1 < argc) {
 				a++;
 				debug_def_out = debug_fd_write;
-				debug_def_arg = comm_open_skip_stdfds(argv[a], O_WRONLY|O_CREAT|O_TRUNC, 0600);
-				if (argv[a-1][2] == 'D') {
+				debug_def_arg = comm_open_skip_stdfds(argv[a],
+								      O_WRONLY | O_CREAT | O_TRUNC,
+								      0600);
+				if (argv[a - 1][2] == 'D') {
 					debug_do_out = debug_fd_write;
 					debug_do_arg = debug_def_arg;
 				}
-			} else if (argv[a][1] == 'c' && a+1 < argc) {
+			} else if (argv[a][1] == 'c' && a + 1 < argc) {
 				a++;
 				medusa_config_file = argv[a];
-			} else
+			} else {
 				return usage(argv[0]);
-		} else
+			}
+		} else {
 			conf_name = argv[a];
+		}
 	}
 
 	if (tls_create_init())

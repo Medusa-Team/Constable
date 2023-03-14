@@ -121,7 +121,7 @@ struct comm_s {
 	 *
 	 * \return
 	 * -1 when no memory is available for allocation
-	 *  0 when answer was succesfully sent
+	 *  0 when answer was successfully sent
 	 *  2 when update_object() returns 2
 	 *  3 when update_object() was executed and Constable is waiting for the
 	 *    answer (success/failure of update operation) from the kernel.
@@ -133,7 +133,7 @@ struct comm_s {
 	 *
 	 * \return
 	 * -1 when no memory is available for allocation or `update` failed
-	 *  0 when object was succesfully updated
+	 *  0 when object was successfully updated
 	 *  3 after `update` request was sent to the kernel (first pass)
 	 */
 	 int (*update_object)(struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake);
@@ -187,9 +187,10 @@ inline struct comm_buffer_s *comm_buf_from_queue_locked(struct comm_buffer_queue
 	pthread_mutex_unlock(&q->lock);
 	return ret;
 }
+
 struct comm_buffer_s *comm_buf_del(struct comm_buffer_queue_s *q,
-					struct queue_item_s *prev,
-					struct queue_item_s *item);
+				   struct queue_item_s *prev,
+				   struct queue_item_s *item);
 struct comm_buffer_s *comm_buf_peek_first(struct comm_buffer_queue_s *q);
 struct comm_buffer_s *comm_buf_peek_last(struct comm_buffer_queue_s *q);
 

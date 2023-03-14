@@ -94,7 +94,6 @@ struct compile_tab_s mcp_conf_lang[] = {
 	{END}
 };
 
-
 enum {
 	LS_start = LS | 1,
 	LS_ident,
@@ -162,8 +161,8 @@ static lextab_t rules_ip[] = {
 };
 
 static lextab_t rules_str[] = {
-	{"\"", LS_start, LEX_VOID|LEX_END},
-	{"\\", 0, LEX_BSLASH|LEX_CONT},
+	{"\"", LS_start, LEX_VOID | LEX_END},
+	{"\\", 0, LEX_BSLASH | LEX_CONT},
 	{"!", 0, LEX_CONT},
 	{NULL, END, 0},
 };
@@ -211,26 +210,27 @@ static int mcp_warning(const char *fmt, ...);
 static void gen_lex_ident(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
 	*sym = T_id;
-	*data = (uintptr_t) strdup(buf);
+	*data = (uintptr_t)strdup(buf);
 }
 
 static void gen_lex_str(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
 	*sym = T_str;
-	*data = (uintptr_t) strdup(buf);
+	*data = (uintptr_t)strdup(buf);
 }
 
 static void gen_lex_num(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
 	*sym = T_num;
-	*data = (uintptr_t) strtol(buf, NULL, 0);
+	*data = (uintptr_t)strtol(buf, NULL, 0);
 	if (errno == ERANGE)
 		mcp_error("Constant out of range");
 }
+
 static void gen_lex_ip(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
 	*sym = T_ip;
-	*data = (uintptr_t) inet_addr(buf);
+	*data = (uintptr_t)inet_addr(buf);
 }
 
 static compiler_class_t *mcp_compiler;
@@ -285,14 +285,14 @@ static char *sym2str(sym_t sym)
 	if (sym == T_num)
 		return "number";
 	if (sym == T_ip)
-		return "IP adress";
-	while (l->keyword != NULL) {
+		return "IP address";
+	while (l->keyword) {
 		if (l->sym == sym)
 			return (l->keyword);
 		l++;
 	}
 	l = operators;
-	while (l->keyword != NULL) {
+	while (l->keyword) {
 		if (l->sym == sym)
 			return l->keyword;
 		l++;
@@ -320,21 +320,22 @@ static sym_t err_error(struct compiler_err_class *this, sym_t errsym, sym_t info
 
 	if (errsym == TEND)
 		return 0;
-	if (errsym == END && info == eLEXERR)
+	if (errsym == END && info == eLEXERR) {
 		mcp_error("Lexical error");
-	else if (errsym == END && (info & TYP) == E)
+	} else if (errsym == END && (info & TYP) == E) {
 		mcp_error("Lexical error %04x", info & ~TYP);
-	else if (errsym == END && ((info & TYP) == T || info == TEND))
+	} else if (errsym == END && ((info & TYP) == T || info == TEND)) {
 		mcp_error("Unexpected %s", sym2str(info));
-	else if ((errsym & TYP) == T && ((info & TYP) == T || info == TEND))
+	} else if ((errsym & TYP) == T && ((info & TYP) == T || info == TEND)) {
 		mcp_error("Missing %s", sym2str(errsym));
-	else if (errsym == (E | 1)) {
+	} else if (errsym == (E | 1)) {
 		errstr = (char **)pthread_getspecific(errstr_key);
 		mcp_error("%s", *errstr);
-	} else if ((errsym & TYP) == E && info == END)
+	} else if ((errsym & TYP) == E && info == END) {
 		mcp_error("%04x", errsym & ~TYP);
-	else
+	} else {
 		mcp_error("%04x %04x", errsym, info);
+	}
 	return 0;
 }
 
@@ -381,7 +382,7 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		break;
 	case Pcommfile:
 		comm = mcp_alloc_comm(name);
-		if (comm == NULL) {
+		if (!comm) {
 			error("Out of memory");
 			free(name);
 			name = NULL;
@@ -389,12 +390,12 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		}
 		free(name);
 		name = NULL;
-		if (mcp_open(comm, (char *)(c->l.data)) < 0)
+		if (mcp_open(comm, (char *)c->l.data) < 0)
 			mcp_error("Cannot open communication device '%s'\n", (char *)(c->l.data));
 		break;
 	case Pcommbind:
 		comm = mcp_alloc_comm(name);
-		if (comm == NULL) {
+		if (!comm) {
 			error("Out of memory");
 			free(name);
 			name = NULL;
@@ -427,11 +428,11 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		port = (in_port_t)(c->l.data);
 		break;
 	case Pchdir:
-		if (chdir((char *)(c->l.data)) < 0)
+		if (chdir((char *)c->l.data) < 0)
 			mcp_error("%s: %s", (char *)(c->l.data), strerror(errno));
 		break;
 	case Psystem:
-		if (system((char *)(c->l.data)) < 0)
+		if (system((char *)c->l.data) < 0)
 			mcp_error("%s: %s", (char *)(c->l.data), strerror(errno));
 		break;
 	case Pconfig:
@@ -439,11 +440,11 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		break;
 	case Pmodule:
 		module = activate_module((char *)(c->l.data));
-		if (module == NULL)
+		if (!module)
 			mcp_error("There is no %s module", (char *)(c->l.data));
 		break;
 	case Pmodfile:
-		if (module != NULL)
+		if (module)
 			module->filename = strdup((char *)(c->l.data));
 		break;
 	case TEND:
@@ -459,16 +460,16 @@ int mcp_language_do(char *filename)
 	struct compiler_preprocessor_class *mcp_prep;
 
 	mcp_compiler = compiler_create();
-	if (mcp_compiler == NULL)
+	if (!mcp_compiler)
 		return init_error("mcp: Can't initialize compiler");
 	mcp_prep = nul_preprocessor_create(filename);
-	if (mcp_prep == NULL) {
+	if (!mcp_prep) {
 		mcp_compiler->destroy(mcp_compiler);
 		return init_error("mcp: Can't open file %s", filename);
 	}
 	inc_use(mcp_prep);
 	mcp_compiler->lex = lex_create(mcp_lex_tab, mcp_prep);
-	if (mcp_compiler->lex == NULL) {
+	if (!mcp_compiler->lex) {
 		mcp_compiler->destroy(mcp_compiler);
 		dec_use(mcp_prep);
 		return init_error("mcp: Can't initialize lexical analyzer");
@@ -480,7 +481,8 @@ int mcp_language_do(char *filename)
 
 	mcp_compiler->compile(mcp_compiler, START);
 	if (mcp_compiler->err->errors > 0 || mcp_compiler->err->warnings > 0)
-		fprintf(stderr, "Errors: %d\nWarnings: %d\n", mcp_compiler->err->errors, mcp_compiler->err->warnings);
+		fprintf(stderr, "Errors: %d\nWarnings: %d\n", mcp_compiler->err->errors,
+			mcp_compiler->err->warnings);
 	if (mcp_compiler->err->errors > 0) {
 		mcp_compiler->destroy(mcp_compiler);
 		dec_use(mcp_prep);

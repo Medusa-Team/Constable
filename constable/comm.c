@@ -39,7 +39,7 @@ void *comm_new_array(int size)
 	void *v;
 
 	v = calloc(comm_nr_connections, size);
-	if (v == NULL)
+	if (!v)
 		return NULL;
 	return v;
 }
@@ -61,7 +61,7 @@ static struct comm_buffer_s *comm_alloc_var_data(struct comm_buffer_s *b)
 	if (b->p_comm_buf == b->comm_buf)
 		len = b->len;
 	b = comm_buf_resize(b, len + comm_var_data_size);
-	if (b == NULL)
+	if (!b)
 		return NULL;
 	b->var_data = b->comm_buf + len;
 
@@ -73,20 +73,20 @@ struct comm_s *comm_new(char *name, int user_size)
 	struct comm_s *c;
 
 	c = calloc(1, sizeof(struct comm_s) + user_size);
-	if (c == NULL)
+	if (!c)
 		return NULL;
 
 	strncpy(c->name, name, sizeof(c->name) - 1);
 	c->fd = -1;
 	c->conn = comm_nr_connections++;
-	c->state_lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+	c->state_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	c->init_buffer = NULL;
 	sem_init(&c->output_sem, 0, 0);
 	c->wait_for_answer.lock =
-		(pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
-	c->output.lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
+		(pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+	c->output.lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 
-	if (last_comm == NULL)
+	if (!last_comm)
 		first_comm = c;
 	else
 		last_comm->next = c;
@@ -99,7 +99,7 @@ struct comm_s *comm_find(char *name)
 {
 	struct comm_s *c;
 
-	for (c = first_comm; c != NULL; c = c->next)
+	for (c = first_comm; c; c = c->next)
 		if (!strcmp(c->name, name))
 			return c;
 
@@ -118,7 +118,7 @@ int comm_do(void)
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
 	// CREATE READ AND WRITE THREADS FOR EACH COMMUNICATION INTERFACE
-	for (c = first_comm; c != NULL; c = c->next) {
+	for (c = first_comm; c; c = c->next) {
 		if (c->fd < 0)
 			continue;
 		if (mcp_receive_greeting(c)) {
@@ -127,7 +127,7 @@ int comm_do(void)
 			continue;
 		}
 		if (pthread_create(&c->read_thread, NULL,
-			   (void *(*)(void *)) c->read, c)) {
+				   (void *(*)(void *)) c->read, c)) {
 			puts("Cannot create read thread");
 			return -1;
 		}
@@ -146,7 +146,7 @@ int comm_do(void)
 	}
 
 	// CALL JOIN
-	for (c = first_comm; c != NULL; c = c->next) {
+	for (c = first_comm; c; c = c->next) {
 		if (c->fd >= 0) {
 			for (int i = 0; i < N_WORKER_THREADS; i++) {
 				if (pthread_join(c->read_thread, NULL)) {
@@ -169,10 +169,10 @@ void *comm_worker(void *arg)
 	int r = 0;
 
 	if (tls_alloc_init())
-		return (void *) -1;
+		return (void *)-1;
 
 	if (execute_registers_init())
-		return (void *) -1;
+		return (void *)-1;
 
 	while (1) {
 		struct comm_buffer_s *b;
@@ -181,11 +181,11 @@ void *comm_worker(void *arg)
 		//printf("comm_worker: b->do_phase = %d, b->var_data = %p\n",
 		//		b->do_phase, b->var_data);
 		pthread_mutex_lock(&b->lock);
-		if (b->var_data == NULL) {
+		if (!b->var_data) {
 			b = comm_alloc_var_data(b);
-			if (b == NULL) {
+			if (!b) {
 				pthread_mutex_unlock(&b->lock);
-				return (void *) -1;
+				return (void *)-1;
 			}
 		}
 
@@ -206,7 +206,7 @@ void *comm_worker(void *arg)
 			/* mY : ak bola udalost vybavena, odosiela sa ANSWER
 			 * mY : to vsak neplati pre umelo vyvolany event funkcie _init
 			 */
-			if (function_init && (b->init_handler == function_init)) {
+			if (function_init && b->init_handler == function_init) {
 				struct comm_s *comm;
 				//printf("comm_worker: answer for function init, buf id = %u, b->init_handler = %p\n",
 				//		b->id, b->init_handler);
@@ -292,7 +292,7 @@ void *comm_worker(void *arg)
 
 void *write_loop(void *arg)
 {
-	struct comm_s *c = (struct comm_s *) arg;
+	struct comm_s *c = (struct comm_s *)arg;
 
 	while (1) {
 		/* c->write() returns 1 on success */
@@ -302,7 +302,7 @@ void *write_loop(void *arg)
 		}
 	}
 
-	return (void *) -1;
+	return (void *)-1;
 }
 
 int comm_conn_init(struct comm_s *comm)

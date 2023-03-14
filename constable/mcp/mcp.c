@@ -33,12 +33,13 @@ static struct comm_s *all_comms;
  * Enumeration of possible return values for mcp handlers
  */
 enum read_result {
-	READ_ERROR = -1,    /**< indicates and error during read operation */
-	READ_DONE,          /**< indicates succesful read operation */
-	READ_FREE,          /**< indicates succesful read operation and asks caller to free the buffer */
+	READ_ERROR = -1,    /**< an error during read operation */
+	READ_DONE,          /**< successful read operation */
+	READ_FREE,          /**< successful read operation and caller should free the buffer */
 };
 
-static int get_event_context(struct comm_s *comm, struct event_context_s *c, struct event_type_s *t, void *data);
+static int get_event_context(struct comm_s *comm, struct event_context_s *c,
+			     struct event_type_s *t, void *data);
 static struct comm_buffer_s *mcp_opened(struct comm_s *c);
 static int mcp_accept(struct comm_s *c);
 static enum read_result mcp_r_greeting(struct comm_buffer_s *b);
@@ -52,43 +53,51 @@ static enum read_result mcp_r_discard(struct comm_buffer_s *b);
 static int mcp_write(struct comm_s *c);
 static int mcp_nowrite(struct comm_s *c);
 static int mcp_close(struct comm_s *c);
-static int mcp_fetch_object(struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake);
+static int mcp_fetch_object(struct comm_s *c, int cont, struct object_s *o,
+			    struct comm_buffer_s *wake);
 static enum read_result mcp_r_fetch_answer(struct comm_buffer_s *b);
 static enum read_result mcp_r_fetch_answer_done(struct comm_buffer_s *b);
-static int mcp_update_object(struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake);
+static int mcp_update_object(struct comm_s *c, int cont, struct object_s *o,
+			     struct comm_buffer_s *wake);
 static enum read_result mcp_r_update_answer(struct comm_buffer_s *b);
 static int mcp_conf_error(struct comm_s *c, const char *fmt, ...);
 
-static int get_event_context(struct comm_s *comm, struct event_context_s *c, struct event_type_s *t, void *data)
+static int get_event_context(struct comm_s *comm,
+			     struct event_context_s *c,
+			     struct event_type_s *t,
+			     void *data)
 {
-	c->operation.next = &(c->subject);
+	c->operation.next = &c->subject;
 	c->operation.attr.offset = 0;
 	c->operation.attr.length = t->acctype.size;
 	c->operation.attr.type = MED_TYPE_END;
-	strncpy(c->operation.attr.name, t->acctype.name, MIN(MEDUSA_ATTRNAME_MAX, MEDUSA_OPNAME_MAX));
+	strncpy(c->operation.attr.name, t->acctype.name,
+		MIN(MEDUSA_ATTRNAME_MAX, MEDUSA_OPNAME_MAX));
 	c->operation.flags = comm->flags;
-	c->operation.class = &(t->operation_class);
+	c->operation.class = &t->operation_class;
 	c->operation.data = (char *)(data) + 2 * sizeof(MCPptr_t);
 
-	c->subject.next = &(c->object);
-	c->subject.attr.offset = c->subject.attr.length = 0;
+	c->subject.next = &c->object;
+	c->subject.attr.offset = 0;
+	c->subject.attr.length = 0;
 	c->subject.attr.type = MED_TYPE_END;
 	strncpy(c->subject.attr.name, t->acctype.op_name[0], MEDUSA_ATTRNAME_MAX);
 	c->subject.flags = comm->flags;
 	c->subject.class = t->op[0];
 	c->subject.data = (char *)(data) + 2 * sizeof(MCPptr_t) + (t->acctype.size);
 	c->object.next = NULL;
-	c->object.attr.offset = c->object.attr.length = 0;
+	c->object.attr.offset = 0;
+	c->object.attr.length = 0;
 	c->object.attr.type = MED_TYPE_END;
 	strncpy(c->object.attr.name, t->acctype.op_name[1], MEDUSA_ATTRNAME_MAX);
 	c->object.flags = comm->flags;
 	c->object.class = t->op[1];
 	c->object.data = (char *)(data) + 2 * sizeof(MCPptr_t) + (t->acctype.size);
-	if (c->subject.class != NULL) {
+	if (c->subject.class) {
 		c->object.data += c->subject.class->m.size;
 		c->subject.attr.length = c->subject.class->m.size;
 	}
-	if (c->object.class != NULL)
+	if (c->object.class)
 		c->object.attr.length = c->object.class->m.size;
 	c->local_vars = NULL;
 
@@ -108,7 +117,7 @@ struct comm_s *mcp_alloc_comm(char *name)
 	struct comm_s *c;
 
 	c = comm_new(name, sizeof(struct mcp_comm_s));
-	if (unlikely(c == NULL))
+	if (unlikely(!c))
 		return NULL;
 
 	c->state = 0;
@@ -156,20 +165,21 @@ int mcp_open(struct comm_s *c, char *filename)
 	return 0;
 }
 
-#define mcp_data(c)	((struct mcp_comm_s *)(comm_user_data(c)))
+#define MCP_DATA(c)	((struct mcp_comm_s *)(comm_user_data(c)))
+
 struct comm_s *mcp_listen(in_port_t port)
 {
 	struct comm_s *p;
 	struct sockaddr_in addr;
 
-	for (p = all_comms; p != NULL; p = mcp_data(p)->next) {
-		if (mcp_data(p)->allow_port == port)
+	for (p = all_comms; p; p = MCP_DATA(p)->next) {
+		if (MCP_DATA(p)->allow_port == port)
 			return p;
 	}
 	p = mcp_alloc_comm(retprintf("#%d", port));
-	if (unlikely(p == NULL))
+	if (unlikely(!p))
 		return NULL;
-	mcp_data(p)->allow_port = port;
+	MCP_DATA(p)->allow_port = port;
 	p->fd = socket(PF_INET, SOCK_STREAM, 0);
 	if (unlikely(p->fd < 0)) {
 		init_error("Can't create socket");
@@ -188,22 +198,23 @@ struct comm_s *mcp_listen(in_port_t port)
 	p->open_counter++;
 	p->read = mcp_accept;
 	p->write = mcp_nowrite;
-	mcp_data(p)->next = all_comms;
+	MCP_DATA(p)->next = all_comms;
 	all_comms = p;
 
 	return p;
 }
 
-int mcp_to_accept(struct comm_s *c, struct comm_s *listen, in_addr_t ip, in_addr_t mask, in_port_t port)
+int mcp_to_accept(struct comm_s *c, struct comm_s *listen,
+		  in_addr_t ip,	in_addr_t mask, in_port_t port)
 {
-	if (unlikely(listen == NULL))
+	if (unlikely(!listen))
 		return -1;
 
-	mcp_data(c)->allow_ip = ip;
-	mcp_data(c)->allow_mask = mask;
-	mcp_data(c)->allow_port = port;
-	mcp_data(c)->next = mcp_data(listen)->to_accept;
-	mcp_data(listen)->to_accept = c;
+	MCP_DATA(c)->allow_ip = ip;
+	MCP_DATA(c)->allow_mask = mask;
+	MCP_DATA(c)->allow_port = port;
+	MCP_DATA(c)->next = MCP_DATA(listen)->to_accept;
+	MCP_DATA(listen)->to_accept = c;
 
 	return 0;
 }
@@ -222,12 +233,11 @@ static int mcp_accept(struct comm_s *c)
 		return -1;
 	}
 
-	for (p = mcp_data(c)->to_accept; p != NULL; p = mcp_data(p)->next) {
-		if ((mcp_data(p)->allow_ip & mcp_data(p)->allow_mask)
-		    == (addr.sin_addr.s_addr & mcp_data(p)->allow_mask)
-		    &&
-		    (mcp_data(p)->allow_port == 0 ||
-		    (mcp_data(p)->allow_port == ntohs(addr.sin_port)))
+	for (p = MCP_DATA(c)->to_accept; p; p = MCP_DATA(p)->next) {
+		if ((MCP_DATA(p)->allow_ip & MCP_DATA(p)->allow_mask)
+		    == (addr.sin_addr.s_addr & MCP_DATA(p)->allow_mask) &&
+		    (MCP_DATA(p)->allow_port == 0 ||
+		    (MCP_DATA(p)->allow_port == ntohs(addr.sin_port)))
 		   ) {
 			if (p->fd >= 0) {
 				comm_error("comm %s: reconnect", p->name);
@@ -239,11 +249,12 @@ static int mcp_accept(struct comm_s *c)
 	}
 
 	comm_error("comm %s: unauthorized access from [%s:%d] => close",
-		c->name, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+		   c->name, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
 	close(sock);
 	return 0;
 }
-#undef mcp_data
+
+#undef MCP_DATA
 
 /**
  * Reads the greeting message from the kernel and sets endianness used for
@@ -306,7 +317,7 @@ static inline int mcp_check_size_and_read(struct comm_buffer_s **buf)
 		struct comm_buffer_s *b;
 
 		b = comm_buf_resize(*buf, (*buf)->want);
-		if (unlikely(b == NULL)) {
+		if (unlikely(!b)) {
 			fatal(Out_of_memory);
 			return -1;
 		}
@@ -322,7 +333,9 @@ static inline int mcp_check_size_and_read(struct comm_buffer_s **buf)
 			return -1;
 		}
 		if (FD_ISSET((*buf)->comm->fd, &rd))
-			r = read((*buf)->comm->fd, (*buf)->p_comm_buf + (*buf)->len, (*buf)->want - (*buf)->len);
+			r = read((*buf)->comm->fd,
+				 (*buf)->p_comm_buf + (*buf)->len,
+				 (*buf)->want - (*buf)->len);
 		else
 			continue;
 		if (unlikely(r <= 0)) {
@@ -343,9 +356,9 @@ static inline int mcp_read_loop(struct comm_buffer_s **buf)
 		if (unlikely(mcp_check_size_and_read(buf) < 0))
 			goto error;
 		result = (*buf)->completed(*buf);
-		if (unlikely(result < READ_DONE))
+		if (unlikely(result < READ_DONE)) {
 			goto error;
-		else if (result == READ_FREE) {
+		} else if (result == READ_FREE) {
 			(*buf)->free(*buf);
 			return 0;
 		}
@@ -402,28 +415,31 @@ static enum read_result mcp_r_head(struct comm_buffer_s *b)
 	x = ((MCPptr_t *)(b->comm_buf))[0];
 	if (likely(x != 0)) {
 		// This is a decision request
-		b->event = (struct event_type_s *)hash_find(&(b->comm->events), x);
-		if (unlikely(b->event == NULL)) {
+		b->event = (struct event_type_s *)hash_find(&b->comm->events, x);
+		if (unlikely(!b->event)) {
 			comm_error("comm %s: Unknown access type %p!", b->comm->name, x);
 			return READ_ERROR;
 		}
 		b->want = sizeof(uint32_t) + b->len + (b->event->acctype.size);
-		if (likely(b->event->op[0] != NULL))
+		if (likely(b->event->op[0]))
 			b->want += b->event->op[0]->m.size;
-		if (b->event->op[1] != NULL)
+		if (b->event->op[1])
 			b->want += b->event->op[1]->m.size;
 		b->completed = mcp_r_query;
 
 		return READ_DONE;
 	}
 
-	switch (byte_reorder_get_int32(b->comm->flags, ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0])) {
+	switch (byte_reorder_get_int32(b->comm->flags,
+				       ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0])) {
 	case MEDUSA_COMM_CLASSDEF:
-		b->want = b->len + sizeof(struct medusa_comm_class_s) + sizeof(struct medusa_comm_attribute_s);
+		b->want = b->len + sizeof(struct medusa_comm_class_s)
+			  + sizeof(struct medusa_comm_attribute_s);
 		b->completed = mcp_r_classdef_attr;
 		break;
 	case MEDUSA_COMM_ACCTYPEDEF:
-		b->want = b->len + sizeof(struct medusa_comm_acctype_s) + sizeof(struct medusa_comm_attribute_s);
+		b->want = b->len + sizeof(struct medusa_comm_acctype_s)
+			  + sizeof(struct medusa_comm_attribute_s);
 		b->completed = mcp_r_acctypedef_attr;
 		break;
 	case MEDUSA_COMM_CLASSUNDEF:
@@ -443,7 +459,7 @@ static enum read_result mcp_r_head(struct comm_buffer_s *b)
 		break;
 	default:
 		comm_error("comm %s: Communication protocol error! (%d)",
-			b->comm->name, ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0]);
+			   b->comm->name, ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0]);
 		return READ_ERROR;
 	}
 
@@ -456,7 +472,7 @@ static enum read_result mcp_r_head(struct comm_buffer_s *b)
  */
 static enum read_result mcp_r_query(struct comm_buffer_s *b)
 {
-	get_event_context(b->comm, &(b->context), b->event, b->comm_buf);
+	get_event_context(b->comm, &b->context, b->event, b->comm_buf);
 	b->ehh_list = EHH_VS_ALLOW;
 	pthread_mutex_lock(&b->comm->state_lock);
 
@@ -474,19 +490,19 @@ static enum read_result mcp_r_query(struct comm_buffer_s *b)
 		 * inserted into `init_buffer->to_wake` queue to be processed after
 		 * _init() finishes.
 		 */
-		if (function_init != NULL) {
+		if (function_init) {
 			struct comm_buffer_s *p;
 
 			p = comm_buf_get(0, b->comm);
-			if (unlikely(p == NULL)) {
+			if (unlikely(!p)) {
 				comm_error("Can't get comm buffer for _init");
 				pthread_mutex_unlock(&b->comm->state_lock);
 				return READ_ERROR;
 			}
-			get_empty_context(&(p->context));
+			get_empty_context(&p->context);
 			p->event = NULL;
 			p->init_handler = function_init;
-			comm_buf_to_queue(&(p->to_wake), b);
+			comm_buf_to_queue(&p->to_wake, b);
 			p->ehh_list = EHH_NOTIFY_ALLOW;
 			b->comm->state = 1;
 			b->comm->init_buffer = p;
@@ -501,7 +517,7 @@ static enum read_result mcp_r_query(struct comm_buffer_s *b)
 
 	if (function_init && b->comm->init_buffer) {
 		/* Enqueue incoming requests to be processed after _init() finishes. */
-		comm_buf_to_queue(&(b->comm->init_buffer->to_wake), b);
+		comm_buf_to_queue(&b->comm->init_buffer->to_wake, b);
 		/* `b->completed` should be set to NULL before `unlock(state_lock)`.
 		 * After _init() finishes, comm_worker() calls `free(init_buffer)`,
 		 * which inserts `b` into `comm_todo`. As free() is called with locked
@@ -541,7 +557,7 @@ static int mcp_answer(struct comm_s *c, struct comm_buffer_s *b)
 
 	/* TODO: only if changed */
 
-	if (b->context.result >= 0 && b->context.subject.class != NULL) {
+	if (b->context.result >= 0 && b->context.subject.class) {
 		/*
 		 * The value od `do_phase` can't be zero, because the function
 		 * `mcp_answer()` is called only once from `comm_worker()` when
@@ -550,7 +566,7 @@ static int mcp_answer(struct comm_s *c, struct comm_buffer_s *b)
 		 */
 		if (b->do_phase == 0)
 			b->do_phase = 1000;
-		i = c->update_object(c, b->do_phase - 1000, &(b->context.subject), b);
+		i = c->update_object(c, b->do_phase - 1000, &b->context.subject, b);
 		/*
 		 * See documentation of update_object() in `struct comm_s`. Negative
 		 * return values of update_object() are silently ignored (including
@@ -567,7 +583,7 @@ static int mcp_answer(struct comm_s *c, struct comm_buffer_s *b)
 	}
 
 	r = comm_buf_get(sizeof(*out), c);
-	if (unlikely(r  == NULL)) {
+	if (unlikely(!r)) {
 		fatal("Can't alloc buffer for send answer!");
 		return -1;
 	}
@@ -601,15 +617,15 @@ static int mcp_answer(struct comm_s *c, struct comm_buffer_s *b)
 
 	pid = -1;
 	apid = get_attribute(b->context.subject.class, "pid");
-	if (apid)
-		object_get_val(&(b->context.subject), apid, &pid, sizeof(pid));
-	else {
+	if (apid) {
+		object_get_val(&b->context.subject, apid, &pid, sizeof(pid));
+	} else {
 		apid = get_attribute(b->context.operation.class, "pid");
 		if (apid)
-			object_get_val(&(b->context.operation), apid, &pid, sizeof(pid));
+			object_get_val(&b->context.operation, apid, &pid, sizeof(pid));
 	}
-	printf("answer 0x%016lx %2d [%s:%d]\n", out->id, (short)out->res,
-	b->context.operation.class->m.name, pid);
+	printf("answer 0x%016lx %2d [%s:%d]\n",
+	       out->id, (short)out->res, b->context.operation.class->m.name, pid);
 
 	comm_buf_output_enqueue(c, r);
 
@@ -633,21 +649,27 @@ static void unify_bitmap_types(struct medusa_comm_attribute_s *a)
 	}
 }
 
+#define OFF_ATTR (sizeof(MCPptr_t) + sizeof(uint32_t))
+#define OFF_ATTR_CLASS (OFF_ATTR + sizeof(struct medusa_comm_class_s))
+#define OFF_ATTR_ACCTYPE (OFF_ATTR + sizeof(struct medusa_comm_acctype_s))
+
 static enum read_result mcp_r_classdef_attr(struct comm_buffer_s *b)
 {
 	struct class_s *cl;
+	char *last_attr = b->comm_buf + b->len - sizeof(struct medusa_comm_attribute_s);
 
-	if (((struct medusa_comm_attribute_s *)(b->comm_buf + b->len - sizeof(struct medusa_comm_attribute_s)))->type != MED_TYPE_END) {
+	if (((struct medusa_comm_attribute_s *)(last_attr))->type != MED_TYPE_END) {
 		b->want = b->len + sizeof(struct medusa_comm_attribute_s);
 		return READ_DONE;
 	}
-	byte_reorder_class(b->comm->flags, (struct medusa_class_s *)(b->comm_buf + sizeof(MCPptr_t) + sizeof(uint32_t)));
-	byte_reorder_attrs(b->comm->flags, (struct medusa_attribute_s *)(b->comm_buf + sizeof(MCPptr_t) + sizeof(uint32_t) + sizeof(struct medusa_comm_class_s)));
-	unify_bitmap_types((struct medusa_attribute_s *)(b->comm_buf + sizeof(MCPptr_t) + sizeof(uint32_t) + sizeof(struct medusa_comm_class_s)));
+	byte_reorder_class(b->comm->flags, (struct medusa_class_s *)(b->comm_buf + OFF_ATTR));
+	byte_reorder_attrs(b->comm->flags,
+			   (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS));
+	unify_bitmap_types((struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS));
 	cl = add_class(b->comm,
-		(struct medusa_class_s *)(b->comm_buf + sizeof(MCPptr_t) + sizeof(uint32_t)),
-		(struct medusa_attribute_s *)(b->comm_buf + sizeof(MCPptr_t) + sizeof(uint32_t) + sizeof(struct medusa_comm_class_s)));
-	if (unlikely(cl == NULL))
+		       (struct medusa_class_s *)(b->comm_buf + OFF_ATTR),
+		       (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS));
+	if (unlikely(!cl))
 		comm_error("comm %s: Can't add class", b->comm->name);
 	b->completed = NULL;
 	return READ_FREE;
@@ -655,19 +677,29 @@ static enum read_result mcp_r_classdef_attr(struct comm_buffer_s *b)
 
 static enum read_result mcp_r_acctypedef_attr(struct comm_buffer_s *b)
 {
-	if (((struct medusa_comm_attribute_s *)(b->comm_buf + b->len - sizeof(struct medusa_comm_attribute_s)))->type != MED_TYPE_END) {
+	struct event_type_s *ev;
+	char *last_attr = b->comm_buf + b->len - sizeof(struct medusa_comm_attribute_s);
+
+	if (((struct medusa_comm_attribute_s *)(last_attr))->type != MED_TYPE_END) {
 		b->want = b->len + sizeof(struct medusa_comm_attribute_s);
 		return READ_DONE;
 	}
-	byte_reorder_acctype(b->comm->flags, (struct medusa_acctype_s *)(b->comm_buf + sizeof(MCPptr_t) + sizeof(uint32_t)));
-	byte_reorder_attrs(b->comm->flags, (struct medusa_attribute_s *)(b->comm_buf + sizeof(MCPptr_t) + sizeof(uint32_t) + sizeof(struct medusa_comm_acctype_s)));
-	unify_bitmap_types((struct medusa_attribute_s *)(b->comm_buf + sizeof(MCPptr_t) + sizeof(uint32_t) + sizeof(struct medusa_comm_acctype_s)));
-	if (unlikely(event_type_add(b->comm, (struct medusa_acctype_s *)(b->comm_buf + sizeof(MCPptr_t) + sizeof(uint32_t)),
-			   (struct medusa_attribute_s *)(b->comm_buf + sizeof(MCPptr_t) + sizeof(uint32_t) + sizeof(struct medusa_comm_acctype_s))) == NULL))
+	byte_reorder_acctype(b->comm->flags, (struct medusa_acctype_s *)(b->comm_buf + OFF_ATTR));
+	byte_reorder_attrs(b->comm->flags,
+			   (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE));
+	unify_bitmap_types((struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE));
+	ev = event_type_add(b->comm,
+			    (struct medusa_acctype_s *)(b->comm_buf + OFF_ATTR),
+			    (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE));
+	if (unlikely(!ev))
 		comm_error("comm %s: Can't add acctype", b->comm->name);
 	b->completed = NULL;
 	return READ_FREE;
 }
+
+#undef OFF_ATTR
+#undef OFF_ATTR_CLASS
+#undef OFF_ATTR_ACCTYPE
 
 static enum read_result mcp_r_discard(struct comm_buffer_s *b)
 {
@@ -701,7 +733,7 @@ static int mcp_write(struct comm_s *c)
 	}
 
 	while (b->want < b->len) {
-		r = write(c->fd, b->p_comm_buf + b->want, b->len-b->want);
+		r = write(c->fd, b->p_comm_buf + b->want, b->len - b->want);
 		if (unlikely(r <= 0)) {
 			comm_error("medusa comm %s: Write error %d", c->name, r);
 			return r;
@@ -719,7 +751,7 @@ static int mcp_nowrite(struct comm_s *c)
 {
 	struct comm_buffer_s *b;
 
-	while ((b = comm_buf_from_queue_locked(&(c->output))) != NULL) {
+	while ((b = comm_buf_from_queue_locked(&c->output)) != NULL) {
 		b->free(b);
 		return 0;
 	}
@@ -733,25 +765,28 @@ static int mcp_close(struct comm_s *c)
 	close(c->fd);
 	c->fd = -1;
 	pthread_mutex_lock(&c->output.lock);
-	while ((b = comm_buf_from_queue(&(c->output))) != NULL)
+	while ((b = comm_buf_from_queue(&c->output)) != NULL)
 		b->free(b);
 	pthread_mutex_unlock(&c->output.lock);
 	pthread_mutex_lock(&c->wait_for_answer.lock);
-	while ((b = comm_buf_from_queue(&(c->wait_for_answer))) != NULL)
+	while ((b = comm_buf_from_queue(&c->wait_for_answer)) != NULL)
 		b->free(b);
 	pthread_mutex_unlock(&c->wait_for_answer.lock);
 	c->open_counter--;
 	return 0;
 }
 
-static int mcp_fetch_object(struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake)
+static int mcp_fetch_object(struct comm_s *c,
+			    int cont,
+			    struct object_s *o,
+			    struct comm_buffer_s *wake)
 {
 	static MCPptr_t id = 2;
 	static pthread_mutex_t id_lock = PTHREAD_MUTEX_INITIALIZER;
 	struct comm_buffer_s *r;
 
 	if (cont == 3) {
-		if (unlikely(debug_do_out != NULL)) {
+		if (unlikely(debug_do_out)) {
 			pthread_mutex_lock(&debug_do_lock);
 			debug_do_out(debug_do_arg, "fetch ");
 			object_print(o, debug_do_out, debug_do_arg);
@@ -762,13 +797,14 @@ static int mcp_fetch_object(struct comm_s *c, int cont, struct object_s *o, stru
 
 	wake->user_data = -1;
 	r = comm_buf_get(3 * sizeof(MCPptr_t) + o->class->m.size, c);
-	if (unlikely(r == NULL)) {
+	if (unlikely(!r)) {
 		fatal("Can't alloc buffer for fetch!");
 		return -1;
 	}
 	wake->user1 = (void *)o;
 	object_set_byte_order(o, c->flags);
-	((MCPptr_t *)(r->comm_buf))[0] = byte_reorder_put_int32(c->flags, MEDUSA_COMM_FETCH_REQUEST);
+	((MCPptr_t *)(r->comm_buf))[0] = byte_reorder_put_int32(c->flags,
+								MEDUSA_COMM_FETCH_REQUEST);
 	((MCPptr_t *)(r->comm_buf))[1] = o->class->m.classid;
 	pthread_mutex_lock(&id_lock);
 	((MCPptr_t *)(r->comm_buf))[2] = id++;
@@ -786,7 +822,7 @@ static int mcp_fetch_object(struct comm_s *c, int cont, struct object_s *o, stru
 	wake->waiting.to = MEDUSA_COMM_FETCH_REQUEST;
 	wake->waiting.cid = ((MCPptr_t *)(r->comm_buf))[1];
 	wake->waiting.seq = ((MCPptr_t *)(r->comm_buf))[2];
-	comm_buf_to_queue_locked(&(wake->comm->wait_for_answer), wake);
+	comm_buf_to_queue_locked(&wake->comm->wait_for_answer, wake);
 	/*
 	 * Send buffer `r` to the output. Buffer is destroyed in the `mcp_write`
 	 * function.
@@ -806,29 +842,31 @@ static enum read_result mcp_r_fetch_answer(struct comm_buffer_s *b)
 	} *bmask = (void *)(b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t));
 	#pragma pack(pop)
 
-	pthread_mutex_lock(&(b->comm->wait_for_answer.lock));
+	pthread_mutex_lock(&b->comm->wait_for_answer.lock);
 	item = b->comm->wait_for_answer.first;
 	while (item) {
 		if (item->buffer->waiting.to == MEDUSA_COMM_FETCH_REQUEST &&
-		item->buffer->waiting.cid == bmask->cid &&
-		item->buffer->waiting.seq == bmask->seq) {
-			p = comm_buf_del(&(b->comm->wait_for_answer), prev, item);
+		    item->buffer->waiting.cid == bmask->cid &&
+		    item->buffer->waiting.seq == bmask->seq) {
+			p = comm_buf_del(&b->comm->wait_for_answer, prev, item);
 			break;
 		}
 		prev = item;
 		item = item->next;
 	}
-	pthread_mutex_unlock(&(b->comm->wait_for_answer.lock));
+	pthread_mutex_unlock(&b->comm->wait_for_answer.lock);
 
-	if (byte_reorder_get_int32(b->comm->flags, ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0]) == MEDUSA_COMM_FETCH_ERROR) {
+	if (byte_reorder_get_int32(b->comm->flags,
+				   ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0])
+				    == MEDUSA_COMM_FETCH_ERROR) {
 		/* the return value is preset to -1 (p->user_data) in `mcp_fetch_object()` */
-		if (likely(p != NULL))
+		if (likely(p))
 			comm_buf_todo(p);
 		b->completed = NULL;
 		return READ_FREE;
 	}
 
-	if (likely(p != NULL)) {
+	if (likely(p)) {
 		b->len = 0;
 		b->want = ((struct object_s *)(p->user1))->class->m.size;
 		b->p_comm_buf = ((struct object_s *)(p->user1))->data;
@@ -842,8 +880,8 @@ static enum read_result mcp_r_fetch_answer(struct comm_buffer_s *b)
 		struct class_s *cl;
 		char *errmsg = "Arrived answer to FETCH request, nobody is waiting for it!";
 
-		cl = (struct class_s *)hash_find(&(b->comm->classes), bmask->cid);
-		if (unlikely(cl == NULL)) {
+		cl = (struct class_s *)hash_find(&b->comm->classes, bmask->cid);
+		if (unlikely(!cl)) {
 			fatal("comm %s: Can't find class by class id. %s", b->comm->name, errmsg);
 			return READ_ERROR;
 		}
@@ -871,7 +909,10 @@ static enum read_result mcp_r_fetch_answer_done(struct comm_buffer_s *b)
 	return READ_FREE;
 }
 
-static int mcp_update_object(struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake)
+static int mcp_update_object(struct comm_s *c,
+			     int cont,
+			     struct object_s *o,
+			     struct comm_buffer_s *wake)
 {
 	static MCPptr_t id = 2;
 	static pthread_mutex_t id_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -902,19 +943,20 @@ static int mcp_update_object(struct comm_s *c, int cont, struct object_s *o, str
 	wake->user_data = RESULT_ERR;
 #endif
 	r = comm_buf_get(3 * sizeof(MCPptr_t) + ((struct object_s *)((void *)o))->class->m.size, c);
-	if (unlikely(r == NULL)) {
+	if (unlikely(!r)) {
 		fatal("Can't alloc buffer for update!");
 		return -1;
 	}
 
-	if (unlikely(debug_do_out != NULL)) {
+	if (unlikely(debug_do_out)) {
 		pthread_mutex_lock(&debug_do_lock);
 		debug_do_out(debug_do_arg, "update ");
 		object_print(o, debug_do_out, debug_do_arg);
 		pthread_mutex_unlock(&debug_do_lock);
 	}
 
-	((MCPptr_t *)(r->comm_buf))[0] = byte_reorder_put_int32(c->flags, MEDUSA_COMM_UPDATE_REQUEST);
+	((MCPptr_t *)(r->comm_buf))[0] = byte_reorder_put_int32(c->flags,
+								MEDUSA_COMM_UPDATE_REQUEST);
 	((MCPptr_t *)(r->comm_buf))[1] = o->class->m.classid;
 	pthread_mutex_lock(&id_lock);
 	((MCPptr_t *)(r->comm_buf))[2] = id++;
@@ -934,7 +976,7 @@ static int mcp_update_object(struct comm_s *c, int cont, struct object_s *o, str
 	wake->waiting.to = MEDUSA_COMM_UPDATE_ANSWER;
 	wake->waiting.cid = ((MCPptr_t *)(r->comm_buf))[1];
 	wake->waiting.seq = ((MCPptr_t *)(r->comm_buf))[2];
-	comm_buf_to_queue_locked(&(wake->comm->wait_for_answer), wake);
+	comm_buf_to_queue_locked(&wake->comm->wait_for_answer, wake);
 	/*
 	 * Send buffer `r` to the output. Buffer is destroyed in the `mcp_write`
 	 * function.
@@ -960,26 +1002,27 @@ static enum read_result mcp_r_update_answer(struct comm_buffer_s *b)
 	} *bmask = (void *)(b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t));
 	#pragma pack(pop)
 
-	pthread_mutex_lock(&(b->comm->wait_for_answer.lock));
+	pthread_mutex_lock(&b->comm->wait_for_answer.lock);
 	item = b->comm->wait_for_answer.first;
 	while (item) {
 		if (item->buffer->waiting.to == MEDUSA_COMM_UPDATE_ANSWER &&
-		item->buffer->waiting.cid == bmask->cid &&
-		item->buffer->waiting.seq == bmask->seq) {
-			p = comm_buf_del(&(b->comm->wait_for_answer), prev, item);
+		    item->buffer->waiting.cid == bmask->cid &&
+		    item->buffer->waiting.seq == bmask->seq) {
+			p = comm_buf_del(&b->comm->wait_for_answer, prev, item);
 			break;
 		}
 		prev = item;
 		item = item->next;
 	}
-	pthread_mutex_unlock(&(b->comm->wait_for_answer.lock));
+	pthread_mutex_unlock(&b->comm->wait_for_answer.lock);
 
-	if (likely(p != NULL)) {
+	if (likely(p)) {
 		p->user_data = byte_reorder_put_int32(b->comm->flags, bmask->update_result);
 		p->waiting.to = 0;
 		comm_buf_todo(p);
 	} else {
-		fatal("comm %s: Arrived answer to UPDATE request, nobody is waiting for it!", b->comm->name);
+		fatal("comm %s: Arrived answer to UPDATE request, nobody is waiting for it!",
+		      b->comm->name);
 	}
 
 	b->completed = NULL;
