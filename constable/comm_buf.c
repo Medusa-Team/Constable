@@ -120,6 +120,7 @@ struct comm_buffer_s *comm_buf_resize(struct comm_buffer_s *b, int size)
 	return b;
 }
 
+int mcp_ready_answer(struct comm_s *c);
 
 static void comm_buf_free(struct comm_buffer_s *b)
 {
@@ -129,6 +130,10 @@ static void comm_buf_free(struct comm_buffer_s *b)
 	while ((q = comm_buf_from_queue(&(b->to_wake))) != NULL)
 		comm_buf_todo(q);
 	pthread_mutex_unlock(&(b->to_wake.lock));
+
+	/* send READY cmd to the kernel after _init() finishes */
+	if (function_init && b->comm->init_buffer == b && mcp_ready_answer(b->comm) < 0)
+		fatal("%s: MEDUSA_COMM_READY_ANSWER not send to the kernel", __func__);
 
 	//printf("comm_buf_free: free buffer %u\n", b->id);
 	if (b->_n >= 0) {

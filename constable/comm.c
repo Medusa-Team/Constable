@@ -26,6 +26,7 @@ int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q,
 struct comm_buffer_s *comm_buf_from_queue_locked(struct comm_buffer_queue_s *q);
 static pthread_t comm_workers[N_WORKER_THREADS];
 
+extern struct event_handler_s *function_init;
 int comm_nr_connections;
 static struct comm_s *first_comm;
 static struct comm_s *last_comm;
@@ -121,6 +122,7 @@ int comm_do(void)
 	for (c = first_comm; c; c = c->next) {
 		if (c->fd < 0)
 			continue;
+
 		if (mcp_receive_greeting(c)) {
 			comm_error("Error when receiving greeting");
 			c->close(c);
@@ -315,6 +317,34 @@ int comm_conn_init(struct comm_s *comm)
 		return -1;
 	if (class_comm_init(comm) < 0)
 		return -1;
+
+	/*
+	 * If the configuration file defines _init(), it is inserted into the
+	 * queue first and decision requests that came from the kernel are
+	 * inserted into `init_buffer->to_wake` queue to be processed after
+	 * _init() finishes.
+	 */
+	pthread_mutex_lock(&comm->state_lock);
+	if (function_init) {
+		struct comm_buffer_s *p;
+
+		p = comm_buf_get(0, comm);
+		if (unlikely(!p)) {
+			comm_error("Can't get comm buffer for _init");
+			pthread_mutex_unlock(&comm->state_lock);
+			return -1;
+		}
+		get_empty_context(&p->context);
+		p->event = NULL;
+		p->init_handler = function_init;
+		p->ehh_list = EHH_NOTIFY_ALLOW;
+		comm->init_buffer = p;
+		// _init() is inserted here
+		comm_buf_todo(p);
+	}
+	comm->state = 1;
+	pthread_mutex_unlock(&comm->state_lock);
+
 	return 0;
 }
 
