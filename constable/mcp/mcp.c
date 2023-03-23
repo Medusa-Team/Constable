@@ -753,7 +753,7 @@ static int mcp_write(struct comm_s *c)
 	while (b->want < b->len) {
 		r = write(c->fd, b->p_comm_buf + b->want, b->len - b->want);
 		if (unlikely(r <= 0)) {
-			comm_error("medusa comm %s: Write error %d", c->name, r);
+			comm_error("medusa comm %s: Write error: %s", c->name, strerror(errno));
 			return r;
 		}
 		b->want += r;
