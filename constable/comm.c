@@ -307,7 +307,7 @@ void *write_loop(void *arg)
 	return (void *)-1;
 }
 
-int comm_conn_init(struct comm_s *comm)
+int comm_conn_init(struct comm_s *comm, bool use_lock)
 {
 	//printf("ZZZ: comm_conn_init %s\n",comm->name);
 	/* default kobjects fo internal constable use */
@@ -324,7 +324,8 @@ int comm_conn_init(struct comm_s *comm)
 	 * inserted into `init_buffer->to_wake` queue to be processed after
 	 * _init() finishes.
 	 */
-	pthread_mutex_lock(&comm->state_lock);
+	if (use_lock)
+		pthread_mutex_lock(&comm->state_lock);
 	if (function_init) {
 		struct comm_buffer_s *p;
 
@@ -343,7 +344,8 @@ int comm_conn_init(struct comm_s *comm)
 		comm_buf_todo(p);
 	}
 	comm->state = 1;
-	pthread_mutex_unlock(&comm->state_lock);
+	if (use_lock)
+		pthread_mutex_unlock(&comm->state_lock);
 
 	return 0;
 }

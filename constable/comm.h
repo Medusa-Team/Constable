@@ -156,7 +156,7 @@ int comm_alloc_buf_var_data(int size);
 struct comm_s *comm_new(char *name, int user_size);
 struct comm_s *comm_find(char *name);
 
-int comm_conn_init(struct comm_s *comm);
+int comm_conn_init(struct comm_s *comm, bool use_lock);
 
 int buffers_init(void);
 int buffers_alloc(void);

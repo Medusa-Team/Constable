@@ -484,14 +484,31 @@ static enum read_result mcp_r_query(struct comm_buffer_s *b)
 
 	/*
 	 * ParanoYa sanity check: `comm->init_buffer` is not allocated yet.
+	 *
+	 * For protocol version >= 3 this is a bug, for version < 3 this is a legitimate
+	 * state: this is the first decision request from the kernel and the comm interface
+	 * should be initialized.
 	 */
 	if (unlikely(b->comm->state == 0)) {
+		if (b->comm->version < 3) {
+			/*
+			 * Initialize comm and allocate a buffer for _init(), if defined in med
+			 * config file. Do not use locking; b->comm->state_lock is already held.
+			 */
+			if (unlikely(comm_conn_init(b->comm, false) < 0)) {
+				pthread_mutex_unlock(&b->comm->state_lock);
+				return READ_ERROR;
+			}
+			goto after_init;
+		}
+
 		comm_error("Corrupted comm '%s' state: comm->init_buffer is not allocated yet!",
 			   b->comm->name);
 		pthread_mutex_unlock(&b->comm->state_lock);
 		return READ_ERROR;
 	}
 
+after_init:
 	if (function_init && b->comm->init_buffer) {
 		/* Enqueue incoming requests to be processed after _init() finishes. */
 		comm_buf_to_queue(&b->comm->init_buffer->to_wake, b);
@@ -709,7 +726,7 @@ static enum read_result mcp_r_ready_request(struct comm_buffer_s *b)
 	b->completed = NULL;
 
 	/* initialize comm and allocate a buffer for _init(), if defined in med config file */
-	if (comm_conn_init(b->comm) < 0)
+	if (comm_conn_init(b->comm, true) < 0)
 		return READ_ERROR;
 
 	/*
