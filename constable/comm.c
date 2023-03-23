@@ -210,8 +210,8 @@ void *comm_worker(void *arg)
 			 */
 			if (function_init && b->init_handler == function_init) {
 				struct comm_s *comm;
-				//printf("comm_worker: answer for function init, buf id = %u, b->init_handler = %p\n",
-				//		b->id, b->init_handler);
+				//printf("comm_worker: answer for function init, buf id = %u, "
+				//	 "b->init_handler = %p\n", b->id, b->init_handler);
 				r = 0;
 				pthread_mutex_lock(&b->comm->state_lock);
 				pthread_mutex_unlock(&b->lock);
@@ -270,7 +270,7 @@ void *comm_worker(void *arg)
 				comm_buf_todo(b);
 			} else {
 				/*
-				 * `r` is 0 or -1 and `b->do_phase` is 1000 after `b->comm->answer()`
+				 * `r` is 0 or -1 and `b->do_phase` is 1000 after b->comm->answer()
 				 * finished. -1 means an error (can't alloc answer buffer).
 				 */
 				pthread_mutex_unlock(&b->lock);

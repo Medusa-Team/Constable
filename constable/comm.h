@@ -127,7 +127,8 @@ struct comm_s {
 	 *    answer (success/failure of update operation) from the kernel.
 	 */
 	int (*answer)(struct comm_s *c, struct comm_buffer_s *b);
-	int (*fetch_object)(struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake);
+	int (*fetch_object)(struct comm_s *c, int cont, struct object_s *o,
+			    struct comm_buffer_s *wake);
 	/**
 	 * Update object information in the kernel.
 	 *
@@ -136,7 +137,8 @@ struct comm_s {
 	 *  0 when object was successfully updated
 	 *  3 after `update` request was sent to the kernel (first pass)
 	 */
-	 int (*update_object)(struct comm_s *c, int cont, struct object_s *o, struct comm_buffer_s *wake);
+	 int (*update_object)(struct comm_s *c, int cont, struct object_s *o,
+			      struct comm_buffer_s *wake);
 
 	int (*conf_error)(struct comm_s *c, const char *fmt, ...);
 	char		user_data_[0]; /**< TODO change type to `mcp/mcp.c: struct mcp_comm_s` */
@@ -208,7 +210,7 @@ static inline struct comm_buffer_s *comm_buf_output_dequeue(struct comm_s *c)
 
 	sem_wait(&c->output_sem);
 	ret = comm_buf_from_queue_locked(&c->output);
-	//printf("comm_buf_output_dequeue: get buffer %u from OUTPUT queue and write it\n", ret->id);
+	//printf("comm_buf_output_dequeue: get buf %u from OUTPUT queue and write it\n", ret->id);
 	return ret;
 }
 
