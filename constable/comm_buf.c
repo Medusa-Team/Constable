@@ -103,17 +103,17 @@ struct comm_buffer_s *comm_buf_resize(struct comm_buffer_s *b, int size)
 		z_size = n->size;
 		z_next = n->next;
 		z_context_cb = n->context.cb;
-		z_free = n->free;
+		z_free = n->bfree;
 		*n = *b;
 		n->id = z_id;
 		n->_n = z__n;
 		n->size = z_size;
 		n->next = z_next;
 		n->context.cb = z_context_cb;
-		n->free = z_free;
+		n->bfree = z_free;
 		memcpy(n->comm_buf, b->comm_buf, n->len);
 		b->to_wake.first = b->to_wake.last = NULL;
-		b->free(b);
+		b->bfree(b);
 		return n;
 	}
 
@@ -157,7 +157,7 @@ static struct comm_buffer_s *malloc_buf(int size)
 		return NULL;
 	}
 
-	b->free = comm_buf_free;
+	b->bfree = comm_buf_free;
 	b->_n = -1;
 	b->size = size;
 
@@ -313,7 +313,7 @@ int buffers_alloc(void)
 			b = malloc_buf(4096);
 			if (b != NULL) {
 				b->_n = 0;
-				b->free(b);
+				b->bfree(b);
 				n++;
 			}
 		}
@@ -321,7 +321,7 @@ int buffers_alloc(void)
 			b = malloc_buf(8192);
 			if (b != NULL) {
 				b->_n = 1;
-				b->free(b);
+				b->bfree(b);
 				n++;
 			}
 		}

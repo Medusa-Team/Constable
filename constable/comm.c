@@ -216,7 +216,7 @@ void *comm_worker(void *arg)
 				pthread_mutex_lock(&b->comm->state_lock);
 				pthread_mutex_unlock(&b->lock);
 				comm = b->comm;
-				b->free(b);
+				b->bfree(b);
 				/* _init() is processed and waiting requests from `b->to_wake`
 				 * are already in `comm_todo`. After setting `init_buffer` to
 				 * NULL, new requests are inserted into `comm_todo` (see
@@ -274,7 +274,7 @@ void *comm_worker(void *arg)
 				 * finished. -1 means an error (can't alloc answer buffer).
 				 */
 				pthread_mutex_unlock(&b->lock);
-				b->free(b);
+				b->bfree(b);
 			}
 		} else {
 			/*

@@ -50,7 +50,7 @@ struct comm_buffer_s {
 	struct comm_buffer_s	*next; /**< Used only for the buffers free list */
 	int			_n;	/**< position in buffers[] */
 	int			size;
-	void (*free)(struct comm_buffer_s *b);
+	void (*bfree)(struct comm_buffer_s *b);
 	unsigned int		id;	/**< identification of the buffer for debug */
 
 	struct comm_s		*comm;

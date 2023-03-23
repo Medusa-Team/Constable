@@ -360,14 +360,14 @@ static inline int mcp_read_loop(struct comm_buffer_s **buf)
 		if (unlikely(result < READ_DONE)) {
 			goto error;
 		} else if (result == READ_FREE) {
-			(*buf)->free(*buf);
+			(*buf)->bfree(*buf);
 			return 0;
 		}
 	}
 	return 0;
 error:
 	(*buf)->comm->close((*buf)->comm);
-	(*buf)->free(*buf);
+	(*buf)->bfree(*buf);
 	return -1;
 }
 
@@ -746,7 +746,7 @@ static int mcp_write(struct comm_s *c)
 
 	/* Ignore buffers incoming from another comm interfaces. */
 	if (unlikely(b->open_counter != c->open_counter)) {
-		b->free(b);
+		b->bfree(b);
 		return 1;
 	}
 
@@ -761,7 +761,7 @@ static int mcp_write(struct comm_s *c)
 			comm_info("medusa comm %s: Non-atomic write", c->name);
 	}
 
-	b->free(b);
+	b->bfree(b);
 	return 1;
 }
 
@@ -770,7 +770,7 @@ static int mcp_nowrite(struct comm_s *c)
 	struct comm_buffer_s *b;
 
 	while ((b = comm_buf_from_queue_locked(&c->output)) != NULL) {
-		b->free(b);
+		b->bfree(b);
 		return 0;
 	}
 	return 0;
@@ -784,11 +784,11 @@ static int mcp_close(struct comm_s *c)
 	c->fd = -1;
 	pthread_mutex_lock(&c->output.lock);
 	while ((b = comm_buf_from_queue(&c->output)) != NULL)
-		b->free(b);
+		b->bfree(b);
 	pthread_mutex_unlock(&c->output.lock);
 	pthread_mutex_lock(&c->wait_for_answer.lock);
 	while ((b = comm_buf_from_queue(&c->wait_for_answer)) != NULL)
-		b->free(b);
+		b->bfree(b);
 	pthread_mutex_unlock(&c->wait_for_answer.lock);
 	c->open_counter--;
 	return 0;
