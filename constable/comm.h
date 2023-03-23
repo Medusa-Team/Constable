@@ -104,6 +104,7 @@ struct comm_s {
 					     * `init_buffer->to_wake` queue.
 					     */
 	int		flags;
+	uint64_t	version;	/** Protocol version provided by greeting message. */
 	struct hash_s	classes;
 	struct hash_s	events;
 

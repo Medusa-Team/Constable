@@ -304,7 +304,8 @@ static enum read_result mcp_r_greeting(struct comm_buffer_s *b)
 		return READ_ERROR;
 	}
 
-	comm_info("comm %s: protocol version %llu", b->comm->name, ((MCPptr_t *)(b->comm_buf))[1]);
+	b->comm->version = ((uint64_t *)(b->comm_buf))[1];
+	comm_info("comm %s: protocol version %llu", b->comm->name, b->comm->version);
 	b->completed = NULL;
 	return READ_FREE;
 }
