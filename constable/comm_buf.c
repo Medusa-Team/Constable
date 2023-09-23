@@ -103,23 +103,24 @@ struct comm_buffer_s *comm_buf_resize(struct comm_buffer_s *b, int size)
 		z_size = n->size;
 		z_next = n->next;
 		z_context_cb = n->context.cb;
-		z_free = n->free;
+		z_free = n->bfree;
 		*n = *b;
 		n->id = z_id;
 		n->_n = z__n;
 		n->size = z_size;
 		n->next = z_next;
 		n->context.cb = z_context_cb;
-		n->free = z_free;
+		n->bfree = z_free;
 		memcpy(n->comm_buf, b->comm_buf, n->len);
 		b->to_wake.first = b->to_wake.last = NULL;
-		b->free(b);
+		b->bfree(b);
 		return n;
 	}
 
 	return b;
 }
 
+int mcp_ready_answer(struct comm_s *c);
 
 static void comm_buf_free(struct comm_buffer_s *b)
 {
@@ -129,6 +130,11 @@ static void comm_buf_free(struct comm_buffer_s *b)
 	while ((q = comm_buf_from_queue(&(b->to_wake))) != NULL)
 		comm_buf_todo(q);
 	pthread_mutex_unlock(&(b->to_wake.lock));
+
+	/* send READY cmd to the kernel after _init() finishes */
+	if (function_init && b->comm && b->comm->version > 2 && b->comm->init_buffer == b
+	    && mcp_ready_answer(b->comm) < 0)
+		fatal("%s: MEDUSA_COMM_READY_ANSWER not send to the kernel", __func__);
 
 	//printf("comm_buf_free: free buffer %u\n", b->id);
 	if (b->_n >= 0) {
@@ -152,7 +158,7 @@ static struct comm_buffer_s *malloc_buf(int size)
 		return NULL;
 	}
 
-	b->free = comm_buf_free;
+	b->bfree = comm_buf_free;
 	b->_n = -1;
 	b->size = size;
 
@@ -308,7 +314,7 @@ int buffers_alloc(void)
 			b = malloc_buf(4096);
 			if (b != NULL) {
 				b->_n = 0;
-				b->free(b);
+				b->bfree(b);
 				n++;
 			}
 		}
@@ -316,7 +322,7 @@ int buffers_alloc(void)
 			b = malloc_buf(8192);
 			if (b != NULL) {
 				b->_n = 1;
-				b->free(b);
+				b->bfree(b);
 				n++;
 			}
 		}

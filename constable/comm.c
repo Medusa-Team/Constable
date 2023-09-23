@@ -26,6 +26,7 @@ int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q,
 struct comm_buffer_s *comm_buf_from_queue_locked(struct comm_buffer_queue_s *q);
 static pthread_t comm_workers[N_WORKER_THREADS];
 
+extern struct event_handler_s *function_init;
 int comm_nr_connections;
 static struct comm_s *first_comm;
 static struct comm_s *last_comm;
@@ -121,6 +122,7 @@ int comm_do(void)
 	for (c = first_comm; c; c = c->next) {
 		if (c->fd < 0)
 			continue;
+
 		if (mcp_receive_greeting(c)) {
 			comm_error("Error when receiving greeting");
 			c->close(c);
@@ -208,13 +210,13 @@ void *comm_worker(void *arg)
 			 */
 			if (function_init && b->init_handler == function_init) {
 				struct comm_s *comm;
-				//printf("comm_worker: answer for function init, buf id = %u, b->init_handler = %p\n",
-				//		b->id, b->init_handler);
+				//printf("comm_worker: answer for function init, buf id = %u, "
+				//	 "b->init_handler = %p\n", b->id, b->init_handler);
 				r = 0;
 				pthread_mutex_lock(&b->comm->state_lock);
 				pthread_mutex_unlock(&b->lock);
 				comm = b->comm;
-				b->free(b);
+				b->bfree(b);
 				/* _init() is processed and waiting requests from `b->to_wake`
 				 * are already in `comm_todo`. After setting `init_buffer` to
 				 * NULL, new requests are inserted into `comm_todo` (see
@@ -268,11 +270,11 @@ void *comm_worker(void *arg)
 				comm_buf_todo(b);
 			} else {
 				/*
-				 * `r` is 0 or -1 and `b->do_phase` is 1000 after `b->comm->answer()`
+				 * `r` is 0 or -1 and `b->do_phase` is 1000 after b->comm->answer()
 				 * finished. -1 means an error (can't alloc answer buffer).
 				 */
 				pthread_mutex_unlock(&b->lock);
-				b->free(b);
+				b->bfree(b);
 			}
 		} else {
 			/*
@@ -305,7 +307,7 @@ void *write_loop(void *arg)
 	return (void *)-1;
 }
 
-int comm_conn_init(struct comm_s *comm)
+int comm_conn_init(struct comm_s *comm, bool use_lock)
 {
 	//printf("ZZZ: comm_conn_init %s\n",comm->name);
 	/* default kobjects fo internal constable use */
@@ -315,6 +317,36 @@ int comm_conn_init(struct comm_s *comm)
 		return -1;
 	if (class_comm_init(comm) < 0)
 		return -1;
+
+	/*
+	 * If the configuration file defines _init(), it is inserted into the
+	 * queue first and decision requests that came from the kernel are
+	 * inserted into `init_buffer->to_wake` queue to be processed after
+	 * _init() finishes.
+	 */
+	if (use_lock)
+		pthread_mutex_lock(&comm->state_lock);
+	if (function_init) {
+		struct comm_buffer_s *p;
+
+		p = comm_buf_get(0, comm);
+		if (unlikely(!p)) {
+			comm_error("Can't get comm buffer for _init");
+			pthread_mutex_unlock(&comm->state_lock);
+			return -1;
+		}
+		get_empty_context(&p->context);
+		p->event = NULL;
+		p->init_handler = function_init;
+		p->ehh_list = EHH_NOTIFY_ALLOW;
+		comm->init_buffer = p;
+		// _init() is inserted here
+		comm_buf_todo(p);
+	}
+	comm->state = 1;
+	if (use_lock)
+		pthread_mutex_unlock(&comm->state_lock);
+
 	return 0;
 }
 

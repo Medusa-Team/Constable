@@ -50,6 +50,7 @@ static int mcp_answer(struct comm_s *c, struct comm_buffer_s *b);
 static enum read_result mcp_r_classdef_attr(struct comm_buffer_s *b);
 static enum read_result mcp_r_acctypedef_attr(struct comm_buffer_s *b);
 static enum read_result mcp_r_discard(struct comm_buffer_s *b);
+static enum read_result mcp_r_ready_request(struct comm_buffer_s *b);
 static int mcp_write(struct comm_s *c);
 static int mcp_nowrite(struct comm_s *c);
 static int mcp_close(struct comm_s *c);
@@ -303,7 +304,8 @@ static enum read_result mcp_r_greeting(struct comm_buffer_s *b)
 		return READ_ERROR;
 	}
 
-	comm_info("comm %s: protocol version %llu", b->comm->name, ((MCPptr_t *)(b->comm_buf))[1]);
+	b->comm->version = ((uint64_t *)(b->comm_buf))[1];
+	comm_info("comm %s: protocol version %llu", b->comm->name, b->comm->version);
 	b->completed = NULL;
 	return READ_FREE;
 }
@@ -359,14 +361,14 @@ static inline int mcp_read_loop(struct comm_buffer_s **buf)
 		if (unlikely(result < READ_DONE)) {
 			goto error;
 		} else if (result == READ_FREE) {
-			(*buf)->free(*buf);
+			(*buf)->bfree(*buf);
 			return 0;
 		}
 	}
 	return 0;
 error:
 	(*buf)->comm->close((*buf)->comm);
-	(*buf)->free(*buf);
+	(*buf)->bfree(*buf);
 	return -1;
 }
 
@@ -457,6 +459,10 @@ static enum read_result mcp_r_head(struct comm_buffer_s *b)
 		b->want = b->len + 2 * sizeof(MCPptr_t) + sizeof(unsigned int);
 		b->completed = mcp_r_update_answer;
 		break;
+	case MEDUSA_COMM_READY_REQUEST:
+		/* only redirect to mcp_r_ready_request() */
+		b->completed = mcp_r_ready_request;
+		break;
 	default:
 		comm_error("comm %s: Communication protocol error! (%d)",
 			   b->comm->name, ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0]);
@@ -477,44 +483,32 @@ static enum read_result mcp_r_query(struct comm_buffer_s *b)
 	pthread_mutex_lock(&b->comm->state_lock);
 
 	/*
-	 * If this is the first decision request from the kernel.
+	 * ParanoYa sanity check: `comm->init_buffer` is not allocated yet.
+	 *
+	 * For protocol version >= 3 this is a bug, for version < 3 this is a legitimate
+	 * state: this is the first decision request from the kernel and the comm interface
+	 * should be initialized.
 	 */
 	if (unlikely(b->comm->state == 0)) {
-		if (unlikely(comm_conn_init(b->comm) < 0)) {
-			pthread_mutex_unlock(&b->comm->state_lock);
-			return READ_ERROR;
-		}
-		/*
-		 * If the configuration file defines _init(), it is inserted into the
-		 * queue first and decision request that came from the kernel is
-		 * inserted into `init_buffer->to_wake` queue to be processed after
-		 * _init() finishes.
-		 */
-		if (function_init) {
-			struct comm_buffer_s *p;
-
-			p = comm_buf_get(0, b->comm);
-			if (unlikely(!p)) {
-				comm_error("Can't get comm buffer for _init");
+		if (b->comm->version < 3) {
+			/*
+			 * Initialize comm and allocate a buffer for _init(), if defined in med
+			 * config file. Do not use locking; b->comm->state_lock is already held.
+			 */
+			if (unlikely(comm_conn_init(b->comm, false) < 0)) {
 				pthread_mutex_unlock(&b->comm->state_lock);
 				return READ_ERROR;
 			}
-			get_empty_context(&p->context);
-			p->event = NULL;
-			p->init_handler = function_init;
-			comm_buf_to_queue(&p->to_wake, b);
-			p->ehh_list = EHH_NOTIFY_ALLOW;
-			b->comm->state = 1;
-			b->comm->init_buffer = p;
-			// _init() is inserted here
-			comm_buf_todo(p);
-			pthread_mutex_unlock(&b->comm->state_lock);
-			b->completed = NULL;
-			return READ_DONE;
+			goto after_init;
 		}
-		b->comm->state = 1;
+
+		comm_error("Corrupted comm '%s' state: comm->init_buffer is not allocated yet!",
+			   b->comm->name);
+		pthread_mutex_unlock(&b->comm->state_lock);
+		return READ_ERROR;
 	}
 
+after_init:
 	if (function_init && b->comm->init_buffer) {
 		/* Enqueue incoming requests to be processed after _init() finishes. */
 		comm_buf_to_queue(&b->comm->init_buffer->to_wake, b);
@@ -707,13 +701,55 @@ static enum read_result mcp_r_discard(struct comm_buffer_s *b)
 	return READ_FREE;
 }
 
+int mcp_ready_answer(struct comm_s *c)
+{
+	struct comm_buffer_s *r;
+	MCPptr_t *out;
+
+	r = comm_buf_get(sizeof(MCPptr_t), c);
+	if (unlikely(!r)) {
+		fatal("Can't alloc buffer for COMM_READY answer!");
+		return -1;
+	}
+	out = (void *)&r->comm_buf;
+	*out = byte_reorder_put_int64(c->flags, MEDUSA_COMM_READY_ANSWER);
+	r->len = sizeof(*out);
+	r->want = 0;
+	r->completed = NULL;
+
+	comm_buf_output_enqueue(c, r);
+	return 0;
+}
+
+static enum read_result mcp_r_ready_request(struct comm_buffer_s *b)
+{
+	b->completed = NULL;
+
+	/* initialize comm and allocate a buffer for _init(), if defined in med config file */
+	if (comm_conn_init(b->comm, true) < 0)
+		return READ_ERROR;
+
+	/*
+	 * If _init() is not defined, initialization is complete, send READY_ANSWER to kernel.
+	 * If it's defined, READY_ANSWER is send after _init() finishes, from comm_buf_free()
+	 * when the _init()'s buffer will be destroyed
+	 */
+	if (!function_init && mcp_ready_answer(b->comm) < 0) {
+		fatal("%s: MEDUSA_COMM_READY_ANSWER not send to the kernel", __func__);
+		return READ_ERROR;
+	}
+
+	return READ_FREE;
+}
+
 /*
  * Each comm has its own thread performing `mcp_write` function.
  * A buffer is inserted into output queue of the comm interface `c`
- * from three operations:
+ * from four operations:
  * 1) answer (at the end of the processing of the kernel request)
  * 2) update (when updating an object on the kernel site)
  * 3) fetch (when requesting an object from the kernel site)
+ * 4) ready answer (an answer to ready query from the kernel site after initialization)
  *
  * Using of this function requires that the buffers in the output queue are
  * not used from another threads of Constable. Why? This function always
@@ -728,14 +764,14 @@ static int mcp_write(struct comm_s *c)
 
 	/* Ignore buffers incoming from another comm interfaces. */
 	if (unlikely(b->open_counter != c->open_counter)) {
-		b->free(b);
+		b->bfree(b);
 		return 1;
 	}
 
 	while (b->want < b->len) {
 		r = write(c->fd, b->p_comm_buf + b->want, b->len - b->want);
 		if (unlikely(r <= 0)) {
-			comm_error("medusa comm %s: Write error %d", c->name, r);
+			comm_error("medusa comm %s: Write error: %s", c->name, strerror(errno));
 			return r;
 		}
 		b->want += r;
@@ -743,7 +779,7 @@ static int mcp_write(struct comm_s *c)
 			comm_info("medusa comm %s: Non-atomic write", c->name);
 	}
 
-	b->free(b);
+	b->bfree(b);
 	return 1;
 }
 
@@ -752,7 +788,7 @@ static int mcp_nowrite(struct comm_s *c)
 	struct comm_buffer_s *b;
 
 	while ((b = comm_buf_from_queue_locked(&c->output)) != NULL) {
-		b->free(b);
+		b->bfree(b);
 		return 0;
 	}
 	return 0;
@@ -766,11 +802,11 @@ static int mcp_close(struct comm_s *c)
 	c->fd = -1;
 	pthread_mutex_lock(&c->output.lock);
 	while ((b = comm_buf_from_queue(&c->output)) != NULL)
-		b->free(b);
+		b->bfree(b);
 	pthread_mutex_unlock(&c->output.lock);
 	pthread_mutex_lock(&c->wait_for_answer.lock);
 	while ((b = comm_buf_from_queue(&c->wait_for_answer)) != NULL)
-		b->free(b);
+		b->bfree(b);
 	pthread_mutex_unlock(&c->wait_for_answer.lock);
 	c->open_counter--;
 	return 0;

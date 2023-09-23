@@ -39,6 +39,9 @@ typedef uint64_t Mptr_t; // medusa pointer if you want to run effectivly medusa 
 #define MEDUSA_COMM_ACCTYPEDEF		0x04	/* k->c */
 #define MEDUSA_COMM_ACCTYPEUNDEF	0x05	/* k->c */
 
+#define MEDUSA_COMM_READY_REQUEST	0x06	/* k->c */
+#define MEDUSA_COMM_READY_ANSWER	0x86	/* c->k */
+
 #define MEDUSA_COMM_FETCH_REQUEST	0x88	/* c->k */
 #define MEDUSA_COMM_FETCH_ANSWER	0x08	/* k->c */
 #define MEDUSA_COMM_FETCH_ERROR		0x09	/* k->c */

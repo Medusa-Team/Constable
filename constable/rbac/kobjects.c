@@ -303,7 +303,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                         return(init_error("Can't add classhandler for ROLE/"));
                     }
 
-                    comm_conn_init(rbac_comm);
+                    comm_conn_init(rbac_comm, true);
                     return(0);
                 }
 
