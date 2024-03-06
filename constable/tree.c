@@ -30,13 +30,14 @@ int tree_init(void)
 		return -1;
 	strncpy(global_root_type->name, GLOBAL_ROOT_NAME, strlen(GLOBAL_ROOT_NAME)+1);
 
-	global_root = calloc(1, sizeof(struct tree_s));
+	global_root = calloc(1, sizeof(struct tree_s)+strlen(GLOBAL_ROOT_NAME)+1);
 	if (!global_root) {
 		free(global_root_type);
 		global_root_type = NULL;
 		return -1;
 	}
 	global_root->type = global_root_type;
+	strncpy(global_root->name, GLOBAL_ROOT_NAME, strlen(GLOBAL_ROOT_NAME)+1);
 
 	return 0;
 }
