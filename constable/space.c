@@ -421,7 +421,6 @@ static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
 	struct event_type_s *type;
 	int ehh_list;
 
-	if (t->events) {
 		event_mask_clear2(t->events[comm->conn].event);
 
 		for (ehh_list = 0; ehh_list < EHH_LISTS; ehh_list++) {
@@ -465,7 +464,6 @@ static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
 				}
 			}
 		} // for ehh_list
-	} // if t->events
 
 	for (p = t->child; p != NULL; p = p->next)
 		tree_comm_reinit(comm, p);
