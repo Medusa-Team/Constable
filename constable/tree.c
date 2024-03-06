@@ -31,15 +31,32 @@ int tree_init(void)
 	strncpy(global_root_type->name, GLOBAL_ROOT_NAME, strlen(GLOBAL_ROOT_NAME)+1);
 
 	global_root = calloc(1, sizeof(struct tree_s)+strlen(GLOBAL_ROOT_NAME)+1);
-	if (!global_root) {
-		free(global_root_type);
-		global_root_type = NULL;
-		return -1;
-	}
+	if (!global_root)
+		goto free_global_root_type;
+
 	global_root->type = global_root_type;
 	strncpy(global_root->name, GLOBAL_ROOT_NAME, strlen(GLOBAL_ROOT_NAME)+1);
 
+	/*
+	 * Allocate ->events array only for dummy use in tree_comm_reinit()
+	 * function. This array in the global root node shouldn't be used for
+	 * real values. It's required only for executing the same code path for
+	 * all nodes of Unified Name Space Tree in the above mentioned function.
+	 */
+	global_root->events = comm_new_array(sizeof(struct tree_event_s));
+	if (global_root->events == NULL)
+		goto free_global_root;
+
 	return 0;
+
+free_global_root:
+	free(global_root);
+	global_root = NULL;
+free_global_root_type:
+	free(global_root_type);
+	global_root_type = NULL;
+
+	return -1;
 }
 
 int tree_set_default_path(char *new)
