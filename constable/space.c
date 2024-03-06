@@ -421,49 +421,49 @@ static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
 	struct event_type_s *type;
 	int ehh_list;
 
-		event_mask_clear2(t->events[comm->conn].event);
+	event_mask_clear2(t->events[comm->conn].event);
 
-		for (ehh_list = 0; ehh_list < EHH_LISTS; ehh_list++) {
-			evhash_foreach(hh, t->subject_handlers[ehh_list]) {
-				en = event_type_find_name(hh->handler->op_name);
-				if (en == NULL) {
-					comm->conf_error(comm, "Unknown event name %s\n", hh->handler->op_name);
-					continue;
-				}
-				type = en->events[comm->conn];
-				if (type == NULL) {
-					comm->conf_error(comm, "Unknown event type %s\n", hh->handler->op_name);
-					continue;
-				}
-
-				if (type->monitored_operand == type->op[0]) {
-					if (type->monitored_operand == t->type->class_handler->classname->classes[comm->conn])
-						event_mask_or2(t->events[comm->conn].event, type->mask);
-					else
-						comm->conf_error(comm, "event %s subject class mismatch", hh->handler->op_name);
-				}
+	for (ehh_list = 0; ehh_list < EHH_LISTS; ehh_list++) {
+		evhash_foreach(hh, t->subject_handlers[ehh_list]) {
+			en = event_type_find_name(hh->handler->op_name);
+			if (en == NULL) {
+				comm->conf_error(comm, "Unknown event name %s\n", hh->handler->op_name);
+				continue;
+			}
+			type = en->events[comm->conn];
+			if (type == NULL) {
+				comm->conf_error(comm, "Unknown event type %s\n", hh->handler->op_name);
+				continue;
 			}
 
-			evhash_foreach(hh, t->object_handlers[ehh_list]) {
-				en = event_type_find_name(hh->handler->op_name);
-				if (en == NULL) {
-					comm->conf_error(comm, "Unknown event name %s\n", hh->handler->op_name);
-					continue;
-				}
-				type = en->events[comm->conn];
-				if (type == NULL) {
-					comm->conf_error(comm, "Unknown event type %s\n", hh->handler->op_name);
-					continue;
-				}
-
-				if (type->monitored_operand == type->op[1]) {
-					if (type->monitored_operand == t->type->class_handler->classname->classes[comm->conn])
-						event_mask_or2(t->events[comm->conn].event, type->mask);
-					else
-						comm->conf_error(comm, "event %s object class mismatch", hh->handler->op_name);
-				}
+			if (type->monitored_operand == type->op[0]) {
+				if (type->monitored_operand == t->type->class_handler->classname->classes[comm->conn])
+					event_mask_or2(t->events[comm->conn].event, type->mask);
+				else
+					comm->conf_error(comm, "event %s subject class mismatch", hh->handler->op_name);
 			}
-		} // for ehh_list
+		}
+
+		evhash_foreach(hh, t->object_handlers[ehh_list]) {
+			en = event_type_find_name(hh->handler->op_name);
+			if (en == NULL) {
+				comm->conf_error(comm, "Unknown event name %s\n", hh->handler->op_name);
+				continue;
+			}
+			type = en->events[comm->conn];
+			if (type == NULL) {
+				comm->conf_error(comm, "Unknown event type %s\n", hh->handler->op_name);
+				continue;
+			}
+
+			if (type->monitored_operand == type->op[1]) {
+				if (type->monitored_operand == t->type->class_handler->classname->classes[comm->conn])
+					event_mask_or2(t->events[comm->conn].event, type->mask);
+				else
+					comm->conf_error(comm, "event %s object class mismatch", hh->handler->op_name);
+			}
+		}
+	} // for ehh_list
 
 	for (p = t->child; p != NULL; p = p->next)
 		tree_comm_reinit(comm, p);
