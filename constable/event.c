@@ -209,7 +209,8 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 		pthread_mutex_unlock(&debug_def_lock);
 	}
 
-	evname = event_type_find_name(e->acctype.name);
+	/* allocate a new event descriptor, if it doesn't exist yet */
+	evname = event_type_find_name(e->acctype.name, true);
 	if (evname == NULL) {
 		free(e);
 		return NULL;
@@ -221,7 +222,16 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 	return e;
 }
 
-struct event_names_s *event_type_find_name(char *name)
+/*
+ * Find event description by @name in the global list `events' and returns it.
+ *
+ * If a corresponding event description is not found and @alloc_new is:
+ * 1) %true: a new event description is created and pointer to it is returned;
+ *	     in case of an error (i.e. memory allocation failure) %NULL is
+ *	     returned;
+ * 2) %false: %NULL is returned.
+ */
+struct event_names_s *event_type_find_name(char *name, bool alloc_new)
 {
 	struct event_names_s *e;
 	int i;
@@ -234,6 +244,9 @@ struct event_names_s *event_type_find_name(char *name)
 		}
 	}
 	pthread_mutex_unlock(&events_lock);
+
+	if (alloc_new == false)
+		return NULL;
 
 	e = malloc(sizeof(struct event_names_s) + strlen(name) + 1);
 	if (e == NULL)

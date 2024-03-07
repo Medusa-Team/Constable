@@ -166,7 +166,7 @@ int rbac_init( struct module_s *m )
     {	init_error(Out_of_memory);
         return(-1);
     }
-    rbac_proc_ch->user=(void*)(event=event_type_find_name("setuid"));
+    rbac_proc_ch->user=(void*)(event=event_type_find_name("setuid", true));
     if( (((struct proc_class_handler_s*)rbac_proc_ch)->attr_uid=(struct medusa_attribute_s**)comm_new_array(sizeof(struct medusa_attribute_s*)))==NULL )
     {	init_error(Out_of_memory);
         return(-1);

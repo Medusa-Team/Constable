@@ -73,42 +73,42 @@ int rbac_adm_perm_init( void )
         return(-1);
     }
     /* create_role */
-    event=event_type_find_name("create_role");
+    event=event_type_find_name("create_role", true);
     strncpy(eh[0].op_name,"rbac_h_create_role",MEDUSA_OPNAME_MAX);
     eh[0].handler=rbac_h_create_role;
     eh[0].local_vars=NULL;
     if( register_event_handler(&(eh[0]),event,&(event->handlers_hash[EHH_VS_ALLOW]),ALL_OBJ,ALL_OBJ)<0 )
         return(init_error("rbac: Can't register handler for create_role"));
     /* delete_role */
-    event=event_type_find_name("delete_role");
+    event=event_type_find_name("delete_role", true);
     strncpy(eh[1].op_name,"rbac_h_delete_role",MEDUSA_OPNAME_MAX);
     eh[1].handler=rbac_h_delete_role;
     eh[1].local_vars=NULL;
     if( register_event_handler(&(eh[1]),event,&(event->handlers_hash[EHH_VS_ALLOW]),ALL_OBJ,ALL_OBJ)<0 )
         return(init_error("rbac: Can't register handler for delete_role"));
     /* role_hierarchy */
-    event=event_type_find_name("role_hierarchy");
+    event=event_type_find_name("role_hierarchy", true);
     strncpy(eh[2].op_name,"rbac_h_role_hierarchy",MEDUSA_OPNAME_MAX);
     eh[2].handler=rbac_h_role_hierarchy;
     eh[2].local_vars=NULL;
     if( register_event_handler(&(eh[2]),event,&(event->handlers_hash[EHH_VS_ALLOW]),ALL_OBJ,ALL_OBJ)<0 )
         return(init_error("rbac: Can't register handler for role_hierarchy"));
     /* uses_assign */
-    event=event_type_find_name("uses_assign");
+    event=event_type_find_name("uses_assign", true);
     strncpy(eh[3].op_name,"rbac_h_user_assign",MEDUSA_OPNAME_MAX);
     eh[3].handler=rbac_h_user_assign;
     eh[3].local_vars=NULL;
     if( register_event_handler(&(eh[3]),event,&(event->handlers_hash[EHH_VS_ALLOW]),ALL_OBJ,ALL_OBJ)<0 )
         return(init_error("rbac: Can't register handler for uses_assign"));
     /* role_assign */
-    event=event_type_find_name("role_assign");
+    event=event_type_find_name("role_assign", true);
     strncpy(eh[4].op_name,"rbac_h_role_assign",MEDUSA_OPNAME_MAX);
     eh[4].handler=rbac_h_role_assign;
     eh[4].local_vars=NULL;
     if( register_event_handler(&(eh[4]),event,&(event->handlers_hash[EHH_VS_ALLOW]),ALL_OBJ,ALL_OBJ)<0 )
         return(init_error("rbac: Can't register handler for role_assign"));
     /* permission_assign */
-    event=event_type_find_name("permission_assign");
+    event=event_type_find_name("permission_assign", true);
     strncpy(eh[5].op_name,"rbac_h_perm_assign",MEDUSA_OPNAME_MAX);
     eh[5].handler=rbac_h_perm_assign;
     eh[5].local_vars=NULL;

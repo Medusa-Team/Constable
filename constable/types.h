@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 
 /* Force a compilation error if condition is true, but also produce a
  * result (of value 0 and type int), so the expression can be used

@@ -364,7 +364,8 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 				error("NULL event name");
 				break;
 			}
-			event = event_type_find_name(op_name);
+			/* allocate a new event descriptor, if it doesn't exist yet */
+			event = event_type_find_name(op_name, true);
 			if (event == NULL)
 				error("Unknown operation %s", op_name);
 		}

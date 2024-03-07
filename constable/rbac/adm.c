@@ -81,7 +81,7 @@ int rbac_adm_create_role( struct comm_buffer_s *to_wait, char *name )
     }
     to_wait->do_phase=2;
     comm_buf_to_queue(&(p->to_wake),to_wait);
-    p->event=(event_type_find_name("create_role"))->events[rbac_comm->conn];
+    p->event=(event_type_find_name("create_role", true))->events[rbac_comm->conn];
     p->completed=rbac_adm_create_role_do;
     p->user1=(void*)to_wait;
     p->user2=(void*)name;
@@ -115,7 +115,7 @@ int rbac_adm_delete_role( struct comm_buffer_s *to_wait, char *name )
     }
     to_wait->do_phase=2;
     comm_buf_to_queue(&(p->to_wake),to_wait);
-    p->event=(event_type_find_name("delete_role"))->events[rbac_comm->conn];
+    p->event=(event_type_find_name("delete_role", true))->events[rbac_comm->conn];
     p->completed=rbac_adm_delete_role_do;
     p->user1=(void*)to_wait;
     p->user2=(void*)r;	/* FIXME: usecount */
@@ -147,7 +147,7 @@ int rbac_adm_hierarchy( int add, struct comm_buffer_s *to_wait, char *sup_name, 
     }
     to_wait->do_phase=2;
     comm_buf_to_queue(&(p->to_wake),to_wait);
-    p->event=(event_type_find_name("role_hierarchy"))->events[rbac_comm->conn];
+    p->event=(event_type_find_name("role_hierarchy", true))->events[rbac_comm->conn];
     p->completed=rbac_adm_hierarchy_do1;
     p->user1=(void*)to_wait;
     p->user2=(void*)rb;	/* FIXME: usecount */
@@ -160,7 +160,7 @@ int rbac_adm_hierarchy( int add, struct comm_buffer_s *to_wait, char *sup_name, 
 int rbac_adm_hierarchy_do1( struct comm_buffer_s *b )
 { void *rp;
     rp=b->context.object.data;
-    b->event=(event_type_find_name("role_hierarchy"))->events[rbac_comm->conn];
+    b->event=(event_type_find_name("role_hierarchy", true))->events[rbac_comm->conn];
     get_event_context(rbac_comm,&(b->context),b->event,b->comm_buf,&(((struct comm_buffer_s*)(b->user1))->context.subject),(b->user2));
     b->completed=rbac_adm_hierarchy_do2;
     b->user2=(void*)rp;
@@ -207,7 +207,7 @@ int rbac_adm_user( int add, struct comm_buffer_s *to_wait, char *role, char *use
     }
     to_wait->do_phase=2;
     comm_buf_to_queue(&(p->to_wake),to_wait);
-    p->event=(event_type_find_name("uses_assign"))->events[rbac_comm->conn];
+    p->event=(event_type_find_name("uses_assign", true))->events[rbac_comm->conn];
     p->completed=rbac_adm_user_do1;
     p->user1=(void*)to_wait;
     p->user2=(void*)r;	/* FIXME: usecount */
@@ -220,7 +220,7 @@ int rbac_adm_user( int add, struct comm_buffer_s *to_wait, char *role, char *use
 int rbac_adm_user_do1( struct comm_buffer_s *b )
 { void *u;
     u=b->context.object.data;
-    b->event=(event_type_find_name("role_assign"))->events[rbac_comm->conn];
+    b->event=(event_type_find_name("role_assign", true))->events[rbac_comm->conn];
     get_event_context(rbac_comm,&(b->context),b->event,b->comm_buf,&(((struct comm_buffer_s*)(b->user1))->context.subject),(b->user2));
     b->completed=rbac_adm_user_do2;
     b->user2=(void*)u;
@@ -279,7 +279,7 @@ int rbac_adm_perm( int add, struct comm_buffer_s *to_wait, char *role, char *acc
     perm->access=str2at(access);
     strncpy(perm->space,space,sizeof(perm->space)-1);
 
-    p->event=(event_type_find_name("permission_assign"))->events[rbac_comm->conn];
+    p->event=(event_type_find_name("permission_assign", true))->events[rbac_comm->conn];
     p->completed=rbac_adm_perm_do1;
     p->user1=(void*)to_wait;
     p->user2=(void*)r;	/* FIXME: usecount */
@@ -292,7 +292,7 @@ int rbac_adm_perm( int add, struct comm_buffer_s *to_wait, char *role, char *acc
 int rbac_adm_perm_do1( struct comm_buffer_s *b )
 { void *perm;
     perm=b->context.object.data;
-    b->event=(event_type_find_name("role_assign"))->events[rbac_comm->conn];
+    b->event=(event_type_find_name("role_assign", true))->events[rbac_comm->conn];
     get_event_context(rbac_comm,&(b->context),b->event,b->comm_buf,&(((struct comm_buffer_s*)(b->user1))->context.subject),(b->user2));
     b->completed=rbac_adm_perm_do2;
     b->user2=(void*)perm;

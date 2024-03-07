@@ -379,7 +379,7 @@ int space_add_event(struct event_handler_s *handler, int ehh_list, struct space_
 		return -1;
 	}
 
-	type = event_type_find_name(handler->op_name);
+	type = event_type_find_name(handler->op_name, true);
 	if (type == NULL) {
 		error("Event %s does not exist\n", handler->op_name);
 		return -1;
@@ -425,7 +425,7 @@ static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
 
 	for (ehh_list = 0; ehh_list < EHH_LISTS; ehh_list++) {
 		evhash_foreach(hh, t->subject_handlers[ehh_list]) {
-			en = event_type_find_name(hh->handler->op_name);
+			en = event_type_find_name(hh->handler->op_name, false);
 			if (en == NULL) {
 				comm->conf_error(comm, "Unknown event name %s\n", hh->handler->op_name);
 				continue;
@@ -445,7 +445,7 @@ static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
 		}
 
 		evhash_foreach(hh, t->object_handlers[ehh_list]) {
-			en = event_type_find_name(hh->handler->op_name);
+			en = event_type_find_name(hh->handler->op_name, false);
 			if (en == NULL) {
 				comm->conf_error(comm, "Unknown event name %s\n", hh->handler->op_name);
 				continue;
@@ -484,7 +484,7 @@ int space_init_event_mask(struct comm_s *comm)
 
 	for (space = global_spaces; space != NULL; space = space->next) {
 		for (le = space->levent; le != NULL; le = le->prev) {
-			en = event_type_find_name(le->handler->op_name);
+			en = event_type_find_name(le->handler->op_name, false);
 			if (en == NULL) {
 				comm->conf_error(comm, "Unknown event name %s\n", le->handler->op_name);
 				continue;
