@@ -537,8 +537,13 @@ after_init:
 
 static int mcp_answer(struct comm_s *c, struct comm_buffer_s *b)
 {
+#ifdef DEBUG_TRACE
+	struct medusa_attribute_s *apid, *acmdline;
+	struct object_s *object;
 	int pid;
-	struct medusa_attribute_s *apid;
+	char cmdline[256];
+	char *result;
+#endif
 	struct comm_buffer_s *r;
 	#pragma pack(push)
 	#pragma pack(1)
@@ -609,17 +614,64 @@ static int mcp_answer(struct comm_s *c, struct comm_buffer_s *b)
 	r->want = 0;
 	r->completed = NULL;
 
-	pid = -1;
-	apid = get_attribute(b->context.subject.class, "pid");
-	if (apid) {
-		object_get_val(&b->context.subject, apid, &pid, sizeof(pid));
-	} else {
-		apid = get_attribute(b->context.operation.class, "pid");
-		if (apid)
-			object_get_val(&b->context.operation, apid, &pid, sizeof(pid));
+#ifdef DEBUG_TRACE
+	switch ((short)out->res) {
+	case MED_ERR: // -1
+		result = "ERR  ";
+		break;
+	case MED_FORCE_ALLOW: // 0
+		result = "FORCE_ALLOW";
+		break;
+	case MED_DENY: // 1
+		result = "DENY ";
+		break;
+	case MED_FAKE_ALLOW: // 2
+		result = "FAKE_ALLOW ";
+		break;
+	case MED_ALLOW: // 3
+		result = "ALLOW";
+		break;
+	default: // BUG
+		result = "__UNKNOWN__";
 	}
-	printf("answer 0x%016lx %2d [%s:%d]\n",
-	       out->id, (short)out->res, b->context.operation.class->m.name, pid);
+
+	printf("answer 0x%016lx %s for %s",
+	       out->id, result, b->context.operation.class->m.name);
+
+	pid = -1;
+	memset(cmdline, '\0', sizeof(cmdline));
+
+	// search for the `pid' attr in the subject
+	object = &b->context.subject;
+	apid = get_attribute(b->context.subject.class, "pid");
+	acmdline = get_attribute(b->context.subject.class, "cmdline");
+
+	// if `pid' is not part of subject's attrs, search for it in
+	// operation's attrs
+	if (!apid) {
+		object = &b->context.operation;
+		apid = get_attribute(b->context.operation.class, "pid");
+		acmdline = get_attribute(b->context.operation.class, "cmdline");
+	}
+
+	// get values for `pid' and `cmdline'
+	if (apid) {
+		object_get_val(object, apid, &pid, sizeof(pid));
+		printf(" [PID %d", pid);
+
+		// not all events have `cmdline' attr defined
+		if (acmdline) {
+			object_get_val(object, acmdline, cmdline, 128);
+			if (*cmdline)
+				printf(", '%s'", cmdline);
+			else
+				printf(", <empty cmdline>");
+		}
+		printf("]");
+	}
+
+	printf("\n");
+#endif
 
 	comm_buf_output_enqueue(c, r);
 
