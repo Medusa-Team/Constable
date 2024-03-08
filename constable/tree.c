@@ -14,8 +14,46 @@
  * FIXME: Ak niekto chce vytvorit .*, mala by sa pod nou vytvorit este jedna .*
  */
 
+/* The root's (of the Unified Name Space Tree) name. */
 #define GLOBAL_ROOT_NAME "/"
 
+/*
+ * Set in medusa config file(s) by primary tree definition:
+ *	primary tree "name";
+ *
+ * Primary tree:
+ * -------------
+ * Medusa conf language uses strings "/a/b/c" or paths @"d/e/f"
+ * as a path representation descending from root of the Unified
+ * Name Space Tree (UNST). Very often the representation of the
+ * file system in the UNST is needed and in that case the file
+ * system should be connected to the root of UNST through its
+ * own tree definition node. For example the config lines:
+ *	tree "fs" of file;
+ *	tree "domain" of process;
+ * define two nodes of UNST; each node represents the root of
+ * a subtree, which contains data (nodes) of its own type:
+ * "fs" contains file objects and "domain" process objects.
+ *
+ *	/		root of the UNST
+ *	|--"fs"		root of the "fs" subtree
+ *	|
+ *	 --"domain"	root of the "domain" subtree
+ *
+ * Implication: all objects in a subtree are reachable only
+ * through string/path prefix (a name of the root of the
+ * subtree). For example, in a space definition for objects
+ * of fs one writes:
+ *	space my_home = "fs/home/my";
+ * For the sake of simplicity and portability of configuration file(s)
+ * Medusa language proposes a possibility of defining one so-called
+ * "primary" tree. If defined, the string/path prefix "/" will be prepended
+ * with the name of defined primary tree. For example
+ *	primary tree "fs";
+ *	space my_home = "/home/my";
+ * will be internally handled as path "fs/home/my" descending from the
+ * root of UNST.
+ */
 static char *default_path;
 
 static struct tree_type_s *global_root_type;
@@ -23,6 +61,7 @@ struct tree_s *global_root;
 
 /* ----------------------------- */
 
+/* Unified Name Space Tree (global root) initialization. */
 int tree_init(void)
 {
 	global_root_type = calloc(1, sizeof(struct tree_type_s)+strlen(GLOBAL_ROOT_NAME)+1);
@@ -59,6 +98,13 @@ free_global_root_type:
 	return -1;
 }
 
+/*
+ * Set @new tree name as default path. Called for medusa conf
+ * primary tree definition:
+ *	primary tree "new";
+ *
+ * @new: Name of the tree to set as primary.
+ */
 int tree_set_default_path(char *new)
 {
 	if (default_path != NULL)

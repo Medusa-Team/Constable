@@ -343,6 +343,21 @@ struct class_handler_s *generic_get_new_class_handler_s(struct class_names_s *cl
 	return ch;
 }
 
+/*
+ * Called only from language/mcp.c:conf_lang_param_out() from
+ * tree registration (`case Ptreereg').
+ *
+ * @name: Name of the tree to be registered.
+ * @subhandler: The expression <exp> to be evaluated in tree definition:
+ *	tree "name" [test_enter | clone ...] of <class> [by <op> <exp>];
+ *	@subhandler's handler is set to execute_handler() function and
+ *	it's name to the "name" of the tree to be registered.
+ * @event: Event <op> triggering the @subhandler's evaluation.
+ * @class: Name of object's type of the tree to be registered. One tree
+ *	can hold only one type of objects. The name of this type is
+ *	stored here (in @class->name field).
+ * @flags: See generic.h for GFL_USE_VSE and GFL_FROM_OBJECT documentation.
+ */
 int generic_init(char *name, struct event_handler_s *subhandler, struct event_names_s *event, struct class_names_s *class, int flags)
 {
 	struct tree_type_s *type;

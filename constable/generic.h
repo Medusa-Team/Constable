@@ -11,8 +11,22 @@
 #include "event.h"
 #include "object.h"
 
-#define GFL_USE_VSE	0x01
-#define GFL_FROM_OBJECT	0x02
+/*
+ * Tree definition in language/conf_lang.c:
+ *	tree "name" [test_enter | clone ...] of <class> [by <op> <exp>];
+ *
+ * GFL_USE_VSE - if set, test, whether the subject of the <op> is
+ *	 allowed enter a given node of tree "name" (for more
+ *	 details see functions generic_enter_tree_node() and
+ *	 generic_hierarchy_handler_decide()). Set by language
+ *	 keyword 'test_enter'.
+ * GFL_FROM_OBJECT - if set, copy `cinfo' from object of the <op>
+ *	 (presumably parent object); for more information see
+ *	 generic_hierarchy_handler_decide(). Set by language
+ *	 keyword 'clone'.
+ */
+#define GFL_USE_VSE	0x01	// language keyword 'test_enter'
+#define GFL_FROM_OBJECT	0x02	// language keyword 'clone'
 
 struct g_event_handler_s {
 	struct event_handler_s h;

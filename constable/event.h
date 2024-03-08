@@ -46,6 +46,10 @@ struct event_mask_s {
 	char bitmap[8];
 };
 
+/*
+ * Struct with variable length.
+ * Allocated by event_type_add().
+ */
 struct event_type_s {
 	struct hash_ent_s	hashent;
 	struct event_names_s	*evname;
@@ -57,6 +61,26 @@ struct event_type_s {
 	struct class_s		operation_class;
 };
 
+/*
+ * Struct with variable length.
+ * Allocated by event_type_find_name().
+ *
+ * @next: Linked list of all registered names of events.
+ *	The last appended name event is the head of the global linked
+ *	list `events'.
+ * @name: Pointer to the name of the event. It's initialized one byte
+ *	behind the struct itself.
+ * @events: Set in event.c:event_type_add(). There can be various versions
+ *	of the event through active connections handled by Constable,
+ *	so each connection keep pointer to the its own definition
+ *	of the event in this array. The byte layout of the event is
+ *	unknown until the connection with a monitored application is
+ *	established (the layout definition is part of the initialization
+ *	phase of Medusa communication protocol).
+ * @handlers_hash: Set by event.c:evhash_add(). Stores list heads for
+ *	each operation mode of Constable. Each list contains handlers
+ *	related to the event with @name.
+ */
 struct event_names_s {
 	struct event_names_s	*next;
 	char			*name;

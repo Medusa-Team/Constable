@@ -369,7 +369,34 @@ int space_apply_all(void)
 	return 0;
 }
 
-/* neprida event_mask */
+/*
+ * Called from conf_lang.c:conf_lang_param_out() in event registration
+ * case (see 'Preg' handling).
+ *	<subj> <event> [:ehh_list] [<obj>] { <cmd> ... }
+ *
+ * @handler: Event name (@handler->op_name) of the event to be registered.
+ * @ehh_list: Operation mode, in which the handler should be executed:
+ *		1) EHH_VS_ALLOW
+ *		2) EHH_VS_DENY
+ *		3) EHH_NOTIFY_ALLOW
+ *		4) EHH_NOTIFY_DENY
+ *	New event is added to the appropriate list of events based on
+ *	value of @ehh_list.
+ * @subject: space identification (ALL_OBJ or subject's space). Never NULL.
+ * @object: NULL or space identification (ALL_OBJ or object's space). Can be
+ *	NULL only if <obj> is omitted in event definition.
+ * @subj_node: NULL or subject's node in Unified Name Space Tree. If not NULL,
+ *	@subject is set to ALL_OBJ.
+ * @obj_node: NULL or object's node in Unified Name Space Tree. If not NULL,
+ *	@object is set to ALL_OBJ.
+ *
+ * Note: This function does not activate triggering of registered event on all
+ * relevant nodes in Unified Name Space Tree. That means, does not change event
+ * mask of nodes. For this activity see space_init_event_mask() function.
+ * Information (the triple <subject space, event, object space>) for later use
+ * in space_init_event_mask() is stored in levent_s structure created and
+ * filled by new_levent() function.
+ */
 int space_add_event(struct event_handler_s *handler, int ehh_list, struct space_s *subject, struct space_s *object, struct tree_s *subj_node, struct tree_s *obj_node)
 {
 	struct event_names_s *type;
@@ -385,11 +412,27 @@ int space_add_event(struct event_handler_s *handler, int ehh_list, struct space_
 		return -1;
 	}
 
+	/*
+	 * 1) @subject cannot be NULL; paranoYa check
+	 * 2) @subject is ALL_OBJ if:
+	 *    a) is explicitly defined as '*' (asterix) in event definition;
+	 *       @subj_node in this case must be NULL
+	 *    b) @subj_node is not NULL
+	 */
 	if (subject != NULL && subject != ALL_OBJ && new_levent(&(subject->levent), handler, subject, object) == NULL)
 		return -1;
+	/*
+	 * 1) @object is NULL, if it's omitted in event definition;
+	 *    @subj_node must be NULL, too.
+	 * 2) @object is ALL_OBJ analogically as in case of @subject, see
+	 *    comment above for @subject == ALL_OBJ
+	 */
 	if (object != NULL && object != ALL_OBJ && new_levent(&(object->levent), handler, subject, object) == NULL)
 		return -1;
 
+	//printf("YYY: %s subject=%p, object=%p, subj_node=%p, obj_node=%p\n", handler->op_name, subject, object, subj_node, obj_node);
+
+	/* @subject and @object must be both ALL_OBJ */
 	if (subj_node && obj_node) {
 		object = space_create(NULL, 0);
 		if (object == NULL)
@@ -399,14 +442,20 @@ int space_add_event(struct event_handler_s *handler, int ehh_list, struct space_
 			return -1;
 		//printf("ZZZ: subj=%s obj=%s tak registrujem podla svetov\n", subj_node->name, obj_node->name);
 		register_event_handler(handler, type, &(subj_node->subject_handlers[ehh_list]), space_get_vs(subject), space_get_vs(object));
-	} else if (subj_node) {
+	}
+	/* @subject = ALL_OBJ, @object is arbitrary, @obj_node = NULL */
+	else if (subj_node) {
 		//printf("ZZZ: registrujem pri subjekte %s\n", subj_node->name);
 		register_event_handler(handler, type, &(subj_node->subject_handlers[ehh_list]), space_get_vs(subject), space_get_vs(object));
-	} else if (obj_node) {
+	}
+	/* @subject != NULL, @object = ALL_OBJ, @subj_node = NULL */
+	else if (obj_node) {
 		//printf("ZZZ: registrujem pri objekte %s\n", obj_node->name);
 		register_event_handler(handler, type, &(obj_node->object_handlers[ehh_list]), space_get_vs(subject), space_get_vs(object));
-	} else {
-		//printf("ZZZ: registrujem podla svetov\n");
+	}
+	/* @subject != NULL, @object is arbitrary, @subj_node = @obj_node = NULL */
+	else {
+		//printf("ZZZ: registrujem '%s' podla svetov\n", handler->op_name);
 		register_event_handler(handler, type, &(type->handlers_hash[ehh_list]), space_get_vs(subject), space_get_vs(object));
 	}
 
@@ -471,7 +520,20 @@ static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
 		tree_comm_reinit(comm, p);
 }
 
-/* space_init_event_mask must be called after connection was estabilished */
+/*
+ * Activate triggering of events on all relevant nodes in Unified Name Space Tree.
+ *
+ * @comm: Identification of the communication with a monitored client.
+ *	@comm->conn: ID of the communication
+ *	@comm->conf_error: private error printing function of the comm interface
+ *
+ * Global variables used by this function: `global_root' and `global_spaces'.
+ *
+ * Note: As this function uses event's definitions, which are set in the initial phase
+ * of communication, the function must be called after connection was established and
+ * the process of event's definitions was finished.
+ */
+// TODO: prerob rozhranie funkcie, aby mala namiesto `comm_s' iba 2 args: comm->conf_error a comm->conn
 int space_init_event_mask(struct comm_s *comm)
 {
 	struct space_s *space;
@@ -495,6 +557,7 @@ int space_init_event_mask(struct comm_s *comm)
 				continue;
 			}
 
+			// it's an error, if subject/object of the event should have subject/object but doesn't
 			if (((type->op[0] == NULL) != (le->subject == NULL)) ||
 					((type->op[1] == NULL) != (le->object == NULL)))
 				comm->conf_error(comm, "Invalid use of event %s\n", le->handler->op_name);
@@ -502,11 +565,13 @@ int space_init_event_mask(struct comm_s *comm)
 			if (le->subject != NULL && le->subject != ALL_OBJ && type->monitored_operand == type->op[0]) {
 				arg.conn = comm->conn;
 				arg.type = type;
+				// activate triggering of the event `type' on all nodes in ->subject space
 				space_for_every_path(le->subject, (fepf_t)tree_add_event_mask_do, &arg);
 			}
 			if (le->object != NULL && le->object != ALL_OBJ && type->monitored_operand == type->op[1]) {
 				arg.conn = comm->conn;
 				arg.type = type;
+				// activate triggering of the event `type' on all nodes in ->object space
 				space_for_every_path(le->object, (fepf_t)tree_add_event_mask_do, &arg);
 			}
 		} // for space->levent

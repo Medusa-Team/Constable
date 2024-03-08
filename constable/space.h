@@ -29,6 +29,22 @@ struct ltree_s {
 #define	LTREE_T_NSPACE	(LTREE_T_SPACE|LTREE_T_EXCLUDE)
 #define	LTREE_RECURSIVE	0x80
 
+/*
+ * Allocated by space_add_event()->new_levent(); space_add_event() is called
+ * from configuration file in case of event/access <op> definition:
+ *	<subject> <op> [:ehh_list] [<object>] { <cmd> ... }
+ *
+ * Function new_levent() is called for <subject> and/or <object>, if it's
+ * a space. Both <subject> and <object> can be of two types:
+ *	1) space identificator (or '*' (star) representing all spaces)
+ *	2) node in Unified Name Space Tree
+ * So new_levent() is called for <subject> and/or <object>, if at least
+ * one of them is a valid space identificator (i.e. not a node, not a
+ * special value ALL_OBJ representing all spaces).
+ *
+ * Struct levent_s stores list (->prev) of events (->handler), where
+ * ->subject and/or ->object is/are a space(s).
+ */
 struct levent_s {
 	struct levent_s		*prev;
 	struct event_handler_s	*handler;

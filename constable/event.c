@@ -108,6 +108,10 @@ int event_free_all_events(struct comm_s *comm)
 	return 0;
 }
 
+/*
+ * Called from mcp/mcp.c:mcp_r_acctypedef_attr() after reading all data
+ * related to a new access/event type which has to be registered.
+ */
 struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s *m, struct medusa_attribute_s *a)
 {
 	struct event_type_s *e;

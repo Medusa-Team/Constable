@@ -68,6 +68,26 @@ struct class_s {
 	struct medusa_attribute_s attr[0];
 };
 
+/*
+ * Struct with variable length.
+ * Initialized by get_class_by_name().
+ *
+ * @next: Linked list of all registered names of classes.
+ *	The last appended name class is the head of the global linked
+ *	list `classes'.
+ * @name: Pointer to the name of the class. It's initialized one byte
+ *	behind the struct itself.
+ * @events: Set in class.c:add_class(). There can be various versions
+ *	of the class through active connections handled by Constable,
+ *	so each connection keep pointer to the its own definition
+ *	of the class in this array. The byte layout of the class is
+ *	unknown until the connection with a monitored application is
+ *	established (the layout definition is part of the initialization
+ *	phase of Medusa communication protocol).
+ * @class_handler: Set by class.c:class_add_handler() called from
+ *	generic.c:generic_init(). Handles manipulation with objects
+ *	of this class.
+ */
 struct class_names_s {
 	struct class_names_s *next;
 	char *name;

@@ -68,7 +68,7 @@ struct comm_buffer_s {
 	struct event_hadler_hash_s *hh; /**< Stores pointer to the current handler
 					  * being processed in an asynchronous call.
 					  */
-	struct class_handler_s	*ch;
+	struct class_handler_s	*ch; /** as ->hh, but for current class handler */
 	struct event_context_s	context;
 	struct event_type_s	*event; /**< Event type of current decision request, see
 					  * mcp_r_head().
