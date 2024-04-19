@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Constable: space.c
- * (c)2002 by Marek Zelem <marek@terminus.sk>
+ * (c) 2002 by Marek Zelem <marek@terminus.sk>
+ * (c) 2024 by Matus Jokay <matus.jokay@gmail.com>
  */
 
 #include "constable.h"
@@ -14,17 +15,46 @@
 /* FIXME: check infinite loops between space_for_every_path, is_included and is_excluded! */
 #define	MAX_SPACE_PATH	32
 
-typedef void (*fepf_t)(struct tree_s *t, void *arg);
+/*
+ * Auxiliary structure for detecting looping of spaces when evaluating space
+ * members.
+ *
+ * @path: Trace of spaces examinated during space members evaluation. Pointers
+ *	to examinated spaces are stored in the @path array starting at index 0.
+ * @n: Actual count of the elements in the @path.
+ */
+struct space_path_s {
+	struct space_s *path[MAX_SPACE_PATH];
+	int n;
+};
 
+typedef void (*fepf_t)(struct tree_s *t, void *arg);
+static int space_path_exclude(struct space_path_s *sp, struct tree_s *t);
+
+/* Linked list of all spaces. */
 struct space_s *global_spaces;
 
-/**
- * Create a new path and append it to the end of \p prev.
- * \param prev tree node to append to
- * \param path_or_space tree node to append
- * \param type of the node to append: LTREE_T_TREE or LTREE_T_SPACE
+/*
+ * new_path() create a new element of a linked list of paths in some space:
+ * fill the data pointer by @path_or_space, fill the element data type by @type
+ * and append it before the @prev.
+ *
+ * @prev: List element to append before it or %NULL.
+ * @path_or_space: Data stored in the newly created list element.
+ * @type: Data type stored in the newly created list element (%LTREE_T_TREE
+ *	or %LTREE_T_SPACE, see space.h for details)./
+ *
+ * Note: The only user of this function is space_add_path(). It calls
+ * new_path() and the result stores into @prev. To prevent the loss
+ * of memory block(s) in case of an error (i.e. out of memory) by
+ * rewriting @prev in caller space_add_path() with a %NULL value,
+ * the entire list @prev is freed before returning the %NULL.
+ *
+ * TODO: pripajanie do zoznamu robit podla new_levent() v tejto funkcii, nie vo
+ *	 volajucej space_add_path()
  */
-static struct ltree_s *new_path(struct ltree_s *prev, void *path_or_space, int type)
+static struct ltree_s *new_path(struct ltree_s *prev, void *path_or_space,
+			        int type)
 {
 	char **errstr;
 	struct ltree_s *l;
@@ -33,17 +63,48 @@ static struct ltree_s *new_path(struct ltree_s *prev, void *path_or_space, int t
 	if (l == NULL) {
 		errstr = (char **) pthread_getspecific(errstr_key);
 		*errstr = Out_of_memory;
+
+		/*
+		 * Free the whole list before return %NULL to prevent
+		 * the loss of memory block(s) in the caller.
+		 *
+		 * while (prev) {
+		 *	l = prev;
+		 *	prev = prev->prev;
+		 *	free(l);
+		 * }
+		 */
 		return NULL;
 	}
 
+	/* Connect new list element before @prev. */
 	l->prev = prev;
+	/* Set list element's data pointer and type. */
 	l->path_or_space = path_or_space;
 	l->type = type;
 
 	return l;
 }
 
-static struct levent_s *new_levent(struct levent_s **prev, struct event_handler_s *handler, struct space_s *subject, struct space_s *object)
+/*
+ * new_levent() create a new element of a linked list of levent_s structs. The
+ * new element will be filled with the data (@handler, @subject, @object) and
+ * appended before the @head, so the new element becomes a new head of the
+ * linked list.
+ *
+ * @head: List head or %NULL.
+ * @handler: Handler of an event with corresponding @subject and @object.
+ * @subject: %NULL or space representing subject of the event.
+ * @object: %NULL or space representing object of the event.
+ *
+ * Note: At least one of @subject/@object should be not %NULL.
+ *
+ * For more details see documentation of `struct levent_s' in space.h.
+ */
+static struct levent_s *new_levent(struct levent_s **head,
+				   struct event_handler_s *handler,
+				   struct space_s *subject,
+				   struct space_s *object)
 {
 	char **errstr;
 	struct levent_s *l;
@@ -55,15 +116,25 @@ static struct levent_s *new_levent(struct levent_s **prev, struct event_handler_
 		return NULL;
 	}
 
+	/* Set list element's data pointers. */
 	l->handler = handler;
 	l->subject = subject;
 	l->object = object;
-	l->prev =  *prev;
-	*prev = l;
+
+	/* Set the new list element as a new head of the list. */
+	l->prev =  *head;
+	*head = l;
 
 	return l;
 }
 
+/*
+ * space_find() find a space in the list `global_spaces' based on the @name.
+ *
+ * @name: The name of a space to find.
+ *
+ * Returns %NULL if no space with @name is found.
+ */
 struct space_s *space_find(char *name)
 {
 	struct space_s *t;
@@ -74,6 +145,22 @@ struct space_s *space_find(char *name)
 	return NULL;
 }
 
+/*
+ * space_create() create a new space with a @name. If a space with the @name
+ * already exists or there is no memory to allocate a new space, %NULL is
+ * returned. Otherwise the newly created space is returned.
+ *
+ * @name: The name of a space to be created. If a space with this @name exists
+ *	in the global list of spaces, %NULL is returned. The @name can be
+ *	%NULL. In this case is created anonymous space with %ANON_SPACE_NAME
+ *	name. There can be multiple anonymous spaces in the global space list.
+ * @primary: If set, the space will be primary. For explanation, see the
+ *	documentation of `struct space_s' in space.h.
+ *
+ * This function creates a space, but the space will be only declared (empty
+ * and not used yet). For explanation of allocation, declaration and definition
+ * of a space see documentation of `struct space_s' in space.h.
+ */
 struct space_s *space_create(char *name, int primary)
 {
 	char **errstr;
@@ -96,24 +183,29 @@ struct space_s *space_create(char *name, int primary)
 		return NULL;
 	}
 
-	strcpy(t->name, name);
+	strcpy(t->name, name);	/* the space will be declared */
 	for (a = 0; a < NR_ACCESS_TYPES; a++)
 		vs_clear(t->vs[a]);
-        vs_clear(t->vs_id);
-	t->levent = NULL;
-	t->ltree = NULL;
+	vs_clear(t->vs_id);	/* the space is not defined yet */
+	t->levent = NULL;	/* the space is not used in any event yet */
+	t->ltree = NULL;	/* the space is without any member yet */
 	t->primary = primary;
 	t->next = global_spaces;
-	global_spaces = t;
+	global_spaces = t;	/* set a new head of the global space list */
 
 	return t;
 }
 
-struct space_path_s {
-	struct space_s *path[MAX_SPACE_PATH];
-	int n;
-};
-
+/*
+ * space_path_add() add another @space into array @sp, if it's not in the @sp
+ * yet. If it's already in the array, a loop in examined trace is detected.
+ *
+ * @sp: An 'array' of examined spaces where @space will be insert to.
+ * @space: A space to be inserted into @sp.
+ *
+ * Function keeps trace of all examined spaces and checks for an eventual loop
+ * in it.
+ */
 static int space_path_add(struct space_path_s *sp, struct space_s *space)
 {
 	int i;
@@ -132,24 +224,44 @@ static int space_path_add(struct space_path_s *sp, struct space_s *space)
 	return 1;
 }
 
-static int is_excluded(struct tree_s *test, struct space_s *space);
-
-static int space_path_exclude(struct space_path_s *sp, struct tree_s *t)
-{
-	int i, r, rn;
-
-	r = 0;
-	for (i = 0; i < sp->n; i++) {
-		rn = is_excluded(t, sp->path[i]);
-		r = rn > r ? rn : r;
-		if (r > 1)
-			break;
-	}
-	return r;
-}
-
-/* is_included: 0 - not, 1 - yes */
-static int is_included_i(struct tree_s *test, struct space_path_s *sp, struct space_s *space, int force_recursive)
+/*
+ * is_included_i() test whether the @test node is member of a @space. If yes,
+ * %true is returned, %false otherwise.
+ *
+ * @test: The node whose membership in a @space is tested.
+ * @sp: An auxiliary structure that is used to detect cycles when evaluating
+ *	@test's membership in the spaces. See the documentation of struct
+ *	space_path_s. Each space visited in the process of membership
+ *	evaluation is stored into @sp and forms a trace of the evaluation;
+ *	see space_path_add() function.
+ * @space: A space within which the @test node membership is evaluated.
+ * @force_recursive: A flag specifying recursive membership evaluation. If
+ *	set, @test node can be a descendant of some node member of the @space.
+ *
+ * The membership evaluation algorithm consist of these steps:
+ * 1) Do a loop detection for the @space.
+ * 2) For each member of the @space:
+ *	a) If a member of the @space is another space, evaluate membership of
+ *	   @test in it. IOW, apply the recursion.
+ *	b) If a member of the @space is a node of UNST, @test belongs to the
+ *	   @space, if:
+ *		i) @test is the member itself, or
+ *		ii) @test is a descendant of the member and recursion flag is
+ *		    set on @test or on the member.
+ *	   Each of above mentioned conditions is necessary but no sufficient.
+ *	   At the end, there should be made a test whether the @test node is
+ *	   not excluded from the spaces in actual evaluation trace recorded
+ *	   in @sp.
+ *
+ * Note: Excluding a @test from @sp takes precedence over including it. This
+ * means that it is enough to find a single case of its exclusion and further
+ * inclusions are not taken into consideration.
+ */
+/* is_included_i: 0 - not, 1 - yes */
+// TODO: 1) zmenit typ navratovej hodnoty na boolean
+//	 2) zmenit typ force_recursive na boolean, aj v dalsich funkciach
+static int is_included_i(struct tree_s *test, struct space_path_s *sp,
+			 struct space_s *space, int force_recursive)
 {
 	struct ltree_s *l;
 
@@ -180,7 +292,21 @@ static int is_included_i(struct tree_s *test, struct space_path_s *sp, struct sp
 	return 0;
 }
 
-static int is_included(struct tree_s *test, struct space_s *space, int force_recursive)
+/*
+ * is_included() return an indication whether the @test node is included in
+ * the @space.
+ *
+ * @test: The node whose membership in a @space is tested.
+ * @space: A space within which the @test node membership is evaluated.
+ * @force_recursive: A flag specifying recursive membership evaluation. If
+ *	set, @test node can be a descendant of some node member of the @space.
+ *
+ * Return values:
+ *	0 if the @test is not included in the @space,
+ *	1 if the @test is included in the @space.
+ */
+static int is_included(struct tree_s *test, struct space_s *space,
+		       int force_recursive)
 {
 	struct space_path_s sp;
 
@@ -188,8 +314,19 @@ static int is_included(struct tree_s *test, struct space_s *space, int force_rec
 	return is_included_i(test, &sp, space, force_recursive);
 }
 
-/* is_excluded: 0 - not, 1 - yes, 2 - recursive */
-static int is_excluded(struct tree_s *test, struct space_s *space)
+/*
+ * is_excluded_i() return an indication whether the @test node is excluded
+ * from the @space.
+ *
+ * @test: The node whose membership in a @space is tested.
+ * @space: A space within which the @test node membership is evaluated.
+ *
+ * Return values:
+ *	0 if the @test is not excluded from the @space,
+ *	1 if the @test is excluded from the @space,
+ *	2 if the @test and its childs are excluded from the @space.
+ */
+static int is_excluded_i(struct tree_s *test, struct space_s *space)
 {
 	struct ltree_s *l;
 	int r = 0;
@@ -202,6 +339,7 @@ static int is_excluded(struct tree_s *test, struct space_s *space)
 					return (l->type & LTREE_RECURSIVE) ? 2 : 1;
 				if ((l->type & LTREE_RECURSIVE)
 						&& tree_is_offspring(test, l->path_or_space))
+					// TODO return 2, lebo LTREE_RECURSIVE je True
 					r = (l->type & LTREE_RECURSIVE) ? 2 : 1;
 			}
 			break;
@@ -221,6 +359,47 @@ static int is_excluded(struct tree_s *test, struct space_s *space)
 	return r;
 }
 
+/*
+ * space_path_exclude() test whether the @test node is excluded from the
+ * trace of the evaluation @sp.
+ *
+ * @test: The node whose exclusion from the @sp is tested.
+ * @sp: An auxiliary structure that is used to detect cycles when evaluating
+ *	@test's membership in the spaces. See the documentation of struct
+ *	space_path_s. Each space visited in the process of membership
+ *	evaluation is stored into @sp and forms a trace of the evaluation;
+ *	see space_path_add() function.
+ *
+ * Return values:
+ *	0 if the @test is not excluded from the @sp,
+ *	1 if the @test is excluded from the @sp,
+ *	2 if the @test and its childs are excluded from the @sp.
+ */
+static int space_path_exclude(struct space_path_s *sp, struct tree_s *test)
+{
+	int i, r, rn;
+
+	r = 0;
+	for (i = 0; i < sp->n; i++) {
+		rn = is_excluded_i(test, sp->path[i]);
+		r = rn > r ? rn : r;
+		if (r > 1)
+			break;
+	}
+	return r;
+}
+
+/*
+ * Auxiliary structure to hold arguments while using tree_for_alternatives()
+ * function call.
+ *
+ * @sp: A trace of the evaluation. See the documentation of struct space_path_s
+ *	and space_path_add() function.
+ * @recursive: A flag specifying recursive membership evaluation.
+ * @func: A function to be applied to a node of UNST, if it is not excluded
+ *	from the @sp. The tree node is produced by tree_for_alternatives().
+ * @arg: Arguments of the @func.
+ */
 struct space_for_one_path_s {
 	struct space_path_s *sp;
 	int recursive;
@@ -228,7 +407,24 @@ struct space_for_one_path_s {
 	void *arg;
 };
 
-static void space_for_one_path_i(struct tree_s *t, struct space_for_one_path_s *a)
+/*
+ * space_for_one_path_i() is applied to each node @t of UNST produced by
+ * tree_for_alternatives() function.
+ *
+ * @t: A node of UNST produced by tree_for_alternatives(). On this node is
+ *	applied @a->func function with @a->arg arguments, if the node is not
+ *	excluded from the @a->sp trace. If @a->recursive is set, the function
+ *	space_for_one_path_i() is applied for the childs of @t, too.
+ * @a: Auxiliary structure holding arguments for space_for_one_path_i():
+ *	-> sp: A trace of the evaluation.
+ *	-> recursive: A flag specifying recursive evaluation.
+ *	-> func: A function to be applied to a node @t of UNST.
+ *	-> arg: Arguments of the ->func.
+ *
+ * Function has no return value.
+ */
+static void space_for_one_path_i(struct tree_s *t,
+				 struct space_for_one_path_s *a)
 {
 	int r;
 	struct tree_s *p;
@@ -245,7 +441,23 @@ static void space_for_one_path_i(struct tree_s *t, struct space_for_one_path_s *
 	}
 }
 
-static void space_for_one_path(struct tree_s *t, struct space_path_s *sp, int recursive, fepf_t func, void *arg)
+/*
+ * space_for_one_path() call space_for_one_path_i() for each alternative of a
+ * @t node of UNST. In other words, @func(@arg) is applied to @t and all
+ * alternatives of it, if @t is not excluded from @sp. Furthermore, @func(@arg)
+ * is applied to all children of @t, if @recursive is set and a respective
+ * child is not excluded from @sp.
+ *
+ * @t: A node of UNST, for which (alternatives and children if @recursive is
+ *	set) @func(@arg) will be applied (if the related node candidate is not
+ *	excluded from @sp).
+ * @sp: A trace of the space evaluation.
+ * @recursive: A flag specifying recursive evaluation.
+ * @func: A function to be applied to a node @t of UNST.
+ * @arg: Arguments of the @func.
+ */
+static void space_for_one_path(struct tree_s *t, struct space_path_s *sp,
+			       int recursive, fepf_t func, void *arg)
 {
 	struct space_for_one_path_s a;
 
@@ -256,7 +468,20 @@ static void space_for_one_path(struct tree_s *t, struct space_path_s *sp, int re
 	tree_for_alternatives(t, (fepf_t)space_for_one_path_i, &a);
 }
 
-static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp, int force_recursive, fepf_t func, void *arg)
+/*
+ * space_for_every_path_i() apply @func(@arg) to each member of the @space.
+ * If a member of @space is another space, space_for_every_path_i() is called
+ * recursively. Every time the function is called, @space is stored in the
+ * trace @sp.
+ *
+ * @space: A space to whose node members the @func(@arg) should be applied.
+ * @sp: A trace of the space evaluation.
+ * @force_recursive: A flag specifying recursive evaluation.
+ * @func: A function to be applied to each node member of @space.
+ * @arg: Arguments of the @func.
+ */
+static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp,
+				  int force_recursive, fepf_t func, void *arg)
 {
 	struct ltree_s *l;
 
@@ -284,6 +509,22 @@ static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp
 	return 0;
 }
 
+/*
+ * space_for_every_path() initialize auxiliary structure for running internal
+ * (recursive) execution function space_for_every_path_i(). The function should
+ * apply @func(@arg) for every node member of @space.
+ *
+ * @space: A space to whose node members the @func(@arg) should be applied.
+ * @func: A function to be applied to every node member of @space.
+ * @arg: Arguments of the @func.
+ *
+ * There are three @func used with space_for_every_path():
+ * 1) set_primary_space_do()
+ * 2) tree_add_event_mask_do()
+ * 3) tree_add_vs_do()
+ */
+// TODO: premenuj set_primary_space_do na tree_set_primary_space_do, nech to je
+// konzistentne s ostatnymi pouzitiami
 static int space_for_every_path(struct space_s *space, fepf_t func, void *arg)
 {
 	struct space_path_s sp;
@@ -292,6 +533,12 @@ static int space_for_every_path(struct space_s *space, fepf_t func, void *arg)
 	return space_for_every_path_i(space, &sp, 0, func, arg);
 }
 
+/*
+ * set_primary_space_do() set the primary @space for a given node @t of UNST.
+ *
+ * @t: A node of UNST for which will be set the primary space to @space.
+ * @space: A space to be set as primary in a given node @t of UNST.
+ */
 static void set_primary_space_do(struct tree_s *t, struct space_s *space)
 {
 	if (t->primary_space != NULL && t->primary_space != space)
@@ -300,41 +547,67 @@ static void set_primary_space_do(struct tree_s *t, struct space_s *space)
 	t->primary_space = space;
 }
 
-/* ----------------------------------- */
-
+/*
+ * Auxiliary structure which holds two arguments for tree_add_event_mask_do().
+ *
+ * @conn: Communication channel number (Constable can handle multiple
+ *	connections to various applications).
+ * @type: Event type.
+ */
 struct tree_add_event_mask_do_s {
 	int conn;
 	struct event_type_s *type;
 };
 
-static void tree_add_event_mask_do(struct tree_s *p, struct tree_add_event_mask_do_s *arg)
+/*
+ * tree_add_event_mask_do() set @arg->type event to be monitored in the node @p
+ * of UNST.
+ *
+ * @p: A node of UNST for which will be set @arg->type event.
+ * @arg: Event type to be set and communication channel number.
+ */
+static void tree_add_event_mask_do(struct tree_s *p,
+				   struct tree_add_event_mask_do_s *arg)
 {
 	if (arg->type->monitored_operand == p->type->class_handler->classname->classes[arg->conn])
 		event_mask_or2(p->events[arg->conn].event, arg->type->mask);
+	//else
+	//	arg->type->monitored_operand->comm->conf_error(arg->type->monitored_operand->comm, "event %s object class mismatch", arg->type->evname->name);
 }
 
-/* ----------------------------------- */
-
+/*
+ * Auxiliary structure which holds two arguments for tree_add_vs_do().
+ *
+ * @which: Specifies which set of virtual spaces will be modified.
+ * @vs: A set of virtual spaces to be set in the node of UNST.
+ */
 struct tree_add_vs_do_s {
 	int which;
 	const vs_t *vs;
 };
 
+/*
+ * tree_add_vs_do() set virtual spaces @arg->vs in the node @p of UNST.
+ * @arg->which specifies which set of virtual spaces will be modified.
+ *
+ * @p: A node of UNST in which will be set @arg->vs set of virtual spaces.
+ * @arg: Specification of the set of virtual spaces to be modified and a set of
+ *	virtual spaces to be set.
+ */
 static void tree_add_vs_do(struct tree_s *p, struct tree_add_vs_do_s *arg)
 {
 	vs_add(arg->vs, p->vs[arg->which]);
 }
 
-/* ----------------------------------- */
-
-
-
-/**
- * Add path node to the list of paths of space and set its type.
- * \param space New path will be added to this virtual space.
- * \param type of the new node (see macros LTREE_*).
- * \param path_or_space Pointer to the node that will be added.
- * \return 0 on success, -1 otherwise
+/*
+ * space_add_path() add path/space node @path_or_space to the list of paths of
+ * @space and set its @type.
+ *
+ * @space: A space into which @path_or_space of given @type will be inserted.
+ * @type: Type of the new node: a space or a node of UNST.
+ * @path_or_space: New path/space which will be added to virtual @space.
+ *
+ * Returns 0 on success, -1 otherwise (i.e. OOM error).
  */
 int space_add_path(struct space_s *space, int type, void *path_or_space)
 {
@@ -347,7 +620,12 @@ int space_add_path(struct space_s *space, int type, void *path_or_space)
 	return 0;
 }
 
-/* space_apply_all must be called after all spaces are defined */
+/*
+ * space_apply_all() set 1) membership of UNST nodes into virtual spaces and
+ * 2) information about primary spaces.
+ *
+ * Note: space_apply_all() must be called after all spaces are defined.
+ */
 int space_apply_all(void)
 {
 	struct space_s *space;
@@ -370,6 +648,10 @@ int space_apply_all(void)
 }
 
 /*
+ * space_add_event() register an event @handler for given operation mode
+ * @ehh_list. The subject of the registered operation is stored in @subject
+ * (or @subj_node) and the corresponding object in @object/@obj_node.
+ *
  * Called from conf_lang.c:conf_lang_param_out() in event registration
  * case (see 'Preg' handling).
  *	<subj> <event> [:ehh_list] [<obj>] { <cmd> ... }
@@ -397,7 +679,9 @@ int space_apply_all(void)
  * in space_init_event_mask() is stored in levent_s structure created and
  * filled by new_levent() function.
  */
-int space_add_event(struct event_handler_s *handler, int ehh_list, struct space_s *subject, struct space_s *object, struct tree_s *subj_node, struct tree_s *obj_node)
+int space_add_event(struct event_handler_s *handler, int ehh_list,
+		    struct space_s *subject, struct space_s *object,
+		    struct tree_s *subj_node, struct tree_s *obj_node)
 {
 	struct event_names_s *type;
 
@@ -419,18 +703,25 @@ int space_add_event(struct event_handler_s *handler, int ehh_list, struct space_
 	 *       @subj_node in this case must be NULL
 	 *    b) @subj_node is not NULL
 	 */
-	if (subject != NULL && subject != ALL_OBJ && new_levent(&(subject->levent), handler, subject, object) == NULL)
+	if (subject != NULL && subject != ALL_OBJ &&
+	    new_levent(&(subject->levent), handler, subject, object) == NULL)
 		return -1;
 	/*
 	 * 1) @object is NULL, if it's omitted in event definition;
-	 *    @subj_node must be NULL, too.
+	 *    @obj_node must be NULL, too.
 	 * 2) @object is ALL_OBJ analogically as in case of @subject, see
 	 *    comment above for @subject == ALL_OBJ
 	 */
-	if (object != NULL && object != ALL_OBJ && new_levent(&(object->levent), handler, subject, object) == NULL)
+	if (object != NULL && object != ALL_OBJ &&
+	    new_levent(&(object->levent), handler, subject, object) == NULL)
 		return -1;
 
-	//printf("YYY: %s subject=%p, object=%p, subj_node=%p, obj_node=%p\n", handler->op_name, subject, object, subj_node, obj_node);
+	// TODO: ked je v konfigu `* getprocess {...}', subject = ALL_OBJ, object = NULL,
+	// subj_node = NULL, obj_node = NULL. Ale nevyhodnoti sa spravne, ze chyba objekt.
+	// Vid tree_comm_reinit(), tam bY sa to malo...
+	// Jaaaaaj ved to preto, lebo je to zavesene na type->handlers_hash a tam este
+	// nemame spravenu kontrolu, vid TODO 3 v space_init_event_mask() ;)
+	printf("YYY: %s subject=%p, object=%p, subj_node=%p, obj_node=%p\n", handler->op_name, subject, object, subj_node, obj_node);
 
 	/* @subject and @object must be both ALL_OBJ */
 	if (subj_node && obj_node) {
@@ -441,27 +732,67 @@ int space_add_event(struct event_handler_s *handler, int ehh_list, struct space_
 		if (new_levent(&(object->levent), handler, subject, object) == NULL)
 			return -1;
 		//printf("ZZZ: subj=%s obj=%s tak registrujem podla svetov\n", subj_node->name, obj_node->name);
-		register_event_handler(handler, type, &(subj_node->subject_handlers[ehh_list]), space_get_vs(subject), space_get_vs(object));
+		register_event_handler(handler, type,
+				       &(subj_node->subject_handlers[ehh_list]),
+				       space_get_vs(subject),
+				       space_get_vs(object));
 	}
 	/* @subject = ALL_OBJ, @object is arbitrary, @obj_node = NULL */
 	else if (subj_node) {
 		//printf("ZZZ: registrujem pri subjekte %s\n", subj_node->name);
-		register_event_handler(handler, type, &(subj_node->subject_handlers[ehh_list]), space_get_vs(subject), space_get_vs(object));
+		register_event_handler(handler, type,
+				       &(subj_node->subject_handlers[ehh_list]),
+				       space_get_vs(subject),
+				       space_get_vs(object));
 	}
 	/* @subject != NULL, @object = ALL_OBJ, @subj_node = NULL */
 	else if (obj_node) {
 		//printf("ZZZ: registrujem pri objekte %s\n", obj_node->name);
-		register_event_handler(handler, type, &(obj_node->object_handlers[ehh_list]), space_get_vs(subject), space_get_vs(object));
+		register_event_handler(handler, type,
+				       &(obj_node->object_handlers[ehh_list]),
+				       space_get_vs(subject),
+				       space_get_vs(object));
 	}
 	/* @subject != NULL, @object is arbitrary, @subj_node = @obj_node = NULL */
 	else {
 		//printf("ZZZ: registrujem '%s' podla svetov\n", handler->op_name);
-		register_event_handler(handler, type, &(type->handlers_hash[ehh_list]), space_get_vs(subject), space_get_vs(object));
+		register_event_handler(handler, type,
+				       &(type->handlers_hash[ehh_list]),
+				       space_get_vs(subject),
+				       space_get_vs(object));
 	}
 
 	return 0;
 }
 
+/*
+ * tree_comm_reinit() reinitialize triggering of events on nodes of UNST.
+ *
+ * @comm: Identification of the established communication interface with a
+ *	  supervised application.
+ * @t: A node od UNST on which (and its children, too) the reinitialization will
+ *     be applied.
+ *
+ * The reinitialization concerns those events that have an UNST node defined
+ * as <subj> and/or <obj>, see event definition in conf_lang.c:
+ *	<subj> <event> [:ehh_list] [<obj>] { <cmd> ... }
+ *
+ * As event's definitions in the configuration file precede their byte
+ * representations (which are transfered after the connection with the
+ * controlled application is established), there can be some invalid event
+ * definition(s) from the PoV of subject/object types or event name(s) itself.
+ * These checks can be made only after the connection was established.
+ *
+ * This function checks validity of all subject and object events in the node
+ * @t of UNST as follows:
+ * 1) the event name should be registered and there should be known an
+ *    event's byte representation on the given communication channel;
+ * 2) subject/object type validity: the type specified in the config file
+ *    definition should be the same as in the byte representation send from
+ *    the supervised application.
+ */
+// TODO: je mozne prerobit aj tuto funkciu, nech nema cele comm, ale iba
+// comm->conn, comm->conf_error a comm->name (pre conf_error())?
 static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
 {
 	struct tree_s *p;
@@ -476,12 +807,14 @@ static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
 		evhash_foreach(hh, t->subject_handlers[ehh_list]) {
 			en = event_type_find_name(hh->handler->op_name, false);
 			if (en == NULL) {
-				comm->conf_error(comm, "Unknown event name %s\n", hh->handler->op_name);
+				comm->conf_error(comm, "Unknown event name %s\n",
+						 hh->handler->op_name);
 				continue;
 			}
 			type = en->events[comm->conn];
 			if (type == NULL) {
-				comm->conf_error(comm, "Unknown event type %s\n", hh->handler->op_name);
+				comm->conf_error(comm, "Unknown event type %s\n",
+						 hh->handler->op_name);
 				continue;
 			}
 
@@ -496,12 +829,14 @@ static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
 		evhash_foreach(hh, t->object_handlers[ehh_list]) {
 			en = event_type_find_name(hh->handler->op_name, false);
 			if (en == NULL) {
-				comm->conf_error(comm, "Unknown event name %s\n", hh->handler->op_name);
+				comm->conf_error(comm, "Unknown event name %s\n",
+						 hh->handler->op_name);
 				continue;
 			}
 			type = en->events[comm->conn];
 			if (type == NULL) {
-				comm->conf_error(comm, "Unknown event type %s\n", hh->handler->op_name);
+				comm->conf_error(comm, "Unknown event type %s\n",
+						 hh->handler->op_name);
 				continue;
 			}
 
@@ -521,7 +856,8 @@ static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
 }
 
 /*
- * Activate triggering of events on all relevant nodes in Unified Name Space Tree.
+ * space_init_event_mask() activate triggering of events on all relevant nodes
+ * in Unified Name Space Tree.
  *
  * @comm: Identification of the communication with a monitored client.
  *	@comm->conn: ID of the communication
@@ -529,11 +865,13 @@ static void tree_comm_reinit(struct comm_s *comm, struct tree_s *t)
  *
  * Global variables used by this function: `global_root' and `global_spaces'.
  *
- * Note: As this function uses event's definitions, which are set in the initial phase
- * of communication, the function must be called after connection was established and
- * the process of event's definitions was finished.
+ * Note: As this function uses event's byte layout definitions, which are set
+ * in the initial phase of communication, the function must be called after
+ * connection with supervised application was established and the process of
+ * event's byte layout definitions was finished.
  */
-// TODO: prerob rozhranie funkcie, aby mala namiesto `comm_s' iba 2 args: comm->conf_error a comm->conn
+// TODO: prerob rozhranie funkcie, aby mala namiesto `comm_s' 3 args:
+// comm->name (pre conf_error), comm->conf_error a comm->conn (pre tree_comm_reinit)
 int space_init_event_mask(struct comm_s *comm)
 {
 	struct space_s *space;
@@ -548,30 +886,42 @@ int space_init_event_mask(struct comm_s *comm)
 		for (le = space->levent; le != NULL; le = le->prev) {
 			en = event_type_find_name(le->handler->op_name, false);
 			if (en == NULL) {
-				comm->conf_error(comm, "Unknown event name %s\n", le->handler->op_name);
+				comm->conf_error(comm, "Unknown event name %s\n",
+						 le->handler->op_name);
 				continue;
 			}
 			type = en->events[comm->conn];
 			if (type == NULL) {
-				comm->conf_error(comm, "Unknown event type %s\n", le->handler->op_name);
+				comm->conf_error(comm, "Unknown event type %s\n",
+						 le->handler->op_name);
 				continue;
 			}
+
+			// TODO 1: pridaj tento test aj do  tree_comm_reinit()
+			// TODO 2: tento aj predosle testy daj do funkcie, nech sa neopakuje kod
+			// TODO 3: za volanie tree_comm_reinit() pridaj volanie novej funkcie,
+			//	ktora skontroluje type->handlers_hash zoznamy event handlerov;
+			//	tam su tie, ktore maju ako subjekt aj ako objekt space, nie
+			//	uzol UNST
 
 			// it's an error, if subject/object of the event should have subject/object but doesn't
 			if (((type->op[0] == NULL) != (le->subject == NULL)) ||
 					((type->op[1] == NULL) != (le->object == NULL)))
-				comm->conf_error(comm, "Invalid use of event %s\n", le->handler->op_name);
+				comm->conf_error(comm, "Invalid use of event %s\n",
+						 le->handler->op_name);
 
 			if (le->subject != NULL && le->subject != ALL_OBJ && type->monitored_operand == type->op[0]) {
 				arg.conn = comm->conn;
 				arg.type = type;
 				// activate triggering of the event `type' on all nodes in ->subject space
+				//printf("%s ->subject of %s\n", space->name, type->evname->name);
 				space_for_every_path(le->subject, (fepf_t)tree_add_event_mask_do, &arg);
 			}
 			if (le->object != NULL && le->object != ALL_OBJ && type->monitored_operand == type->op[1]) {
 				arg.conn = comm->conn;
 				arg.type = type;
 				// activate triggering of the event `type' on all nodes in ->object space
+				//printf("%s ->object of %s\n", space->name, type->evname->name);
 				space_for_every_path(le->object, (fepf_t)tree_add_event_mask_do, &arg);
 			}
 		} // for space->levent
@@ -580,15 +930,28 @@ int space_init_event_mask(struct comm_s *comm)
 	return 0;
 }
 
-/**
- * Place subject with virtual space \p space into virtual spaces defined by \p
- * vs for access type \p which. Original virtual spaces of \p space won't be
- * changed.
- * \param space Virtual spaces of the subject
- * \param which Access type
- * \param vs Virtual spaces to add
- * \return 0 on success, -1 on invalid which value
+/*
+ * space_add_vs() place subject with virtual @space into virtual spaces defined
+ * by @vs for a given access type @which. Original virtual spaces of @space
+ * won't be changed.
+ *
+ * @space: A set of virtual spaces of each access type of a subject.
+ * @which: Access type. Access types keywords are defined in language/lex.c:
+ *	MEMBER, READ or RECEIVE, WRITE or SEND, SEE, CREATE, ERASE, ENTER,
+ *	CONTROL.
+ * @vs: Virtual spaces of an object to add.
+ *
+ * Returns 0 on success, -1 on invalid @which value.
+ *
+ * Called from conf_lang.c:conf_lang_param_out() in subject's access type(s)
+ * definition(s) case (see 'Paddvs' handling).
+ *	<subj> <acces_type> <obj> , [<acces_type>] <obj> ... ;
+ * The function is called to add the object's virtual spaces to the subject's
+ * relevant permission set (i.e. to the subject's virtual spaces of a given
+ * access type) in order to enable the subject to perform the given operation
+ * on the object.
  */
+/* TODO: premenuj which -> access_type, space -> subj_space, vs -> obj_vs */
 int space_add_vs(struct space_s *space, int which, vs_t *vs)
 {
 	if (which < 0 || which >= NR_ACCESS_TYPES)
@@ -597,12 +960,44 @@ int space_add_vs(struct space_s *space, int which, vs_t *vs)
 	return 0;
 }
 
+/*
+ * space_get_vs() return an identification of the @space in the VS model.
+ *
+ * @space: A space which identification should be returned.
+ *
+ * This function provides a real definition of the @space. A space doesn't have
+ * an identification (i.e. allocated its identification bit in VS model) until
+ * this function is called. For more information about allocation, declaration
+ * and definition of a space see space.h:struct space_s.
+ *
+ * Returns:
+ * 1) %NULL: if @space does not represent a valid identificator or an error
+ *    occured while allocating a new @space's identificator in the VS model.
+ * 2) A valid identificator of the @space in the VS model. That is a bit array,
+ *    where only one bit is set. This bit will be identification of the @space
+ *    in the VS model.
+ */
 vs_t *space_get_vs(struct space_s *space)
 {
 	if (space == NULL || space == ALL_OBJ)
 		return (vs_t *)space;
 	if (!vs_isclear(space->vs_id))
 		return space->vs_id;
+	// TODO 1: namiesto return NULL treba hlasit chybu a skoncit, lebo
+	// alokacia svetov sa robi v priebehu parsovania konfiguraku. Ked
+	// nie je mozne alokovat svet, konfigurak nebude platny a nebude
+	// fungovat.
+	//
+	// TODO 2: skontrolovat pri vytvoreni spojenia, kolko bitov na VS
+	// ma jadro. Ak menej nez sa vyuziva v konfigu, treba zahlasit chybu
+	// a vhodnym sposobom zareagovat. Pravdepodobne ukoncenim spojenia,
+	// lebo nebude mozne vynucovat riadenie zo strany AS.
+	//
+	// TODO 3: bolo by fajn preskumat, preco segmentation fault pre:
+	//	tree "domain" of process;
+	//      space d;
+	//      space c = "domain" - space d;
+	//      space d = space d;
 	if (vs_alloc(space->vs_id) < 0)
 		return NULL;
 
@@ -611,8 +1006,14 @@ vs_t *space_get_vs(struct space_s *space)
 	return space->vs_id;
 }
 
-/* ----------------------------------- */
-
+/*
+ * space_vs_to_str() translate identification bits in @vs to their names as
+ * they are used in configuration file(s).
+ *
+ * @vs: Input set of virtual spaces to be translated.
+ * @out: Output buffer to store names of virtual spaces in @vs.
+ * @size: Maximum size of the output buffer.
+ */
 int space_vs_to_str(vs_t *vs, char *out, int size)
 {
 	struct space_s *space;
