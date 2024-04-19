@@ -37,23 +37,15 @@ struct space_s *global_spaces;
 /*
  * new_path() create a new element of a linked list of paths in some space:
  * fill the data pointer by @path_or_space, fill the element data type by @type
- * and append it before the @prev.
+ * and append it before the @head, so the new element becomes a new head of the
+ * linked list.
  *
- * @prev: List element to append before it or %NULL.
+ * @head: List head address; value on it can be %NULL, if the list is empty.
  * @path_or_space: Data stored in the newly created list element.
  * @type: Data type stored in the newly created list element (%LTREE_T_TREE
  *	or %LTREE_T_SPACE, see space.h for details)./
- *
- * Note: The only user of this function is space_add_path(). It calls
- * new_path() and the result stores into @prev. To prevent the loss
- * of memory block(s) in case of an error (i.e. out of memory) by
- * rewriting @prev in caller space_add_path() with a %NULL value,
- * the entire list @prev is freed before returning the %NULL.
- *
- * TODO: pripajanie do zoznamu robit podla new_levent() v tejto funkcii, nie vo
- *	 volajucej space_add_path()
  */
-static struct ltree_s *new_path(struct ltree_s *prev, void *path_or_space,
+static struct ltree_s *new_path(struct ltree_s **head, void *path_or_space,
 			        int type)
 {
 	char **errstr;
@@ -63,24 +55,16 @@ static struct ltree_s *new_path(struct ltree_s *prev, void *path_or_space,
 	if (l == NULL) {
 		errstr = (char **) pthread_getspecific(errstr_key);
 		*errstr = Out_of_memory;
-
-		/*
-		 * Free the whole list before return %NULL to prevent
-		 * the loss of memory block(s) in the caller.
-		 */
-		while (prev) {
-			l = prev;
-			prev = prev->prev;
-			free(l);
-		}
 		return NULL;
 	}
 
-	/* Connect new list element before @prev. */
-	l->prev = prev;
 	/* Set list element's data pointer and type. */
 	l->path_or_space = path_or_space;
 	l->type = type;
+
+	/* Set the new list element as a new head of the list. */
+	l->prev =  *head;
+	*head = l;
 
 	return l;
 }
@@ -91,7 +75,7 @@ static struct ltree_s *new_path(struct ltree_s *prev, void *path_or_space,
  * appended before the @head, so the new element becomes a new head of the
  * linked list.
  *
- * @head: List head or %NULL.
+ * @head: List head address; value on it can be %NULL, if the list is empty.
  * @handler: Handler of an event with corresponding @subject and @object.
  * @subject: %NULL or space representing subject of the event.
  * @object: %NULL or space representing object of the event.
@@ -613,8 +597,7 @@ int space_add_path(struct space_s *space, int type, void *path_or_space)
 	if (path_or_space == NULL)
 		return -1;
 
-	space->ltree = new_path(space->ltree, path_or_space, type);
-	if (space->ltree == NULL)
+	if (new_path(&(space->ltree), path_or_space, type) == NULL)
 		return -1;
 	return 0;
 }
