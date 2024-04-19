@@ -67,13 +67,12 @@ static struct ltree_s *new_path(struct ltree_s *prev, void *path_or_space,
 		/*
 		 * Free the whole list before return %NULL to prevent
 		 * the loss of memory block(s) in the caller.
-		 *
-		 * while (prev) {
-		 *	l = prev;
-		 *	prev = prev->prev;
-		 *	free(l);
-		 * }
 		 */
+		while (prev) {
+			l = prev;
+			prev = prev->prev;
+			free(l);
+		}
 		return NULL;
 	}
 
