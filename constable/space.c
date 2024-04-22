@@ -244,7 +244,7 @@ static int space_path_add(struct space_path_s *sp, struct space_s *space)
 // TODO: 1) zmenit typ navratovej hodnoty na boolean
 //	 2) zmenit typ force_recursive na boolean, aj v dalsich funkciach
 static int is_included_i(struct tree_s *test, struct space_path_s *sp,
-			 struct space_s *space, int force_recursive)
+			 struct space_s *space, bool force_recursive)
 {
 	struct ltree_s *l;
 
@@ -257,7 +257,7 @@ static int is_included_i(struct tree_s *test, struct space_path_s *sp,
 			if (!(l->type&LTREE_EXCLUDE)) {
 				if (tree_is_equal(test, l->path_or_space))
 					return !space_path_exclude(sp, test);
-				if ((force_recursive || l->type&LTREE_RECURSIVE)
+				if ((force_recursive || l->type & LTREE_RECURSIVE)
 						&& tree_is_offspring(test, l->path_or_space))
 					return !space_path_exclude(sp, test);
 			}
@@ -265,7 +265,7 @@ static int is_included_i(struct tree_s *test, struct space_path_s *sp,
 		case LTREE_T_SPACE:
 			if (!(l->type&LTREE_EXCLUDE)) {
 				if (is_included_i(test, sp, l->path_or_space,
-						(l->type & LTREE_RECURSIVE) ? 1 : force_recursive))
+						l->type & LTREE_RECURSIVE || force_recursive))
 					return 1;
 			}
 			break;
@@ -289,7 +289,7 @@ static int is_included_i(struct tree_s *test, struct space_path_s *sp,
  *	1 if the @test is included in the @space.
  */
 static int is_included(struct tree_s *test, struct space_s *space,
-		       int force_recursive)
+		       bool force_recursive)
 {
 	struct space_path_s sp;
 
@@ -322,8 +322,8 @@ static int is_excluded_i(struct tree_s *test, struct space_s *space)
 					return (l->type & LTREE_RECURSIVE) ? 2 : 1;
 				if ((l->type & LTREE_RECURSIVE)
 						&& tree_is_offspring(test, l->path_or_space))
-					// TODO return 2, lebo LTREE_RECURSIVE je True
-					r = (l->type & LTREE_RECURSIVE) ? 2 : 1;
+					// a node is excluded recursively
+					return 2;
 			}
 			break;
 		case LTREE_T_SPACE:
@@ -385,7 +385,7 @@ static int space_path_exclude(struct space_path_s *sp, struct tree_s *test)
  */
 struct space_for_one_path_s {
 	struct space_path_s *sp;
-	int recursive;
+	bool recursive;
 	fepf_t func;
 	void *arg;
 };
@@ -440,7 +440,7 @@ static void space_for_one_path_i(struct tree_s *t,
  * @arg: Arguments of the @func.
  */
 static void space_for_one_path(struct tree_s *t, struct space_path_s *sp,
-			       int recursive, fepf_t func, void *arg)
+			       bool recursive, fepf_t func, void *arg)
 {
 	struct space_for_one_path_s a;
 
@@ -464,7 +464,7 @@ static void space_for_one_path(struct tree_s *t, struct space_path_s *sp,
  * @arg: Arguments of the @func.
  */
 static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp,
-				  int force_recursive, fepf_t func, void *arg)
+				  bool force_recursive, fepf_t func, void *arg)
 {
 	struct ltree_s *l;
 
@@ -476,13 +476,13 @@ static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp
 		case LTREE_T_TREE:
 			if (!(l->type & LTREE_EXCLUDE))
 				space_for_one_path(l->path_or_space, sp,
-					(force_recursive || (l->type & LTREE_RECURSIVE)) ? 1 : 0,
+					l->type & LTREE_RECURSIVE || force_recursive,
 					func, arg);
 			break;
 		case LTREE_T_SPACE:
 			if (!(l->type & LTREE_EXCLUDE))
 				space_for_every_path_i(l->path_or_space, sp,
-					(l->type & LTREE_RECURSIVE) ? 1 : force_recursive,
+					l->type & LTREE_RECURSIVE || force_recursive,
 					func, arg);
 			break;
 		}
@@ -513,7 +513,7 @@ static int space_for_every_path(struct space_s *space, fepf_t func, void *arg)
 	struct space_path_s sp;
 
 	sp.n = 0;
-	return space_for_every_path_i(space, &sp, 0, func, arg);
+	return space_for_every_path_i(space, &sp, false, func, arg);
 }
 
 /*
