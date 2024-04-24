@@ -173,6 +173,8 @@ struct space_s *space_create(char *name, int primary)
 	t->levent = NULL;	/* the space is not used in any event yet */
 	t->ltree = NULL;	/* the space is without any member yet */
 	t->primary = primary;
+	t->initialized = false;
+	t->used = false;
 	t->next = global_spaces;
 	global_spaces = t;	/* set a new head of the global space list */
 
@@ -192,6 +194,9 @@ struct space_s *space_create(char *name, int primary)
 static int space_path_add(struct space_path_s *sp, struct space_s *space)
 {
 	int i;
+
+	/* set a space as visited, as it's being used (maybe by another space) */
+	space->used = true;
 
 	for (i = 0; i < sp->n; i++) {
 		if (sp->path[i] == space) {
@@ -610,20 +615,80 @@ int space_add_path(struct space_s *space, int type, void *path_or_space)
  */
 int space_apply_all(void)
 {
-	struct space_s *space;
+	struct space_s *space, *space_prev, *space_next;
 	struct tree_add_vs_do_s arg;
 	int a;
 
 	tree_expand_alternatives();
 
-	for (space = global_spaces; space != NULL; space = space->next) {
-		if (space->primary)
-			space_for_every_path(space, (fepf_t)set_primary_space_do, space);
-		for (a = 0; a < NR_ACCESS_TYPES; a++) {
-			arg.which = a;
-			arg.vs = space->vs[a];
-			space_for_every_path(space, (fepf_t)tree_add_vs_do, &arg);
+	space = global_spaces;
+	while (space != NULL) {
+		/* apply only used but not initialized spaces yet */
+		if (space->used && !space->initialized) {
+			if (space->primary)
+				space_for_every_path(space, (fepf_t)set_primary_space_do, space);
+			for (a = 0; a < NR_ACCESS_TYPES; a++) {
+				if (vs_isclear(space->vs[a]))
+					continue;
+				arg.which = a;
+				arg.vs = space->vs[a];
+				space_for_every_path(space, (fepf_t)tree_add_vs_do, &arg);
+			}
+			space->initialized = true;
+
+			/*
+			 * Restart initialization process, as some space(s) may
+			 * be labeled as visited in space_for_every_path_i() during
+			 * last space traversal.
+			 */
+			space = global_spaces;
+			continue;
 		}
+
+		space = space->next;
+	}
+
+	/* remove unused spaces from the memory */
+	space_prev = NULL;
+	space = global_spaces;
+	while (space != NULL) {
+		if (!space->initialized) {
+			fprintf(stderr, "Warning: Space '%s' is defined but not used!\n",
+			    space->name);
+
+			/* it's an error, if the space is used but not initialized */
+			if (space->levent) {
+				fprintf(stderr, "Error: space '%s' not initialized, but used\n",
+				    space->name);
+				exit(-1);
+			}
+
+			/* free the space members */
+			if (space->ltree) {
+				struct ltree_s *l_next, *l = space->ltree;
+				while (l) {
+					l_next = l->prev;
+					free(l);
+					l = l_next;
+				}
+				space->ltree = NULL;
+			}
+
+			/* remove unused space from the global space list */
+			if (space_prev)
+				space_prev->next = space->next;
+			else
+				global_spaces = space->next;
+
+			/* and free it */
+			space_next = space->next;
+			free(space);
+			space = space_next;
+			continue;
+		}
+
+		space_prev = space;
+		space = space->next;
 	}
 
 	return 0;
@@ -983,7 +1048,7 @@ vs_t *space_get_vs(struct space_s *space)
 	if (vs_alloc(space->vs_id) < 0)
 		return NULL;
 
-	//printf("ZZZ:space_get_vs %s 0x%08x\n",space->name,*(space->vs_id));
+	space->used = true;
 	vs_add(space->vs_id, space->vs[AT_MEMBER]);
 	return space->vs_id;
 }

@@ -134,17 +134,36 @@ struct levent_s {
  *	determines which set of permissions will be applied. And the rule is:
  *	whenever the given entity acts as a subject, apply the permissions of
  *	the primary space.
+ * @initialized: Set if the space is successfully validated (i.e. it has some
+ *	member(s) and it's used).
+ * @used: Set if the space is visited while traversing members of another
+ *	space. IOW, the space is a member of another space, which members are
+ *	examinated in space_for_every_path_i() function. This flag indicates,
+ *	that the space is used. Spaces, which have not set this flag, are not
+ *	used at all (nor as member(s) of another space(s), nor as subject(s)/
+ *	object(s) of any event(s), nor as variables in some function(s)) and
+ *	will be destroyed and removed from the memory (see space_apply_all()).
  * @name: Name of the space.
  *
- * Allocation, declaration and definition of a space:
+ * Allocation, declaration, definition, initialization and membership of a
+ * space:
  * 1) An instance of `struct space_s' is created by space_create() function.
  *    It creates an empty instance of space. IOW, makes a declaration of the
- *    space without any member(s); ->vs_id will be empty.
+ *    space without any member(s) and without an identification, i.e. ->vs_id
+ *    will be empty.
  * 2) A real definition of the space is made by space_get_vs() function, which
  *    assigns an identification bit to the space; ->vs_id will be used and
  *    this identification is copied to ->vs[AT_MEMBER] bit field. At this
- *    moment the space is declared, defined, but still without any member(s).
- * 3) language/conf_lang.c:'case Paddpath' calls space_add_path() -> new_path()
+ *    moment the space is declared, defined, but still can be without any
+ *    member(s).
+ * 3) The initialization of the space is located in space_apply_all() function.
+ *    It sets the ->initialized flag for each used space. There can be some
+ *    unused space(s) as members of another space S, which is used. This unused
+ *    spaces get their mark ->used set during the processing of the space S (see
+ *    space_path_add() function). When an until now unused space becomes a part
+ *    of the member's evaluation trace (of the space S), will be marked as
+ *    used.
+ * 4) language/conf_lang.c:'case Paddpath' calls space_add_path() -> new_path()
  *    and it adds a new member to the space (via ->ltree).
  */
 struct space_s {
@@ -153,7 +172,9 @@ struct space_s {
 	vs_t		vs_id[VS_WORDS];
 	struct levent_s	*levent;
 	struct ltree_s	*ltree;
-	int		primary;
+	int		primary; // TODO: pretypuj na bool
+	bool		initialized;
+	bool		used;
 	char		name[0];
 };
 
