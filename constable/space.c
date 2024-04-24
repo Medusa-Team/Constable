@@ -467,6 +467,8 @@ static void space_for_one_path(struct tree_s *t, struct space_path_s *sp,
  * @force_recursive: A flag specifying recursive evaluation.
  * @func: A function to be applied to each node member of @space.
  * @arg: Arguments of the @func.
+ *
+ * Return -1 on error, 0 otherwise.
  */
 static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp,
 				  bool force_recursive, fepf_t func, void *arg)
@@ -506,10 +508,12 @@ static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp
  * @func: A function to be applied to every node member of @space.
  * @arg: Arguments of the @func.
  *
- * There are three @func used with space_for_every_path():
+ * There are five @func used with space_for_every_path():
  * 1) set_primary_space_do()
  * 2) tree_add_event_mask_do()
  * 3) tree_add_vs_do()
+ * 4) tree_get_traversed_do()
+ * 5) tree_clear_traversed_do()
  */
 // TODO: premenuj set_primary_space_do na tree_set_primary_space_do, nech to je
 // konzistentne s ostatnymi pouzitiami
@@ -587,6 +591,35 @@ static void tree_add_vs_do(struct tree_s *p, struct tree_add_vs_do_s *arg)
 	vs_add(arg->vs, p->vs[arg->which]);
 }
 
+// TODO: document
+struct tree_get_traversed_do_s {
+	int cnt;
+	struct tree_s *members;
+};
+
+/*
+ * tree_set_traversed_do() set a @t->traversed flag to %true.
+ *
+ * Function is used for real member counting of a space. The real member is a
+ * UNST node, not another space, so for counting is used space traversing
+ * mechanism, the space_for_every_path() function call.
+ */
+static void tree_get_traversed_do(struct tree_s *t, struct tree_get_traversed_do_s *a)
+{
+	if (!t->traversed) {
+		t->traversed = true;
+		a->cnt++;
+	}
+}
+
+/*
+ * tree_clear_traversed_do() clear a @t->traversed flag to %false.
+ */
+static void tree_clear_traversed_do(struct tree_s *t, void *)
+{
+	t->traversed = false;
+}
+
 /*
  * space_add_path() add path/space node @path_or_space to the list of paths of
  * @space and set its @type.
@@ -617,29 +650,62 @@ int space_apply_all(void)
 {
 	struct space_s *space, *space_prev, *space_next;
 	struct tree_add_vs_do_s arg;
+	struct tree_get_traversed_do_s space_info;
 	int a;
 
 	tree_expand_alternatives();
 
 	space = global_spaces;
 	while (space != NULL) {
-		/* apply only used but not initialized spaces yet */
+		/* Apply only to used but not initialized spaces yet. */
 		if (space->used && !space->initialized) {
+			/*
+			 * Get count of UNST nodes (i.e. real members) of the
+			 * space.
+			 */
+			space_info.cnt = 0;
+			space_info.members = NULL;
+			space_for_every_path(space,
+			    (fepf_t)tree_get_traversed_do, &space_info);
+
+			/*
+			 * Clear traversed flags, as a node can belong to many
+			 * spaces.
+			 */
+			space_for_every_path(space,
+			    (fepf_t)tree_clear_traversed_do, NULL);
+			printf("space '%s' has %d members\n", space->name, space_info.cnt);
+
+			/* Space with no member but with ID can't be ignored. */
+			if (!vs_isclear(space->vs_id) && !space_info.cnt)
+				fatal("space '%s' has no path member(s)!",
+				    space->name);
+			/* Space with no member and no ID will be ignored. */
+			if (!space_info.cnt) {
+				fprintf(stderr, "Warning: Space '%s' has no "
+				    "path member(s), will be ignored.\n",
+				    space->name);
+				space->used = false;
+				goto init_restart;
+			}
+
 			if (space->primary)
-				space_for_every_path(space, (fepf_t)set_primary_space_do, space);
+				space_for_every_path(space,
+				    (fepf_t)set_primary_space_do, space);
 			for (a = 0; a < NR_ACCESS_TYPES; a++) {
 				if (vs_isclear(space->vs[a]))
 					continue;
 				arg.which = a;
 				arg.vs = space->vs[a];
-				space_for_every_path(space, (fepf_t)tree_add_vs_do, &arg);
+				space_for_every_path(space,
+				    (fepf_t)tree_add_vs_do, &arg);
 			}
 			space->initialized = true;
 
+init_restart:
 			/*
 			 * Restart initialization process, as some space(s) may
-			 * be labeled as visited in space_for_every_path_i() during
-			 * last space traversal.
+			 * be labeled as visited during last space traversal.
 			 */
 			space = global_spaces;
 			continue;
@@ -653,15 +719,13 @@ int space_apply_all(void)
 	space = global_spaces;
 	while (space != NULL) {
 		if (!space->initialized) {
-			fprintf(stderr, "Warning: Space '%s' is defined but not used!\n",
-			    space->name);
+			fprintf(stderr, "Warning: Space '%s' is defined but "
+			    "not used, will be ignored.\n", space->name);
 
-			/* it's an error, if the space is used but not initialized */
-			if (space->levent) {
-				fprintf(stderr, "Error: space '%s' not initialized, but used\n",
-				    space->name);
-				exit(-1);
-			}
+			/* it's error, if space is used but not initialized */
+			if (!vs_isclear(space->vs_id))
+				fatal("Error: Space '%s' is not initialized, "
+				    "but used.", space->name);
 
 			/* free the space members */
 			if (space->ltree) {
