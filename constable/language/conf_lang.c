@@ -166,7 +166,7 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 
 	struct event_names_s *event;
 	uintptr_t x;
-	int i = 0;
+	bool pspace;
 	vs_t *v;
 
 	if ((s & 0x0f00) == 0x0100) {
@@ -184,16 +184,17 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 		return;
 	}
 
+	pspace = false;
 	switch (s) {
 	case Ppspace:
-		i = 1;
+		pspace = true;
 	case Pspace:
 		if (c->l.data != 0) {
 			space = space_find((char *)(c->l.data));
-			if (space != NULL && space->ltree == NULL && (!i == !(space->primary)))
+			if (space != NULL && space->ltree == NULL && (!pspace == !(space->primary)))
 				break;
 		}
-		space = space_create((char *)(c->l.data), i);
+		space = space_create((char *)(c->l.data), pspace);
 		if (space == NULL) {
 			char **errstr = (char **)pthread_getspecific(errstr_key);
 

@@ -197,14 +197,14 @@ struct space_s {
 	vs_t		vs_id[VS_WORDS];
 	struct levent_s	*levent;
 	struct ltree_s	*ltree;
-	int		primary; // TODO: pretypuj na bool
+	bool		primary;
 	bool		initialized;
 	bool		used;
 	struct members_s members;
 	char		name[0];
 };
 
-struct space_s *space_create(char *name, int primary);
+struct space_s *space_create(char *name, bool primary);
 struct space_s *space_find(char *name);
 int space_add_path(struct space_s *space, int type, void *path_or_space);
 int space_add_event(struct event_handler_s *handler, int level,

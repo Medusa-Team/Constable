@@ -144,7 +144,7 @@ struct space_s *space_find(char *name)
  * and not used yet). For explanation of allocation, declaration and definition
  * of a space see documentation of `struct space_s' in space.h.
  */
-struct space_s *space_create(char *name, int primary)
+struct space_s *space_create(char *name, bool primary)
 {
 	char **errstr;
 	struct space_s *t;
@@ -849,7 +849,8 @@ int space_add_event(struct event_handler_s *handler, int ehh_list,
 
 	/* @subject and @object must be both ALL_OBJ */
 	if (subj_node && obj_node) {
-		object = space_create(NULL, 0);
+		/* create anonymous and not primary space */
+		object = space_create(NULL, false);
 		if (object == NULL)
 			return -1;
 		space_add_path(object, 0, obj_node);
