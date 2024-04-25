@@ -14,9 +14,7 @@
 
 extern struct space_s *global_spaces;
 
-// TODO: nahrad ascii symbol "substitute" za tlacitelny znak
-//#define ANON_SPACE_NAME "?" // name of an internal anonymous space
-#define ANON_SPACE_NAME "\x1A" // name of an internal anonymous space
+#define ANON_SPACE_NAME "?" // name of an internal anonymous space
 
 /*
  * ltree_s: List (->prev) of elements (nodes of Unified Name Space Tree or
