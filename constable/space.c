@@ -1055,17 +1055,17 @@ int space_init_event_mask(struct comm_s *comm)
 }
 
 /*
- * space_add_vs() place subject with virtual @space into virtual spaces defined
- * by @vs for a given access type @which. Original virtual spaces of @space
- * won't be changed.
+ * space_add_vs() place subject with virtual @subj_space into virtual spaces
+ * defined by @obj_vs for a given @access_type. Original virtual spaces of
+ * @subj_space won't be changed.
  *
- * @space: A set of virtual spaces of each access type of a subject.
- * @which: Access type. Access types keywords are defined in language/lex.c:
+ * @subj_space: A set of virtual spaces of each access type of a subject.
+ * @access_type: Access types keywords are defined in language/lex.c:
  *	MEMBER, READ or RECEIVE, WRITE or SEND, SEE, CREATE, ERASE, ENTER,
  *	CONTROL.
- * @vs: Virtual spaces of an object to add.
+ * @obj_vs: Virtual spaces of an object to add.
  *
- * Returns 0 on success, -1 on invalid @which value.
+ * Returns 0 on success, -1 on invalid @access_type value.
  *
  * Called from conf_lang.c:conf_lang_param_out() in subject's access type(s)
  * definition(s) case (see 'Paddvs' handling).
@@ -1075,12 +1075,11 @@ int space_init_event_mask(struct comm_s *comm)
  * access type) in order to enable the subject to perform the given operation
  * on the object.
  */
-/* TODO: premenuj which -> access_type, space -> subj_space, vs -> obj_vs */
-int space_add_vs(struct space_s *space, int which, vs_t *vs)
+int space_add_vs(struct space_s *subj_space, int access_type, vs_t *obj_vs)
 {
-	if (which < 0 || which >= NR_ACCESS_TYPES)
+	if (access_type < 0 || access_type >= NR_ACCESS_TYPES)
 		return -1;
-	vs_add(vs, space->vs[which]);
+	vs_add(obj_vs, subj_space->vs[access_type]);
 	return 0;
 }
 
