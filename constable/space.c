@@ -173,7 +173,7 @@ struct space_s *space_create(char *name, bool primary)
 	t->levent = NULL;	/* the space is not used in any event yet */
 	t->ltree = NULL;	/* the space is without any member yet */
 	t->primary = primary;
-	t->initialized = false;
+	t->processed = false;
 	t->used = false;
 	t->next = global_spaces;
 	global_spaces = t;	/* set a new head of the global space list */
@@ -662,8 +662,8 @@ int space_apply_all(void)
 
 	space = global_spaces;
 	while (space != NULL) {
-		/* Apply only to used but not initialized spaces yet. */
-		if (space->used && !space->initialized) {
+		/* Apply only to used but not processed spaces yet. */
+		if (space->used && !space->processed) {
 			/*
 			 * Get count of UNST nodes (i.e. real members) of the
 			 * space.
@@ -700,24 +700,13 @@ int space_apply_all(void)
 				space->used = false;
 				goto init_restart;
 			}
-
-			if (space->primary)
-				space_for_every_path(space,
-				    (fepf_t)tree_set_primary_space_do, space);
-			for (a = 0; a < NR_ACCESS_TYPES; a++) {
-				if (vs_isclear(space->vs[a]))
-					continue;
-				arg.which = a;
-				arg.vs = space->vs[a];
-				space_for_every_path(space,
-				    (fepf_t)tree_add_vs_do, &arg);
-			}
-			space->initialized = true;
+			/* Set space as processed. */
+			space->processed = true;
 
 init_restart:
 			/*
-			 * Restart initialization process, as some space(s) may
-			 * be labeled as visited during last space traversal.
+			 * Restart processing of all spaces, as some space(s)
+			 * may be marked as visited during last space traversal.
 			 */
 			space = global_spaces;
 			continue;
@@ -730,14 +719,16 @@ init_restart:
 	space_prev = NULL;
 	space = global_spaces;
 	while (space != NULL) {
-		if (!space->initialized) {
+		if (!space->processed) {
+#ifdef DEBUG_TRACE
 			fprintf(stderr, "Warning: Space '%s' is defined but "
 			    "not used, will be ignored.\n", space->name);
+#endif // DEBUG_TRACE
 
-			/* it's error, if space is used but not initialized */
+			/* it's error, if space is used but not processed */
 			if (!vs_isclear(space->vs_id))
-				fatal("Error: Space '%s' is not initialized, "
-				    "but used.", space->name);
+				fatal("Space '%s' is not processed, but still"
+				    "used.", space->name);
 
 			/* free the space members */
 			if (space->ltree) {
@@ -765,6 +756,22 @@ init_restart:
 
 		space_prev = space;
 		space = space->next;
+	}
+
+	/* process the remaining (active) spaces */
+	// TODO: vytvor space_for_every_member() a nahrad space_for_every_path()
+	for (space = global_spaces; space != NULL; space = space->next) {
+		if (space->primary)
+			space_for_every_path(space,
+			    (fepf_t)tree_set_primary_space_do, space);
+		for (a = 0; a < NR_ACCESS_TYPES; a++) {
+			if (vs_isclear(space->vs[a]))
+				continue;
+			arg.which = a;
+			arg.vs = space->vs[a];
+			space_for_every_path(space,
+			    (fepf_t)tree_add_vs_do, &arg);
+		}
 	}
 
 	return 0;
