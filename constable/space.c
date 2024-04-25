@@ -512,8 +512,8 @@ static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp
  * 1) set_primary_space_do()
  * 2) tree_add_event_mask_do()
  * 3) tree_add_vs_do()
- * 4) tree_get_traversed_do()
- * 5) tree_clear_traversed_do()
+ * 4) tree_get_visited_do()
+ * 5) tree_clear_visited_do()
  */
 // TODO: premenuj set_primary_space_do na tree_set_primary_space_do, nech to je
 // konzistentne s ostatnymi pouzitiami
@@ -591,33 +591,40 @@ static void tree_add_vs_do(struct tree_s *p, struct tree_add_vs_do_s *arg)
 	vs_add(arg->vs, p->vs[arg->which]);
 }
 
-// TODO: document
-struct tree_get_traversed_do_s {
-	int cnt;
-	struct tree_s *members;
-};
-
 /*
- * tree_set_traversed_do() set a @t->traversed flag to %true.
+ * tree_set_visited_do() set a @t->visited flag to %true.
+ *
+ * @p: A node of UNST which will be marked as visited.
+ * @arg: Structure holding information about members of the traversed space:
+ *	the count of the members and an array of pointers to each of them.
  *
  * Function is used for real member counting of a space. The real member is a
  * UNST node, not another space, so for counting is used space traversing
  * mechanism, the space_for_every_path() function call.
+ *
+ * Deduplication is guaranteed by @p->visited flag: inclusion of a node in
+ * the group of space members is done only if the node has not yet been
+ * visited.
  */
-static void tree_get_traversed_do(struct tree_s *t, struct tree_get_traversed_do_s *a)
+static void tree_get_visited_do(struct tree_s *p, struct members_s *arg)
 {
-	if (!t->traversed) {
-		t->traversed = true;
-		a->cnt++;
+	if (!p->visited) {
+		p->visited = true;
+		arg->count++;
+		arg->array = reallocarray(arg->array, arg->count,
+				 sizeof(struct tree_s *));
+		if (!arg->array)
+			fatal("Error: Can't alloc memory for space members.");
+		arg->array[arg->count - 1] = p;
 	}
 }
 
 /*
- * tree_clear_traversed_do() clear a @t->traversed flag to %false.
+ * tree_clear_visited_do() clear a @t->visited flag to %false.
  */
-static void tree_clear_traversed_do(struct tree_s *t, void *)
+static void tree_clear_visited_do(struct tree_s *t, void *)
 {
-	t->traversed = false;
+	t->visited = false;
 }
 
 /*
@@ -650,7 +657,6 @@ int space_apply_all(void)
 {
 	struct space_s *space, *space_prev, *space_next;
 	struct tree_add_vs_do_s arg;
-	struct tree_get_traversed_do_s space_info;
 	int a;
 
 	tree_expand_alternatives();
@@ -663,25 +669,32 @@ int space_apply_all(void)
 			 * Get count of UNST nodes (i.e. real members) of the
 			 * space.
 			 */
-			space_info.cnt = 0;
-			space_info.members = NULL;
+			space->members.count = 0;
+			space->members.array = NULL;
 			space_for_every_path(space,
-			    (fepf_t)tree_get_traversed_do, &space_info);
+			    (fepf_t)tree_get_visited_do, &(space->members));
 
 			/*
-			 * Clear traversed flags, as a node can belong to many
+			 * Clear visited flags, as a node can belong to many
 			 * spaces.
 			 */
 			space_for_every_path(space,
-			    (fepf_t)tree_clear_traversed_do, NULL);
-			printf("space '%s' has %d members\n", space->name, space_info.cnt);
+			    (fepf_t)tree_clear_visited_do, NULL);
+
+#ifdef DEBUG_TRACE
+			printf("space '%s' has %d member(s):", space->name,
+				space->members.count);
+			for (int i = 0; i < space->members.count; i++)
+				printf(" '%s'", space->members.array[i]->name);
+			printf("\n");
+#endif // DEBUG_TRACE
 
 			/* Space with no member but with ID can't be ignored. */
-			if (!vs_isclear(space->vs_id) && !space_info.cnt)
+			if (!vs_isclear(space->vs_id) && !space->members.count)
 				fatal("space '%s' has no path member(s)!",
 				    space->name);
 			/* Space with no member and no ID will be ignored. */
-			if (!space_info.cnt) {
+			if (!space->members.count) {
 				fprintf(stderr, "Warning: Space '%s' has no "
 				    "path member(s), will be ignored.\n",
 				    space->name);

@@ -40,7 +40,7 @@ struct tree_s {
 	vs_t	no_vs[NR_ACCESS_TYPES][VS_WORDS];  /**< not used */
 	struct event_hadler_hash_s	*subject_handlers[EHH_LISTS];
 	struct event_hadler_hash_s	*object_handlers[EHH_LISTS];
-	bool traversed; /* used for counting space members */
+	bool	visited; /* used for counting space members */
 	char	name[0];
 };
 

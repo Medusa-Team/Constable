@@ -264,7 +264,7 @@ static struct tree_s *create_one_i(struct tree_s *base, char *name, int regexp)
 	p->child = NULL;
 	p->regex_child = NULL;
 	p->primary_space = NULL;
-	p->traversed = false;
+	p->visited = false;
 
 	p->events = comm_new_array(sizeof(struct tree_event_s));
 	if (p->events == NULL) {

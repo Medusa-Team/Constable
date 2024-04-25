@@ -108,6 +108,22 @@ struct levent_s {
 };
 
 /*
+ * struct members_s stores information about real members (nodes of UNST) of
+ * a space.
+ *
+ * @count: Stores count of the members.
+ * @array: Consists of @count elements. Each element is pointer to one real
+ *	member (i.e. address of a node of UNST) of the space.
+ *
+ * The struct is filled in space_apply_all() function, which is calle after all
+ * spaces are defined.
+ */
+struct members_s {
+	int count;
+	struct tree_s **array;
+};
+
+/*
  * struct space_s reprezents a virtual space.
  * Struct with a variable length (see ->name).
  *
@@ -143,6 +159,8 @@ struct levent_s {
  *	used at all (nor as member(s) of another space(s), nor as subject(s)/
  *	object(s) of any event(s), nor as variables in some function(s)) and
  *	will be destroyed and removed from the memory (see space_apply_all()).
+ * @members: Stores information about real members of the space and their
+ *	count. For more information see definition of struct members_s.
  * @name: Name of the space.
  *
  * Allocation, declaration, definition, initialization and membership of a
@@ -164,7 +182,14 @@ struct levent_s {
  *    of the member's evaluation trace (of the space S), will be marked as
  *    used.
  * 4) language/conf_lang.c:'case Paddpath' calls space_add_path() -> new_path()
- *    and it adds a new member to the space (via ->ltree).
+ *    and it adds a new member to the space (via ->ltree). The attribute
+ *    ->ltree stores mixed information about space members: a member can be
+ *    of struct tree_s or struct space_s type. Moreover, a member can be stored
+ *    multiple times in the list and there may be members, which are marked as
+ *    excluded from the space. So real (final) list of members is stored in
+ *    ->members after evaluation of ->ltree in space_apply_all(). The final
+ *    list ->members.array stores deduplicated pointers to UNST nodes (real
+ *    members of the space) and their count in ->members.count.
  */
 struct space_s {
 	struct space_s	*next;
@@ -175,6 +200,7 @@ struct space_s {
 	int		primary; // TODO: pretypuj na bool
 	bool		initialized;
 	bool		used;
+	struct members_s members;
 	char		name[0];
 };
 
