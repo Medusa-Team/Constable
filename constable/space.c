@@ -1094,11 +1094,13 @@ int space_add_vs(struct space_s *subj_space, int access_type, vs_t *obj_vs)
  * and definition of a space see space.h:struct space_s.
  *
  * Returns:
- * 1) %NULL: if @space does not represent a valid identificator or an error
- *    occured while allocating a new @space's identificator in the VS model.
+ * 1) %NULL: if @space does not represent a valid identificator in the VS model.
  * 2) A valid identificator of the @space in the VS model. That is a bit array,
  *    where only one bit is set. This bit will be identification of the @space
  *    in the VS model.
+ *
+ * Note: Cause a fatal failure if an error occured (i.e. OOM while allocating a
+ * new @space's identificator in the VS model).
  */
 vs_t *space_get_vs(struct space_s *space)
 {
@@ -1106,11 +1108,7 @@ vs_t *space_get_vs(struct space_s *space)
 		return (vs_t *)space;
 	if (!vs_isclear(space->vs_id))
 		return space->vs_id;
-	// TODO 1: namiesto return NULL treba hlasit chybu a skoncit, lebo
-	// alokacia svetov sa robi v priebehu parsovania konfiguraku. Ked
-	// nie je mozne alokovat svet, konfigurak nebude platny a nebude
-	// fungovat.
-	//
+
 	// TODO 2: skontrolovat pri vytvoreni spojenia, kolko bitov na VS
 	// ma jadro. Ak menej nez sa vyuziva v konfigu, treba zahlasit chybu
 	// a vhodnym sposobom zareagovat. Pravdepodobne ukoncenim spojenia,
@@ -1122,7 +1120,8 @@ vs_t *space_get_vs(struct space_s *space)
 	//      space c = "domain" - space d;
 	//      space d = space d;
 	if (vs_alloc(space->vs_id) < 0)
-		return NULL;
+		fatal("OOM while allocating a new space identificator in the "
+		    "VS model");
 
 	space->used = true;
 	vs_add(space->vs_id, space->vs[AT_MEMBER]);
