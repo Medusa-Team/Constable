@@ -509,14 +509,12 @@ static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp
  * @arg: Arguments of the @func.
  *
  * There are five @func used with space_for_every_path():
- * 1) set_primary_space_do()
+ * 1) tree_set_primary_space_do()
  * 2) tree_add_event_mask_do()
  * 3) tree_add_vs_do()
  * 4) tree_get_visited_do()
  * 5) tree_clear_visited_do()
  */
-// TODO: premenuj set_primary_space_do na tree_set_primary_space_do, nech to je
-// konzistentne s ostatnymi pouzitiami
 static int space_for_every_path(struct space_s *space, fepf_t func, void *arg)
 {
 	struct space_path_s sp;
@@ -526,12 +524,13 @@ static int space_for_every_path(struct space_s *space, fepf_t func, void *arg)
 }
 
 /*
- * set_primary_space_do() set the primary @space for a given node @t of UNST.
+ * tree_set_primary_space_do() set the primary @space for a given node @t of
+ * UNST.
  *
  * @t: A node of UNST for which will be set the primary space to @space.
  * @space: A space to be set as primary in a given node @t of UNST.
  */
-static void set_primary_space_do(struct tree_s *t, struct space_s *space)
+static void tree_set_primary_space_do(struct tree_s *t, struct space_s *space)
 {
 	if (t->primary_space != NULL && t->primary_space != space)
 		warning("Redefinition of primary space %s to %s",
@@ -704,7 +703,7 @@ int space_apply_all(void)
 
 			if (space->primary)
 				space_for_every_path(space,
-				    (fepf_t)set_primary_space_do, space);
+				    (fepf_t)tree_set_primary_space_do, space);
 			for (a = 0; a < NR_ACCESS_TYPES; a++) {
 				if (vs_isclear(space->vs[a]))
 					continue;
