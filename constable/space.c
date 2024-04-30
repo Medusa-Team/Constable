@@ -500,6 +500,27 @@ static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp
 }
 
 /*
+ * space_for_every_member() apply @func(@arg) to each member of a @space.
+ *
+ * @space: A space to whose members the @func(@arg) should be applied.
+ * @func: A function to be applied to every member of @space.
+ * @arg: Arguments of the @func.
+ *
+ * There are four @func used with space_for_every_member():
+ * 1) tree_set_primary_space_do()
+ * 2) tree_add_event_mask_do()
+ * 3) tree_add_vs_do()
+ * 4) tree_clear_visited_do()
+ */
+static void space_for_every_member(struct space_s *space, fepf_t func, void *arg)
+{
+	struct tree_s **members = space->members.array;
+
+	for (int i = 0; i < space->members.count; i++)
+		func(members[i], arg);
+}
+
+/*
  * space_for_every_path() initialize auxiliary structure for running internal
  * (recursive) execution function space_for_every_path_i(). The function should
  * apply @func(@arg) for every node member of @space.
@@ -508,12 +529,8 @@ static int space_for_every_path_i(struct space_s *space, struct space_path_s *sp
  * @func: A function to be applied to every node member of @space.
  * @arg: Arguments of the @func.
  *
- * There are five @func used with space_for_every_path():
- * 1) tree_set_primary_space_do()
- * 2) tree_add_event_mask_do()
- * 3) tree_add_vs_do()
- * 4) tree_get_visited_do()
- * 5) tree_clear_visited_do()
+ * There is only one @func used with space_for_every_path():
+ * tree_get_visited_do(), which makes a list of members of a space.
  */
 static int space_for_every_path(struct space_s *space, fepf_t func, void *arg)
 {
@@ -677,7 +694,7 @@ int space_apply_all(void)
 			 * Clear visited flags, as a node can belong to many
 			 * spaces.
 			 */
-			space_for_every_path(space,
+			space_for_every_member(space,
 			    (fepf_t)tree_clear_visited_do, NULL);
 
 #ifdef DEBUG_TRACE
@@ -759,17 +776,16 @@ init_restart:
 	}
 
 	/* process the remaining (active) spaces */
-	// TODO: vytvor space_for_every_member() a nahrad space_for_every_path()
 	for (space = global_spaces; space != NULL; space = space->next) {
 		if (space->primary)
-			space_for_every_path(space,
+			space_for_every_member(space,
 			    (fepf_t)tree_set_primary_space_do, space);
 		for (a = 0; a < NR_ACCESS_TYPES; a++) {
 			if (vs_isclear(space->vs[a]))
 				continue;
 			arg.which = a;
 			arg.vs = space->vs[a];
-			space_for_every_path(space,
+			space_for_every_member(space,
 			    (fepf_t)tree_add_vs_do, &arg);
 		}
 	}
@@ -1046,14 +1062,14 @@ int space_init_event_mask(struct comm_s *comm)
 				arg.type = type;
 				// activate triggering of the event `type' on all nodes in ->subject space
 				//printf("%s ->subject of %s\n", space->name, type->evname->name);
-				space_for_every_path(le->subject, (fepf_t)tree_add_event_mask_do, &arg);
+				space_for_every_member(le->subject, (fepf_t)tree_add_event_mask_do, &arg);
 			}
 			if (le->object != NULL && le->object != ALL_OBJ && type->monitored_operand == type->op[1]) {
 				arg.conn = comm->conn;
 				arg.type = type;
 				// activate triggering of the event `type' on all nodes in ->object space
 				//printf("%s ->object of %s\n", space->name, type->evname->name);
-				space_for_every_path(le->object, (fepf_t)tree_add_event_mask_do, &arg);
+				space_for_every_member(le->object, (fepf_t)tree_add_event_mask_do, &arg);
 			}
 		} // for space->levent
 	} // for space in global_spaces
