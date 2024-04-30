@@ -550,7 +550,8 @@ static int space_for_every_path(struct space_s *space, fepf_t func, void *arg)
 static void tree_set_primary_space_do(struct tree_s *t, struct space_s *space)
 {
 	if (t->primary_space != NULL && t->primary_space != space)
-		warning("Redefinition of primary space %s to %s",
+		fprintf(stderr,
+			"Warning: Redefinition of primary space '%s' to '%s'\n",
 			t->primary_space->name, space->name);
 	t->primary_space = space;
 }
