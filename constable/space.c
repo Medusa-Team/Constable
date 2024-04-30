@@ -175,10 +175,74 @@ struct space_s *space_create(char *name, bool primary)
 	t->primary = primary;
 	t->processed = false;
 	t->used = false;
+	t->members.array = NULL;
+	t->members.count = 0;
 	t->next = global_spaces;
 	global_spaces = t;	/* set a new head of the global space list */
 
 	return t;
+}
+
+/*
+ * space_destroy() remove a space @s from the global list of spaces
+ * and free all resources related to the it.
+ *
+ * @s: The space to be destroyed.
+ *
+ * Note: the function uses global variable `global_spaces'.
+ */
+void space_destroy(struct space_s *s) {
+	struct space_s *space, *space_prev;
+
+	/* search prev of @s */
+	for (space_prev = NULL, space = global_spaces;
+	     space != NULL;
+	     space_prev = space, space = space->next) {
+		if (space == s)
+			break;
+	}
+
+	/* paranoYa check: is @s in the global space list? */
+	if (!space)
+		fatal("Space '%s' is not in the global space list.", s->name);
+
+	/* free the space members */
+	if (space->ltree) {
+		struct ltree_s *l_next, *l = space->ltree;
+		while (l) {
+			l_next = l->prev;
+			free(l);
+			l = l_next;
+		}
+		space->ltree = NULL;
+	}
+
+	/* free events info related to the space */
+	if (space->levent) {
+		struct levent_s *l_next, *l = space->levent;
+		while (l) {
+			l_next = l->prev;
+			free(l);
+			l = l_next;
+		}
+		space->levent = NULL;
+	}
+
+	/* free members info related to the space */
+	if (space->members.array) {
+		free(space->members.array);
+		space->members.array = NULL;
+		space->members.count = 0;
+	}
+
+	/* remove space from the global space list */
+	if (space_prev)
+		space_prev->next = space->next;
+	else
+		global_spaces = space->next;
+
+	/* and free it */
+	free(space);
 }
 
 /*
@@ -672,7 +736,7 @@ int space_add_path(struct space_s *space, int type, void *path_or_space)
  */
 int space_apply_all(void)
 {
-	struct space_s *space, *space_prev, *space_next;
+	struct space_s *space, *space_next;
 	struct tree_add_vs_do_s arg;
 	int a;
 
@@ -734,46 +798,29 @@ init_restart:
 	}
 
 	/* remove unused spaces from the memory */
-	space_prev = NULL;
 	space = global_spaces;
 	while (space != NULL) {
-		if (!space->processed) {
-#ifdef DEBUG_TRACE
-			fprintf(stderr, "Warning: Space '%s' is defined but "
-			    "not used, will be ignored.\n", space->name);
-#endif // DEBUG_TRACE
-
-			/* it's error, if space is used but not processed */
-			if (!vs_isclear(space->vs_id))
-				fatal("Space '%s' is not processed, but still"
-				    "used.", space->name);
-
-			/* free the space members */
-			if (space->ltree) {
-				struct ltree_s *l_next, *l = space->ltree;
-				while (l) {
-					l_next = l->prev;
-					free(l);
-					l = l_next;
-				}
-				space->ltree = NULL;
-			}
-
-			/* remove unused space from the global space list */
-			if (space_prev)
-				space_prev->next = space->next;
-			else
-				global_spaces = space->next;
-
-			/* and free it */
-			space_next = space->next;
-			free(space);
-			space = space_next;
+		/* skip processed spaces */
+		if (space->processed) {
+			space = space->next;
 			continue;
 		}
 
-		space_prev = space;
-		space = space->next;
+#ifdef DEBUG_TRACE
+		// TODO: zmen na runtime()
+		fprintf(stderr, "Warning: Space '%s' is defined but "
+		    "not used, will be ignored.\n", space->name);
+#endif // DEBUG_TRACE
+
+		/* it's error, if space is used but not processed */
+		if (!vs_isclear(space->vs_id))
+			fatal("Space '%s' is not processed, but still"
+			    "used.", space->name);
+
+		/* destroy the space */
+		space_next = space->next;
+		space_destroy(space);
+		space = space_next;
 	}
 
 	/* process the remaining (active) spaces */
