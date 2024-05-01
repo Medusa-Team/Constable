@@ -614,8 +614,7 @@ static int space_for_every_path(struct space_s *space, fepf_t func, void *arg)
 static void tree_set_primary_space_do(struct tree_s *t, struct space_s *space)
 {
 	if (t->primary_space != NULL && t->primary_space != space)
-		fprintf(stderr,
-			"Warning: Redefinition of primary space '%s' to '%s'\n",
+		runtime("Redefinition of primary space '%s' to '%s'.",
 			t->primary_space->name, space->name);
 	t->primary_space = space;
 }
@@ -740,6 +739,11 @@ int space_apply_all(void)
 	struct tree_add_vs_do_s arg;
 	int a;
 
+#ifdef DEBUG_TRACE
+	char *runtime_file = (char *)pthread_getspecific(runtime_file_key);
+	*runtime_file = 0; /* empty string */
+#endif
+
 	tree_expand_alternatives();
 
 	space = global_spaces;
@@ -763,7 +767,7 @@ int space_apply_all(void)
 			    (fepf_t)tree_clear_visited_do, NULL);
 
 #ifdef DEBUG_TRACE
-			printf("space '%s' has %d member(s):", space->name,
+			printf("Debug : space '%s' has %d member(s):", space->name,
 				space->members.count);
 			for (int i = 0; i < space->members.count; i++)
 				printf(" '%s'", space->members.array[i]->name);
@@ -776,9 +780,8 @@ int space_apply_all(void)
 				    space->name);
 			/* Space with no member and no ID will be ignored. */
 			if (!space->members.count) {
-				fprintf(stderr, "Warning: Space '%s' has no "
-				    "path member(s), will be ignored.\n",
-				    space->name);
+				runtime("Space '%s' has no member, will be "
+				    "ignored.", space->name);
 				space->used = false;
 				goto init_restart;
 			}
@@ -807,15 +810,14 @@ init_restart:
 		}
 
 #ifdef DEBUG_TRACE
-		// TODO: zmen na runtime()
-		fprintf(stderr, "Warning: Space '%s' is defined but "
-		    "not used, will be ignored.\n", space->name);
+		runtime("Space '%s' is defined but not used, will be ignored.",
+		    space->name);
 #endif // DEBUG_TRACE
 
 		/* it's error, if space is used but not processed */
 		if (!vs_isclear(space->vs_id))
-			fatal("Space '%s' is not processed, but still"
-			    "used.", space->name);
+			fatal("Space '%s' is not processed, but still used.",
+			    space->name);
 
 		/* destroy the space */
 		space_next = space->next;

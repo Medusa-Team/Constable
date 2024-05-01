@@ -53,7 +53,10 @@ int runtime(const char *fmt, ...)
 
 	runtime_file = (char *) pthread_getspecific(runtime_file_key);
 	runtime_pos = (char *) pthread_getspecific(runtime_pos_key);
-	sprintf(buf, "Runtime error [\"%s\" %s]: ", runtime_file, runtime_pos);
+	if (strlen(runtime_file) && strlen(runtime_pos))
+		sprintf(buf, "Runtime error [\"%s\" %s]: ", runtime_file, runtime_pos);
+	else
+		sprintf(buf, "Runtime error : ");
 #endif
 	va_start(ap, fmt);
 	vsnprintf(buf + strlen(buf), 4000, fmt, ap);
