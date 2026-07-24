@@ -1,0 +1,27 @@
+name: Linux build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - codex/medusa-revival-phase-0
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Constable reference server
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential
+      - name: Build libmcompiler
+        run: make -C libmcompiler
+      - name: Build Constable
+        run: make -C constable
