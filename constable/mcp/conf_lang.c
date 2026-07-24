@@ -23,6 +23,7 @@
 #include <mcompiler/lex.h>
 
 extern char *medusa_config_file;
+extern int medusa_config_file_explicit;
 
 enum {
 	START = N | 0x0000,
@@ -436,7 +437,8 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 			mcp_error("%s: %s", (char *)(c->l.data), strerror(errno));
 		break;
 	case Pconfig:
-		medusa_config_file = strdup((char *)(c->l.data));
+		if (!medusa_config_file_explicit)
+			medusa_config_file = strdup((char *)(c->l.data));
 		break;
 	case Pmodule:
 		module = activate_module((char *)(c->l.data));

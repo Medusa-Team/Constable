@@ -26,6 +26,7 @@
 #endif
 
 char *medusa_config_file = "/etc/medusa.conf";
+int medusa_config_file_explicit;
 
 static int test;
 
@@ -227,6 +228,7 @@ int main(int argc, char *argv[])
 			} else if (argv[a][1] == 'c' && a + 1 < argc) {
 				a++;
 				medusa_config_file = argv[a];
+				medusa_config_file_explicit = 1;
 			} else {
 				return usage(argv[0]);
 			}
