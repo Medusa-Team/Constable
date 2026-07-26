@@ -679,6 +679,42 @@ static int mcp_answer(struct comm_s *c, struct comm_buffer_s *b)
 	return 0;
 }
 
+/**
+ * mcp_renew_authrequest - Report progress for a long-running decision.
+ * @request: Decision request that is still being evaluated.
+ *
+ * Interactive handlers should call this before each kernel lease expires
+ * while they wait for user input. This extends liveness only; it does not
+ * provide a verdict or alter policy.
+ */
+int mcp_renew_authrequest(struct comm_buffer_s *request)
+{
+	struct comm_buffer_s *output;
+	struct {
+		MCPptr_t command;
+		MCPptr_t id;
+	} __attribute__((packed)) *message;
+
+	if (!request || !request->comm ||
+	    request->len < 2 * sizeof(MCPptr_t))
+		return -EINVAL;
+
+	output = comm_buf_get(sizeof(*message), request->comm);
+	if (!output)
+		return -ENOMEM;
+
+	message = (void *)&output->comm_buf;
+	message->command = byte_reorder_put_int64(
+		request->comm->flags, MEDUSA_COMM_AUTHREQUEST_PROGRESS);
+	message->id = ((MCPptr_t *)(request->comm_buf +
+				    sizeof(MCPptr_t)))[0];
+	output->len = sizeof(*message);
+	output->want = 0;
+	output->completed = NULL;
+	comm_buf_output_enqueue(request->comm, output);
+	return 0;
+}
+
 static void unify_bitmap_types(struct medusa_comm_attribute_s *a)
 {
 	/*

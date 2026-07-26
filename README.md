@@ -13,6 +13,20 @@ that is excluded from Medusa. Constable configuration consists of two parts:
 Constable is completely independent from kernel, which is ensured by kernel sending all supported 
 entities to Constable at the start.
 
+Long-running decisions
+----------------------
+
+Linux Medusa's decision timeout is a renewable liveness lease rather than a
+maximum decision duration. An asynchronous or interactive handler may call
+`mcp_renew_authrequest(request)` before each lease expires while it waits for
+user input. The progress message extends only that request's lease; it does
+not send a verdict or change policy.
+
+This is currently an optional protocol-v3 extension. Callers must enable it
+only when paired with a kernel that supports
+`MEDUSA_COMM_AUTHREQUEST_PROGRESS`; automatic feature negotiation is planned
+for the next protocol revision.
+
 Usage
 -----
 run constable with parameter minimal/constable.conf that blocks all syscalls
