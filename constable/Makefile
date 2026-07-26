@@ -26,13 +26,18 @@ CP = cp
 
 # Do not touch rest of the file!
 
-OBJECTS = vs.o tree.o space.o class.o object.o object_endian.o event.o \
+OBJECTS = vs.o tree.o space.o class.o object.o object_endian.o decision.o event.o \
 	  comm.o comm_buf.o hash.o constable.o init.o generic.o \
 	  access_types.o
 MODULES = language mcp rbac # force
 ADDON = Mlibc
 
+.PHONY: test
+
 all:	constable rbacadm
+
+test: constable
+	$(MAKE) -C tests CC="$(CC)" CFLAGS="$(CFLAGS)"
 
 remake:	clean all
 
@@ -73,9 +78,9 @@ clean:
 	rm -f *.o modules.a constable rbacadm
 	$(MAKE) modules TARGET=clean
 	$(MAKE) addon TARGET=clean
+	$(MAKE) -C tests clean
 
 mrproper:
 	rm -f *.o modules.a constable rbacadm
 	$(MAKE) modules TARGET=mrproper
 	$(MAKE) addon TARGET=mrproper
-

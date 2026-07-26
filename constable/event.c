@@ -328,33 +328,6 @@ int register_event_handler(struct event_handler_s *h, struct event_names_s *evna
 }
 
 
-int evaluate_result(int old, int new)
-{
-	/*
-	 * if( new==RESULT_FORCE_ALLOW && (old==RESULT_ERR || old==RESULT_ALLOW) )
-	 *	return new;
-	 * else if( new==RESULT_DENY )
-	 *	return new;
-	 * else if( new==RESULT_FAKE_ALLOW && old!=RESULT_DENY )
-	 *	return new;
-	 * else if( new==RESULT_ALLOW && old==RESULT_ERR )
-	 *	return new;
-	 */
-
-	if (new != RESULT_ALLOW && new != RESULT_DENY
-		&& new != RESULT_FAKE_ALLOW && new != RESULT_FORCE_ALLOW)
-		new = RESULT_DENY;
-
-	if (old == RESULT_DENY || new == RESULT_DENY)
-		return RESULT_DENY;
-	if (old == RESULT_ERR || new == RESULT_FAKE_ALLOW)
-		return new;
-	if (old == RESULT_ALLOW && new == RESULT_FORCE_ALLOW)
-		return new;
-
-	return old;
-}
-
 static int do_event_handler(struct comm_buffer_s *cb)
 {
 	struct event_handler_s *h;

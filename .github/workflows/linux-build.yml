@@ -25,3 +25,5 @@ jobs:
         run: make -C libmcompiler
       - name: Build Constable
         run: make -C constable
+      - name: Test Constable semantics
+        run: make -C constable test

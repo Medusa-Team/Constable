@@ -27,6 +27,14 @@ only when paired with a kernel that supports
 `MEDUSA_COMM_AUTHREQUEST_PROGRESS`; automatic feature negotiation is planned
 for the next protocol revision.
 
+Policy language
+---------------
+
+The protocol-v3 policy grammar, handler ordering, and multi-handler answer
+composition are documented in [docs/policy-language.md](docs/policy-language.md).
+The document records implemented behavior so later compiler modernization can
+be checked for semantic equivalence.
+
 Usage
 -----
 run constable with parameter minimal/constable.conf that blocks all syscalls
