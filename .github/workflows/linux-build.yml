@@ -27,3 +27,24 @@ jobs:
         run: make -C constable
       - name: Test Constable semantics
         run: make -C constable test
+
+  sanitizer:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sanitizer: address
+            name: AddressSanitizer
+          - sanitizer: undefined
+            name: UndefinedBehaviorSanitizer
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes build-essential
+      - name: Build and test
+        run: ./ci/sanitize.sh ${{ matrix.sanitizer }}

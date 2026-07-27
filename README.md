@@ -27,6 +27,25 @@ only when paired with a kernel that supports
 `MEDUSA_COMM_AUTHREQUEST_PROGRESS`; automatic feature negotiation is planned
 for the next protocol revision.
 
+Development checks
+------------------
+
+The normal Linux build and semantic corpus run with:
+
+```sh
+make -C libmcompiler
+make -C constable
+make -C constable test
+```
+
+CI also builds the complete reference server and executes the same tests
+independently under AddressSanitizer and UndefinedBehaviorSanitizer:
+
+```sh
+./ci/sanitize.sh address
+./ci/sanitize.sh undefined
+```
+
 Policy language
 ---------------
 

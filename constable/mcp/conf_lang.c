@@ -212,12 +212,16 @@ static void gen_lex_ident(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t
 {
 	*sym = T_id;
 	*data = (uintptr_t)strdup(buf);
+	if (!*data)
+		*sym = eNOMEM;
 }
 
 static void gen_lex_str(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
 	*sym = T_str;
 	*data = (uintptr_t)strdup(buf);
+	if (!*data)
+		*sym = eNOMEM;
 }
 
 static void gen_lex_num(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
@@ -376,6 +380,10 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 	static in_port_t port;
 	static struct module_s *module;
 	struct comm_s *comm;
+	char *token = NULL;
+
+	if (c->l.sym == T_id || c->l.sym == T_str)
+		token = (char *)c->l.data;
 
 	switch (s) {
 	case Pname:
@@ -455,6 +463,10 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		mcp_error("mcp language error");
 		break;
 	}
+
+	free(token);
+	if (token)
+		c->l.data = 0;
 }
 
 int mcp_language_do(char *filename)

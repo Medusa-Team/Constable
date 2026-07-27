@@ -5,37 +5,68 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <stdint.h>
 #include <mcompiler/dynamic.h>
 
 int _darg_resizebuf( darg_t *darg, int addlen )
-{ char *p,*pe;
-    long d;
-    p=darg->buf;	pe=p+darg->blen;
-    darg->blen+=addlen;
-    if( (darg->buf=realloc(p,(darg->blen)*sizeof(char)))
-            ==NULL )
-    {	darg->buf=p;
-        darg->blen-=addlen;
+{
+    char *old_buf, *new_buf;
+    uintptr_t old_start, old_end;
+    int old_len, new_len, i;
+
+    if( darg==NULL || addlen<=0 || darg->blen<0 ||
+            darg->blen>INT_MAX-addlen )
         return(0);
-    }
-    d=(darg->buf)-p;
-    if( d!=0 )
-    { int i;
+
+    old_buf=darg->buf;
+    old_len=darg->blen;
+    new_len=old_len+addlen;
+    if( (new_buf=malloc((size_t)new_len))==NULL )
+        return(0);
+
+    if( old_buf!=NULL && darg->bn>0 )
+        memcpy(new_buf,old_buf,(size_t)darg->bn);
+
+    /*
+     * realloc() invalidates the old pointer value when it moves the buffer.
+     * Relocate pointers while the original allocation is still alive, then
+     * release it.
+     */
+    old_start=(uintptr_t)old_buf;
+    old_end=old_start+(size_t)old_len;
+    if( old_buf!=NULL && old_end>=old_start )
         for(i=0;i<darg->an;i++)
-            if( darg->argv[i]>=p && darg->argv[i]<pe )
-                darg->argv[i]+=d;
-    }
+        {
+            uintptr_t arg=(uintptr_t)darg->argv[i];
+
+            if( arg>=old_start && arg<old_end )
+                darg->argv[i]=new_buf+(arg-old_start);
+        }
+
+    free(old_buf);
+    darg->buf=new_buf;
+    darg->blen=new_len;
     return(addlen);
 }
 
 int _darg_resizeargv( darg_t *darg, int addlen )
-{ char **z;
-    darg->alen+=addlen;
-    if((darg->argv=realloc((z=darg->argv),(darg->alen)*sizeof(char*)))==NULL)
-    {	darg->argv=z;
-        darg->alen-=addlen;
+{
+    char **new_argv;
+    int new_alen;
+
+    if( darg==NULL || addlen==0 ||
+            (addlen>0 && darg->alen>INT_MAX-addlen) ||
+            (addlen<0 && (addlen==INT_MIN || darg->alen< -addlen)) )
         return(0);
-    }
+    new_alen=darg->alen+addlen;
+    if( new_alen<=darg->an )
+        return(0);
+    new_argv=realloc(darg->argv,(size_t)new_alen*sizeof(char*));
+    if( new_argv==NULL )
+        return(0);
+    darg->argv=new_argv;
+    darg->alen=new_alen;
     return(addlen);
 }
 
@@ -87,7 +118,13 @@ int darg_append( darg_t *darg, char *arg )
     if( (darg->an)+1 >= darg->alen )
         if( _darg_resizeargv(darg,32)!=32 )
             return(0);
-    if( arg!=NULL )		len=strlen(arg)+1;
+    if( arg!=NULL ) {
+        size_t arglen=strlen(arg);
+
+        if( arglen>=INT_MAX )
+            return(0);
+        len=(int)arglen+1;
+    }
     else			len=0;
     if( arg==NULL )
         darg->argv[darg->an]=NULL;
@@ -96,7 +133,9 @@ int darg_append( darg_t *darg, char *arg )
             return(0);
     }
     else
-    {	if( (darg->bn)+len > darg->blen )
+    {	if( darg->bn>INT_MAX-len )
+            return(0);
+        while( (darg->bn)+len > darg->blen )
             if( _darg_resizebuf(darg,128)!=128 )
                 return(0);
         darg->argv[darg->an]=(darg->buf)+(darg->bn);
@@ -117,7 +156,13 @@ int darg_insert( darg_t *darg, int pos, char *arg )
     if( (darg->an)+1 >= darg->alen )
         if( _darg_resizeargv(darg,32)!=32 )
             return(0);
-    if( arg!=NULL )		len=strlen(arg)+1;
+    if( arg!=NULL ) {
+        size_t arglen=strlen(arg);
+
+        if( arglen>=INT_MAX )
+            return(0);
+        len=(int)arglen+1;
+    }
     else			len=0;
     if( arg==NULL )
         a=NULL;
@@ -126,7 +171,9 @@ int darg_insert( darg_t *darg, int pos, char *arg )
             return(0);
     }
     else
-    {	if( (darg->bn)+len > darg->blen )
+    {	if( darg->bn>INT_MAX-len )
+            return(0);
+        while( (darg->bn)+len > darg->blen )
             if( _darg_resizebuf(darg,128)!=128 )
                 return(0);
         a=(darg->buf)+(darg->bn);
@@ -169,4 +216,3 @@ int darg_delete( darg_t *darg, int pos )
         _darg_resizeargv(darg,-32);
     return(1);
 }
-
