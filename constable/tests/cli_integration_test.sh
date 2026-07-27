@@ -16,6 +16,7 @@ trap cleanup EXIT HUP INT TERM
 grep -Fq 'Usage:' "$temporary.help"
 grep -Fq -- '--help' "$temporary.help"
 grep -Fq -- '-c <policy file>' "$temporary.help"
+grep -Fq -- '--fallback <event=policy>' "$temporary.help"
 
 if "$constable" -trash >"$temporary.unknown" 2>&1
 then
@@ -30,5 +31,12 @@ then
 	exit 1
 fi
 grep -Fxq 'Option -V requires an argument' "$temporary.missing"
+
+if "$constable" -F invalid >"$temporary.missing" 2>&1
+then
+	echo "cli integration: malformed fallback policy was accepted" >&2
+	exit 1
+fi
+grep -Fq 'Invalid fallback policy' "$temporary.missing"
 
 echo "cli integration: all checks passed"

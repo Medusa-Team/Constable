@@ -125,6 +125,23 @@ constable_cli_parse(int argc, char *const argv[],
 			options->medusa_config_file_explicit = true;
 			continue;
 		}
+		if (option_is(argument, "-F") ||
+		    option_is(argument, "--fallback")) {
+			if (options->fallback_policy_count >=
+			    CONSTABLE_MAX_FALLBACK_POLICIES) {
+				*problem_argument = argument;
+				return CONSTABLE_CLI_TOO_MANY_FALLBACKS;
+			}
+			result = option_argument(
+				argc, argv, &index,
+				&options->fallback_policy_specs[
+					options->fallback_policy_count],
+				problem_argument);
+			if (result != CONSTABLE_CLI_OK)
+				return result;
+			options->fallback_policy_count++;
+			continue;
+		}
 
 		*problem_argument = argument;
 		return CONSTABLE_CLI_UNKNOWN_OPTION;

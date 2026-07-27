@@ -51,6 +51,11 @@ layout and byte order come from that connection. After the schema is complete,
 Constable resolves monitoring masks and executes the optional policy `_init`
 handler. Only then does it send READY.
 
+Configured fallback policies live in `fallback_policy.c`. MCP resolves their
+symbolic event names only after the kernel has announced its connection-local
+schema. It queues exact, fixed-size policy frames before READY; policy
+compilation and normal decision evaluation do not own this handshake state.
+
 For a decision:
 
 1. The MCP reader allocates a `comm_buffer_s`, validates the frame, and resolves

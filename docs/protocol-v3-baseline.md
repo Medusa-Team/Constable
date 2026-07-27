@@ -21,8 +21,17 @@ plane, authentication model, learning system, or safe rollout mechanism.
 1. Constable opens the configured Medusa character device.
 2. It receives the kernel greeting and uses the version supplied there.
 3. The kernel publishes class and event definitions.
-4. Constable processes the ready exchange.
-5. Authorization requests and fetch/update traffic use the established schema.
+4. Constable optionally sends configured per-event fallback policies.
+5. Constable processes the ready exchange.
+6. Authorization requests and fetch/update traffic use the established schema.
+
+The fallback-policy command is a migration extension to protocol v3. Its
+payload is the announced event identifier followed by one byte selecting
+`baseline_allow`, `baseline_deny`, or `online_required`. The kernel stages the
+complete set without changing live decisions and publishes it atomically when
+READY succeeds. Closing the connection before READY discards the staged set.
+Constable sends no extension commands unless the operator uses `-F` or
+`--fallback`, preserving compatibility for existing configurations.
 
 Worker threads execute policy events, but the kernel-side transport serializes
 the delegated request/answer path. Parallel policy evaluation is therefore not

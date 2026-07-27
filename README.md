@@ -31,6 +31,20 @@ Run `constable/constable --help` for all command-line modes. Production use
 requires a matching Medusa kernel and normally supplies both the Constable
 communication configuration and the Medusa policy configuration.
 
+Fallback policy installation is opt-in and repeatable:
+
+```sh
+constable/constable -F exec=baseline_deny \
+  --fallback ptrace=online_required
+```
+
+Accepted policies are `baseline_allow`, `baseline_deny`, and
+`online_required`. Constable resolves each event against the schema announced
+by that kernel connection, queues every policy before READY, and refuses
+startup if an event is unknown. A kernel without the optional protocol-v3
+fallback command rejects the write, so a configured policy cannot silently
+downgrade to the old behavior.
+
 Long-running decisions
 ----------------------
 

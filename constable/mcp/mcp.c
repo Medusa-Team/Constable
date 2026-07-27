@@ -16,6 +16,7 @@
 #include "../medusa_object.h"
 #include "../object.h"
 #include "../event.h"
+#include "../fallback_policy.h"
 #include "../string_utils.h"
 #include <sys/param.h>
 #include <endian.h>
@@ -882,11 +883,56 @@ static enum read_result mcp_r_discard(struct comm_buffer_s *b)
 	return READ_FREE;
 }
 
+static int mcp_queue_fallback_policies(struct comm_s *c)
+{
+	const struct fallback_policy_config *policy;
+	struct event_names_s *event_name;
+	struct event_type_s *event;
+	struct comm_buffer_s *buffer;
+	MCPptr_t command_wire;
+	MCPptr_t event_wire;
+	unsigned int index;
+	size_t frame_size =
+		sizeof(MCPptr_t) +
+		sizeof(struct medusa_comm_fallback_policy_s);
+
+	for (index = 0; index < fallback_policy_count(); index++) {
+		policy = fallback_policy_at(index);
+		event_name = event_type_find_name((char *)policy->event, false);
+		if (!event_name || !event_name->events[c->conn]) {
+			comm_error("comm %s: fallback event '%s' was not announced",
+				   c->name, policy->event);
+			return -1;
+		}
+		event = event_name->events[c->conn];
+		buffer = comm_buf_get((int)frame_size, c);
+		if (!buffer)
+			return -1;
+		command_wire = byte_reorder_put_int64(
+			c->flags, MEDUSA_COMM_FALLBACK_POLICY);
+		event_wire = byte_reorder_put_int64(
+			c->flags, event->acctype.opid);
+		if (fallback_policy_frame_encode(
+			    command_wire, event_wire, policy->policy,
+			    (unsigned char *)buffer->comm_buf, frame_size)) {
+			buffer->bfree(buffer);
+			return -1;
+		}
+		buffer->len = (int)frame_size;
+		buffer->want = 0;
+		buffer->completed = NULL;
+		comm_buf_output_enqueue(c, buffer);
+	}
+	return 0;
+}
+
 int mcp_ready_answer(struct comm_s *c)
 {
 	struct comm_buffer_s *r;
 	MCPptr_t *out;
 
+	if (mcp_queue_fallback_policies(c) < 0)
+		return -1;
 	r = comm_buf_get(sizeof(MCPptr_t), c);
 	if (unlikely(!r)) {
 		fatal("Can't alloc buffer for COMM_READY answer!");

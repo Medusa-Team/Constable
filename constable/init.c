@@ -24,6 +24,7 @@
 #include "policy_inspect.h"
 #include "policy_validate.h"
 #include "cli_options.h"
+#include "fallback_policy.h"
 
 #ifndef MEDUSA_INITNAME
 #define MEDUSA_INITNAME "/sbin/init"
@@ -140,6 +141,7 @@ int usage(const char *me)
 		"Usage: %s [options] [<constable config>]\n\n"
 		"    -h, --help prints this help without loading a policy\n"
 		"    -c <policy file> selects the Medusa policy source\n"
+		"    -F, --fallback <event=policy> stages an event fallback before READY\n"
 		"    -t and/or -d causes Constable to shut down before initiating communication\n"
 		"    -T executes function _debug offline and succeeds only on FORCE_ALLOW\n"
 		"    -E executes the controlled _debug_event policy self-test offline\n"
@@ -279,9 +281,18 @@ int main(int argc, char *argv[])
 		if (parse_result == CONSTABLE_CLI_MISSING_ARGUMENT)
 			fprintf(stderr, "Option %s requires an argument\n",
 				problem_argument);
+		else if (parse_result == CONSTABLE_CLI_TOO_MANY_FALLBACKS)
+			fprintf(stderr, "Too many fallback policies (maximum %u)\n",
+				CONSTABLE_MAX_FALLBACK_POLICIES);
 		else
 			fprintf(stderr, "Unknown option: %s\n", problem_argument);
 		usage(argv[0]);
+		return 2;
+	}
+	if (fallback_policy_configure(options.fallback_policy_specs,
+				      options.fallback_policy_count) < 0) {
+		fprintf(stderr,
+			"Invalid fallback policy; expected event=baseline_allow, event=baseline_deny, or event=online_required without duplicate events\n");
 		return 2;
 	}
 

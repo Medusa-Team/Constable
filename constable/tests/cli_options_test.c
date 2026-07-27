@@ -55,7 +55,9 @@ static void documented_options_are_parsed(void)
 	char *argv[] = {
 		"constable", "-t", "-T", "-E", "event", "-H", "history",
 		"-I", "policy.json", "-V", "/securityfs", "-d", "tree.log",
-		"-DD", "events.log", "-c", "medusa.conf", "constable.conf",
+		"-DD", "events.log", "-c", "medusa.conf",
+		"-F", "exec=baseline_deny",
+		"--fallback", "ptrace=online_required", "constable.conf",
 	};
 	struct constable_cli_options options;
 	const char *problem;
@@ -73,6 +75,10 @@ static void documented_options_are_parsed(void)
 	EXPECT_STRING("tree.log", options.tree_debug_file);
 	EXPECT_STRING("events.log", options.definition_debug_file);
 	EXPECT_STRING("medusa.conf", options.medusa_config_file);
+	EXPECT_TRUE(options.fallback_policy_count == 2);
+	EXPECT_STRING("exec=baseline_deny", options.fallback_policy_specs[0]);
+	EXPECT_STRING("ptrace=online_required",
+		      options.fallback_policy_specs[1]);
 	EXPECT_STRING("constable.conf", options.config_file);
 	EXPECT_TRUE(problem == NULL);
 }

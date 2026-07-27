@@ -25,7 +25,7 @@ CP = cp
 OBJECTS = vs.o tree.o space.o class.o object.o object_endian.o decision.o event.o \
 	  comm.o comm_buf.o hash.o constable.o init.o generic.o string_utils.o \
 	  access_types.o policy_event_test.o policy_inspect.o policy_validate.o \
-	  cli_options.o
+	  cli_options.o fallback_policy.o
 MODULES = language mcp rbac
 ADDON = Mlibc
 
