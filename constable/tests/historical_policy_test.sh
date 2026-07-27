@@ -65,4 +65,12 @@ done <"$manifest"
 test "$checks" -eq 5 ||
 	fail "manifest contains $checks policies, expected 5"
 
-echo "historical policy: $checks preserved policies and compiled trees match"
+minimal_policy="$source_root/constable/minimal/medusa.conf"
+grep -Fq "transparent path_guard path_guard;" "$minimal_policy" ||
+	fail "minimal policy does not declare the path_guard object"
+grep -Fq "fetch path_guard;" "$minimal_policy" ||
+	fail "minimal policy does not exercise path_guard fetch syntax"
+grep -Fq "update path_guard;" "$minimal_policy" ||
+	fail "minimal policy does not exercise path_guard update syntax"
+
+echo "historical policy: $checks preserved policies and compiled trees match; path_guard syntax present"

@@ -67,3 +67,8 @@ Both modes are offline: their schemas and objects exist only inside the
 Constable process, no device is opened, and no kernel state is read or
 modified. The schema is deliberately limited to fields exercised by these
 goldens; it is not presented as a complete current-kernel ABI.
+
+The Linux 7.1 Phase 4 kernel renames the experimental hard-link destination
+object class to `path_guard`. The minimal policy uses that descriptive class
+for its disabled fetch/update examples, and the historical-policy test requires
+those declarations while preserving the policy's compiled-tree digest.
