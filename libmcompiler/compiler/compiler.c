@@ -17,26 +17,38 @@ int compiler_verlib(char *ver)
 
 
 static sym_t c_warn( struct compiler_err_class *this, sym_t errsym, sym_t info )
-{	return(0);
+{
+    (void)this;
+    (void)errsym;
+    (void)info;
+    return(0);
 }
 
 static sym_t c_err( struct compiler_err_class *this, sym_t errsym, sym_t info )
-{	return(errsym);
+{
+    (void)this;
+    (void)info;
+    return(errsym);
 }
 
 static void c_err_destroy( struct compiler_err_class *this )
-{	return;
+{
+    (void)this;
 }
 
 static struct compiler_err_class c_default_err=
 {c_err_destroy,0,c_warn,c_err,0,0};
 
 static void c_default_param_out( struct compiler_class *c, sym_t sym )
-{	return;
+{
+    (void)c;
+    (void)sym;
 }
 
 static void c_default_inf_out( struct compiler_class *c, sym_t sym,... )
-{	return;
+{
+    (void)c;
+    (void)sym;
 }
 
 static void compiler_destroy( compiler_class_t *c )
@@ -104,4 +116,3 @@ compiler_class_t *compiler_create( void )
     c->l_rel=NULL;
     return(c);
 }
-

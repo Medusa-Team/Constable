@@ -152,6 +152,7 @@ lexstattab_t clex_states[]={
 
 void clex_gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 { val_t *v;
+    (void)want;
     if( (v=malloc(sizeof(val_t)+len+1))==NULL )
     {	*sym=eNOMEM;
         return;
@@ -209,6 +210,7 @@ void clex_gen_lex_numb( char *buf, int blen, sym_t *sym, uintptr_t *data, sym_t 
     int typ,len;
     unsigned long long l,b;
     double f;
+    (void)want;
     buf[blen]=0;
     l=0; b=0; f=0;
     if( *buf==0 )
@@ -283,6 +285,7 @@ void clex_gen_lex_string( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t
 { val_t *v;
     int p;
     long l;
+    (void)want;
     if( (v=malloc(sizeof(val_t)+len+1))==NULL )
     {	*sym=eNOMEM;
         return;
@@ -305,6 +308,7 @@ void clex_gen_lex_apos( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t w
 { val_t *v;
     int p;
     long l;
+    (void)want;
     if( (v=malloc(sizeof(val_t)+len+1))==NULL )
     {	*sym=eNOMEM;
         return;
@@ -327,4 +331,3 @@ void clex_gen_lex_apos( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t w
     *sym=CL_CHAR;
     *data=(uintptr_t)v;
 }
-

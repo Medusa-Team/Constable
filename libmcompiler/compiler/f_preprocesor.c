@@ -112,20 +112,20 @@ Retry:
     return( (p->file->last_char=p->file->buf[p->file->buf_pos++]) );
 }
 
-#define	GET_WORD	do { \
-    i=0;							\
-    while( (buf[i]=get_char(p))==' ' || buf[i]=='\t' ); 	\
-    if( buf[i]=='\n' )					\
-    goto Err;					\
-    i++;							\
-    for(;;)							\
-{	if( (z=get_char(p))<0 )				\
-    goto Err;				\
-    if( isspace((buf[i++]=(char)z)) )		\
-    break;					\
-    }							\
-    x=buf[i-1];						\
-    buf[i-1]=0;						\
+#define	GET_WORD	do {						\
+    i=0;								\
+    while( (buf[i]=get_char(p))==' ' || buf[i]=='\t' );		\
+    if( buf[i]=='\n' )						\
+        goto Err;							\
+    i++;								\
+    for(;;) {							\
+        if( (z=get_char(p))<0 )					\
+            goto Err;						\
+        if( isspace((buf[i++]=(char)z)) )			\
+            break;							\
+    }									\
+    x=buf[i-1];							\
+    buf[i-1]=0;							\
     } while(0)
 static int get_cmd( pre_t *p )
 { char buf[4096];
@@ -192,4 +192,3 @@ struct compiler_preprocessor_class *f_preprocessor_create( char *filename )
     }
     return((struct compiler_preprocessor_class*)p);
 }
-

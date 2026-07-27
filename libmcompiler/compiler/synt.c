@@ -72,7 +72,7 @@ static sym_t get_want(sym_t *stack, int stacklen)
     }
 
 sym_t compiler_compile( compiler_class_t *compiler, sym_t start )
-{ struct lex_s l;
+{ struct lex_s l = {0};
     int i,j;
     struct compile_tab_s *t;
     sym_t *stack,want,r,sym;
@@ -165,4 +165,3 @@ sym_t compiler_compile( compiler_class_t *compiler, sym_t start )
     free(stack);
     return(T);
 }
-
