@@ -6,6 +6,7 @@ TESTS = decision_test dynamic_argv_test alu_mixed_compare_test string_utils_test
 TESTS += dynamic_buffer_test comm_buffer_test register_bounds_test
 TESTS += checked_math_test lexer_growth_test
 TESTS += linked_list_test tree_path_test
+TESTS += rbac_roles_test
 
 .PHONY: all clean
 
@@ -25,6 +26,7 @@ all: $(TESTS) ../constable
 	./lexer_growth_test
 	./linked_list_test
 	./tree_path_test
+	./rbac_roles_test
 	sh ./policy_compile_test.sh ../constable fixtures
 
 ../constable:
@@ -90,6 +92,10 @@ linked_list_test: linked_list_test.c ../../libmcompiler/libmcompiler.a
 tree_path_test: tree_path_test.c ../tree.c
 	$(CC) $(CFLAGS) -std=c11 -I.. -I../../libmcompiler -o $@ \
 		tree_path_test.c ../tree.c
+
+rbac_roles_test: rbac_roles_test.c ../rbac/roles.c ../string_utils.c
+	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ rbac_roles_test.c \
+		../rbac/roles.c ../string_utils.c -pthread
 
 clean:
 	rm -rf $(TESTS) $(addsuffix .dSYM,$(TESTS))
