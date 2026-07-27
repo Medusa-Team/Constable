@@ -33,7 +33,7 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
     c->operation.attr.type=MED_TYPE_END;
     strncpy(c->operation.attr.name,t->acctype.name,MIN(MEDUSA_ATTRNAME_MAX,MEDUSA_OPNAME_MAX));
     c->operation.flags=comm->flags;
-    c->operation.class=&(t->operation_class);
+    c->operation.class=t->operation_class;
     c->operation.data=(char*)(op);
 
     c->subject.next=&(c->object);

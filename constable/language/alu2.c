@@ -73,8 +73,6 @@ void r_sto(struct register_s *v, struct register_s *d)
 
 	if (v->data == v->buf) {
 		runtime("Invalid lvalue");
-		//if ((d->attr->type & 0x0f) == MED_TYPE_STRING)
-		printf("ZZZ: %s: str=\"%s\"\n", __func__, d->data);
 		return;
 	}
 	if (!(v->flags & OBJECT_FLAG_LOCAL) && v->attr->type & MED_TYPE_READ_ONLY) {

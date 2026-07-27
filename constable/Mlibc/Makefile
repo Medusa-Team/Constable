@@ -1,5 +1,6 @@
 # Makefile for Mlibc, (C) 2000 Medusa Development Team
 # $Id: Makefile,v 1.2 2002/10/23 10:25:43 marek Exp $
+# Legacy optional addon; it is not part of the default Constable build.
 
 CC= gcc
 #CCOPTS= -Wall -O2
@@ -28,4 +29,3 @@ clean:
 
 mrproper:
 	-rm -f $(F_OBJS) *.o
-

@@ -75,7 +75,7 @@ static int get_event_context(struct comm_s *comm,
 	strncpy(c->operation.attr.name, t->acctype.name,
 		MIN(MEDUSA_ATTRNAME_MAX, MEDUSA_OPNAME_MAX));
 	c->operation.flags = comm->flags;
-	c->operation.class = &t->operation_class;
+	c->operation.class = t->operation_class;
 	c->operation.data = (char *)(data) + 2 * sizeof(MCPptr_t);
 
 	c->subject.next = &c->object;

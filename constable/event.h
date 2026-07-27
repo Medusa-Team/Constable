@@ -40,10 +40,7 @@ struct event_mask_s {
 	char bitmap[8];
 };
 
-/*
- * Struct with variable length.
- * Allocated by event_type_add().
- */
+/* Allocated by event_type_add(). */
 struct event_type_s {
 	struct hash_ent_s	hashent;
 	struct event_names_s	*evname;
@@ -52,7 +49,7 @@ struct event_type_s {
 	struct event_mask_s	mask[2];
 	//	struct event_type_s	*alt;
 	struct medusa_acctype_s	acctype;
-	struct class_s		operation_class;
+	struct class_s		*operation_class;
 };
 
 /*
@@ -97,7 +94,7 @@ struct event_handler_s {
 	 */
 	int (*handler)(struct comm_buffer_s *, struct event_handler_s *, struct event_context_s *);
 	struct object_s	*local_vars;
-	char		data[0];
+	uintptr_t	*data;
 };
 
 struct event_hadler_hash_s {

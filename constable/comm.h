@@ -15,7 +15,7 @@
 #include <semaphore.h>
 #include <stdio.h>
 
-#define	P_COMM_BUF_VAR_DATA(cb, ofs)	((cb)->var_data + (ofs))
+#define	P_COMM_BUF_VAR_DATA(cb, ofs)	((char *)(cb)->var_data + (ofs))
 #define	PUPTR_COMM_BUF_VAR_DATA(cb, ofs)  ((uintptr_t *)P_COMM_BUF_VAR_DATA((cb), (ofs)))
 
 extern struct comm_buffer_queue_s comm_todo;
@@ -82,7 +82,7 @@ struct comm_buffer_s {
 	int (*completed)(struct comm_buffer_s *c); /* for comm */
 	void			*var_data;
 	char			*p_comm_buf;	/* for read/write */
-	char			comm_buf[0];	/* for comm */
+	char			comm_buf[];	/* for comm */
 };
 
 struct comm_s {
@@ -142,7 +142,7 @@ struct comm_s {
 			      struct comm_buffer_s *wake);
 
 	int (*conf_error)(struct comm_s *c, const char *fmt, ...);
-	char		user_data_[0]; /**< TODO change type to `mcp/mcp.c: struct mcp_comm_s` */
+	char		user_data_[]; /**< TODO change type to `mcp/mcp.c: struct mcp_comm_s` */
 };
 
 #define	comm_user_data(c)	((void *)(&((c)->user_data_[0])))

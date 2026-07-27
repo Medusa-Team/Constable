@@ -3,7 +3,8 @@
 
 THIS = objects.a
 INCDIR = ..
-CFLAGS = -Wall -ggdb
+CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -g -fPIC \
+	-D_GNU_SOURCE
 
 OBJECTS = compiler.o synt.o special_out.o lex.o \
 	  nul_preprocesor.o gcc_preprocesor.o \
@@ -32,4 +33,3 @@ test_c_lex:	test_c_lex.c objects.a
 
 test_c_pre:	test_c_pre.c objects.a
 	$(CC) $(CFLAGS) -I $(INCDIR) test_c_pre.c -o test_c_pre objects.a
-

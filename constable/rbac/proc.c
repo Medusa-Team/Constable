@@ -184,7 +184,7 @@ int rbac_init( struct module_s *m )
         return(init_error("rbac: Can't add classhandler to process"));
     }
 
-    if( (eh=malloc(1*sizeof(struct event_handler_s)))==NULL )
+    if( (eh=calloc(1, sizeof(*eh)))==NULL )
     {	init_error(Out_of_memory);
         free(rbac_proc_ch->cinfo_offset);
         free(((struct proc_class_handler_s*)rbac_proc_ch)->attr_uid);
@@ -200,4 +200,3 @@ int rbac_init( struct module_s *m )
     }
     return(0);
 }
-

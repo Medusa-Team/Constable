@@ -11,11 +11,10 @@ module.o:	$(OBJECTS)
 	$(LD) -r -o $@ $(OBJECTS)
 
 %.o:	%.c
-	$(CC) $(CFLAGS) -ggdb -c $<
+	$(CC) $(CFLAGS) -c $<
 
 clean:
 	rm -f *.o
 
 mrproper:
 	rm -f *.o
-

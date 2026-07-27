@@ -65,7 +65,7 @@ struct class_s {
 					  */
 	} subject;
 	struct medusa_class_s m;
-	struct medusa_attribute_s attr[0];
+	struct medusa_attribute_s attr[];
 };
 
 /*
@@ -158,4 +158,3 @@ void class_print(struct class_s *c, void(*out)(int arg, char *), int arg);
 void object_print(struct object_s *o, void(*out)(int arg, char *), int arg);
 
 #endif /* _OBJECT_H */
-

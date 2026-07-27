@@ -7,12 +7,8 @@ DESTDIR = $(PREFIX)
 BINDIR = $(DESTDIR)/bin
 CC = gcc
 #CC = clang
-#CFLAGS = -Wall -O2
-CFLAGS = -Wall -ggdb -DRBAC -DDEBUG_TRACE -I`pwd`/../libmcompiler/ -D_GNU_SOURCE
-#CFLAGS = -Wall -ggdb -DDEBUG_TRACE
-#CFLAGS = -Wall -O2 -DRBAC
-#CFLAGS = -Wall -O2
-#CFLAGS = -Wall -ggdb
+CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -g -DRBAC \
+	-I$(CURDIR)/../libmcompiler -D_GNU_SOURCE
 LD = ld
 #LDFLAGS = ../libmcompiler/libmcompiler.a -lefence
 LDFLAGS = ../libmcompiler/libmcompiler.a -pthread

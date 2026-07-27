@@ -68,7 +68,7 @@ int rbac_adm_perm_init( void )
 { struct event_handler_s *eh;
     struct event_names_s *event;
 
-    if( (eh=malloc(6*sizeof(struct event_handler_s)))==NULL )
+    if( (eh=calloc(6, sizeof(*eh)))==NULL )
     {	init_error(Out_of_memory);
         return(-1);
     }
@@ -116,4 +116,3 @@ int rbac_adm_perm_init( void )
         return(init_error("rbac: Can't register handler for permission_assign"));
     return(0);
 }
-

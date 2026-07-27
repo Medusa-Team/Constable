@@ -117,7 +117,7 @@ static int test_char( char c, char *test )
     switch( l->c )				\
 {	case 'a':     l->c='\a'; break;	\
     case 'b':     l->c='\b'; break;	\
-    case 'e':     l->c='\e'; break; \
+    case 'e':     l->c='\033'; break; \
     case 'f':     l->c='\f'; break;	\
     case 'n':     l->c='\n'; break;	\
     case 'r':     l->c='\r'; break;	\
@@ -277,4 +277,3 @@ struct compiler_lex_class *lex_create( lexstattab_t *stattab, struct compiler_pr
     {	dec_use(l->pre);	l->pre=NULL;	}
     return((struct compiler_lex_class*)l);
 }
-

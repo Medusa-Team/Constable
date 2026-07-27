@@ -702,8 +702,9 @@ static void tree_get_visited_do(struct tree_s *p, struct members_s *arg)
 /*
  * tree_clear_visited_do() clear a @t->visited flag to %false.
  */
-static void tree_clear_visited_do(struct tree_s *t, void *)
+static void tree_clear_visited_do(struct tree_s *t, void *arg)
 {
+	(void)arg;
 	t->visited = false;
 }
 
@@ -917,8 +918,6 @@ int space_add_event(struct event_handler_s *handler, int ehh_list,
 	// Vid tree_comm_reinit(), tam bY sa to malo...
 	// Jaaaaaj ved to preto, lebo je to zavesene na type->handlers_hash a tam este
 	// nemame spravenu kontrolu, vid TODO 3 v space_init_event_mask() ;)
-	printf("YYY: %s subject=%p, object=%p, subj_node=%p, obj_node=%p\n", handler->op_name, subject, object, subj_node, obj_node);
-
 	/* @subject and @object must be both ALL_OBJ */
 	if (subj_node && obj_node) {
 		/* create anonymous and not primary space */

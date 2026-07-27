@@ -99,6 +99,7 @@ int event_free_all_events(struct comm_s *comm)
 	pthread_mutex_lock(&events_lock);
 	for (e = events; e != NULL; e = e->next) {
 		if (e->events[comm->conn] != NULL) {
+			free(e->events[comm->conn]->operation_class);
 			free(e->events[comm->conn]);
 			e->events[comm->conn] = NULL;
 		}
@@ -124,22 +125,21 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 	l++;
 
 	l *= sizeof(struct medusa_attribute_s);
-	e = malloc(sizeof(struct event_type_s) + l);
+	e = calloc(1, sizeof(*e));
 	if (e == NULL)
 		return NULL;
+	e->operation_class = calloc(1, sizeof(*e->operation_class) + l);
+	if (e->operation_class == NULL) {
+		free(e);
+		return NULL;
+	}
 	memcpy(&(e->acctype), m, sizeof(struct medusa_acctype_s));
-	memset(&(e->operation_class), 0, sizeof(e->operation_class));
-	//	e->operation_class.next=NULL;
-	//	e->operation_class.cinfo_offset=e->operation_class.cinfo_size=0;
-	//	e->operation_class.cinfo_mask=0;
-	//	e->operation_class.set=NULL;
-	//	e->operation_class.event_offset=e->operation_class.event_size=0;
-	//	e->operation_class.m.classid=0;
-	e->operation_class.m.size = e->acctype.size;
-	e->operation_class.m.name[0] = 0;
-	strncpy(e->operation_class.m.name, e->acctype.name, MIN(MEDUSA_CLASSNAME_MAX, MEDUSA_OPNAME_MAX));
-	memcpy(e->operation_class.attr, a, l);
-	e->operation_class.comm = comm;
+	e->operation_class->m.size = e->acctype.size;
+	e->operation_class->m.name[0] = 0;
+	strncpy(e->operation_class->m.name, e->acctype.name,
+		MIN(MEDUSA_CLASSNAME_MAX, MEDUSA_OPNAME_MAX));
+	memcpy(e->operation_class->attr, a, l);
+	e->operation_class->comm = comm;
 
 	e->op[0] = (struct class_s *)hash_find(&(comm->classes), e->acctype.op_class[0]);
 	if (e->op[0] == NULL)
@@ -207,7 +207,8 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 			debug_def_out(debug_def_arg, " subject's event");
 
 		debug_def_out(debug_def_arg, " {\n");
-		attr_print(&(e->operation_class.attr[0]), debug_def_out, debug_def_arg);
+		attr_print(&(e->operation_class->attr[0]), debug_def_out,
+			   debug_def_arg);
 		debug_def_out(debug_def_arg, "}\n");
 
 		pthread_mutex_unlock(&debug_def_lock);
@@ -216,6 +217,7 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 	/* allocate a new event descriptor, if it doesn't exist yet */
 	evname = event_type_find_name(e->acctype.name, true);
 	if (evname == NULL) {
+		free(e->operation_class);
 		free(e);
 		return NULL;
 	}
@@ -323,7 +325,6 @@ int register_event_handler(struct event_handler_s *h, struct event_names_s *evna
 		vs_add(object_vs, l->object_vs);
 	// else	vs_clear(l->object_vs);
 
-	printf("Zaregistrovane %p [%s]\n", l, l->evname->name);
 	return 0;
 }
 

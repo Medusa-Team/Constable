@@ -199,7 +199,7 @@ struct space_s {
 	bool		processed;
 	bool		used;
 	struct members_s members;
-	char		name[0];
+	char		name[];
 };
 
 struct space_s *space_create(char *name, bool primary);
@@ -221,4 +221,3 @@ int space_apply_all(void);
 int space_vs_to_str(vs_t *vs, char *out, int size);
 
 #endif /* _TARGET_H */
-

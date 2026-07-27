@@ -8,8 +8,8 @@ VERSION = 1.0
 ROOT = 
 DESTDIR = $(ROOT)/usr/local
 CC = gcc
-#CFLAGS = -Wall -O2 -fPIC
-CFLAGS = -Wall -Wextra -g -fPIC -D_GNU_SOURCE
+CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -g -fPIC \
+	-D_GNU_SOURCE
 LD = ld
 LDFLAGS =
 AR = ar
@@ -90,4 +90,3 @@ remove_objects:
 	rm -f *.o core 
 	rm -rf $(BUILDDIR)
 	$(MAKE) subdirs TARGET=clean
-

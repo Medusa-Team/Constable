@@ -405,7 +405,7 @@ int generic_init(char *name, struct event_handler_s *subhandler, struct event_na
 
 	//printf("ZZZZZZZZZZZZZZ name=%s subhandler=%p event=%p\n", name, subhandler, event);
 	if (subhandler && event) {
-		eh = malloc(2 * sizeof(struct g_event_handler_s));
+		eh = calloc(2, sizeof(*eh));
 		if (eh == NULL) {
 			init_error(Out_of_memory);
 			free(ch->cinfo_offset);

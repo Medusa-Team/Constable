@@ -32,7 +32,7 @@ struct stack_s {
 	struct stack_s	*next;
 	int	size;
 	int	my_offset;
-	uintptr_t stack[0];
+	uintptr_t stack[];
 };
 
 struct execute_s {
@@ -88,4 +88,3 @@ int execute_init_stacks(int n);
 int execute_registers_init(void);
 
 #endif /* _EXECUTE_H */
-

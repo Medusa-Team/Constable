@@ -218,7 +218,7 @@ lexstattab_t lex_tab[] = {
 
 struct str_archive_s {
 	struct str_archive_s *next;
-	char str[0];
+	char str[];
 };
 
 static struct str_archive_s *str_archive;

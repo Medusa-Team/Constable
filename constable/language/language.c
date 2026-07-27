@@ -49,7 +49,7 @@ struct compile_tab_s language[] = {
 /* for */
 	{CMD, {Tfor, END}, {Tfor, SEC_START|2, SEC_START|3,
 			T|'(', CNE, T|';', SEC_SETPOS|4, C4, oJR, OUT_VAL3|3, END}},
-	{NEXTLINE, {}, {T|';', SEC_SETPOS|0xff, CNE, oJR, OUT_VAL3|4, T|')',
+	{NEXTLINE, {0}, {T|';', SEC_SETPOS|0xff, CNE, oJR, OUT_VAL3|4, T|')',
 			SEC_SETPOS|3, CMD, oJR, OUT_VAL3|0xff,
 			SEC_END, SEC_SETPOS|0xff, SEC_END, END}},
 	{C4, {T|';', END}, {END}},
@@ -85,4 +85,3 @@ struct compile_tab_s language[] = {
 
 	{END}
 };
-

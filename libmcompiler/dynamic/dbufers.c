@@ -107,7 +107,8 @@ int dlifo_read( dfifo_t *df, void *buf, int len )
     if( buf!=NULL )
     {
         for(i=0;i<len;i++)
-        {	memcpy(buf+i*(df->size),df->buf+((df->n-i-1)*(df->size)),(df->size));
+        {	memcpy((char *)buf+i*(df->size),
+		       df->buf+((df->n-i-1)*(df->size)), (df->size));
         }
     }
     df->n-=len;
@@ -135,7 +136,8 @@ int dfifo_last( dfifo_t *df, void *buf, int len )
     {	len=(df->n)-(df->pos);	}
     if( len<=0 )	return(0);
     for(i=0;i<len;i++)
-    {	memcpy(buf+i*(df->size),df->buf+((df->n-i-1)*(df->size)),(df->size));
+    {	memcpy((char *)buf+i*(df->size),
+	       df->buf+((df->n-i-1)*(df->size)), (df->size));
     }
     return(len);
 }
@@ -175,4 +177,3 @@ ddata_t *dfifo_to_ddata( dfifo_t *df )
     free(df);
     return(dd);
 }
-

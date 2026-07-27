@@ -9,7 +9,7 @@ temporary=${TMPDIR:-/tmp}/constable-policy-test.$$
 
 cleanup()
 {
-	rm -f "$temporary.valid" "$temporary.invalid"
+	rm -f "$temporary.valid" "$temporary.invalid" "$temporary.duplicate"
 }
 trap cleanup EXIT HUP INT TERM
 
@@ -32,4 +32,17 @@ if ! grep -Eq 'Missing ;|Unexpected }' "$temporary.invalid"; then
 	exit 1
 fi
 
-echo "policy compiler: valid corpus accepted; invalid corpus rejected"
+if "$constable" -t -c "$fixtures/policy-duplicate-function.conf" \
+	"$fixtures/offline.conf" >"$temporary.duplicate" 2>&1; then
+	echo "duplicate function unexpectedly compiled" >&2
+	exit 1
+fi
+
+if ! grep -Fq 'Duplicate definition of function duplicate' \
+	"$temporary.duplicate"; then
+	echo "duplicate function did not produce the expected diagnostic" >&2
+	sed -n '1,120p' "$temporary.duplicate" >&2
+	exit 1
+fi
+
+echo "policy compiler: valid corpus accepted; syntax and duplicate definitions rejected"

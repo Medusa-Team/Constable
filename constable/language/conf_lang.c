@@ -127,16 +127,20 @@ void conf_lang_out(struct compiler_out_class *o, sym_t s, uintptr_t d)
 		return;
 	}
 	if (handler_pos >= handler_size) {
-		handler_size = handler_pos + BYTECODE_CHUNK_SIZE;
-		handler = realloc(handler, sizeof(struct event_handler_s) + handler_size*sizeof(uintptr_t));
-		if (handler == NULL) {
+		int new_size = handler_pos + BYTECODE_CHUNK_SIZE;
+		uintptr_t *new_data =
+			realloc(handler->data, new_size * sizeof(*new_data));
+
+		if (new_data == NULL) {
 			error(Out_of_memory);
 			return;
 		}
+		handler->data = new_data;
+		handler_size = new_size;
 	}
 	if ((s & TYP) == O)
 		d = s;
-	((uintptr_t *)(handler->data))[handler_pos++] = d;
+	handler->data[handler_pos++] = d;
 }
 
 static void out_destroy(struct compiler_out_class *this)
@@ -289,8 +293,15 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 		ehh_list = EHH_VS_ALLOW;
 		handler_size = BYTECODE_CHUNK_SIZE;
 		handler_pos = 0;
-		handler = malloc(sizeof(struct event_handler_s) + handler_size*sizeof(uintptr_t));
+		handler = calloc(1, sizeof(*handler));
 		if (handler == NULL) {
+			error(Out_of_memory);
+			break;
+		}
+		handler->data = malloc(handler_size * sizeof(*handler->data));
+		if (handler->data == NULL) {
+			free(handler);
+			handler = NULL;
 			error(Out_of_memory);
 			break;
 		}
@@ -307,6 +318,10 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 			error("NULL function name");
 			break;
 		}
+		if (handler == NULL) {
+			error("NULL function handler");
+			break;
+		}
 		strcpy(handler->op_name, "func:");
 		strncpy(handler->op_name+5, op_name, MEDUSA_OPNAME_MAX-5);
 		if (!strcmp(op_name, "_init"))
@@ -316,12 +331,32 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 		else {
 			x = lex_getkeyword(op_name, Tcallfunc);
 			if (x == 0) {
-				x = (uintptr_t)(malloc(sizeof(void *)));
-				if (lex_addkeyword(op_name, Tcallfunc, x) < 0)
+				x = (uintptr_t)malloc(sizeof(uintptr_t));
+				if (x == 0) {
+					error(Out_of_memory);
+					free(handler->data);
+					free(handler);
+					handler = NULL;
+					break;
+				}
+				*((uintptr_t *)x) = 0;
+				if (lex_addkeyword(op_name, Tcallfunc, x) < 0) {
 					error("Duplicate definition of function %s", op_name);
-			} else if (*((uintptr_t *)x) != 0)
+					free((void *)x);
+					free(handler->data);
+					free(handler);
+					handler = NULL;
+					break;
+				}
+			} else if (*((uintptr_t *)x) != 0) {
 				error("Duplicate definition of function %s", op_name);
-			*((uintptr_t *)x) = ((uintptr_t)handler) + ((uintptr_t)(((struct event_handler_s *)0)->data));
+				free(handler->data);
+				free(handler);
+				handler = NULL;
+				break;
+			}
+			*((uintptr_t *)x) = (uintptr_t)handler->data;
+			free(handler);
 		}
 		handler = NULL;
 		break;
@@ -331,11 +366,14 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 			error("NULL function name");
 			break;
 		}
-		x = (uintptr_t)(malloc(sizeof(void *)));
-		*((void **)x) = 0;
+		x = (uintptr_t)malloc(sizeof(uintptr_t));
+		if (x == 0) {
+			error(Out_of_memory);
+			break;
+		}
+		*((uintptr_t *)x) = 0;
 		if (lex_addkeyword(op_name, Tcallfunc, x) < 0)
-			//warning("Duplicit declaration of function %s",op_name);
-			;
+			free((void *)x);
 		break;
 	case Pehh_list:
 		ehh_list = c->l.data;

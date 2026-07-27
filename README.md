@@ -30,6 +30,11 @@ for the next protocol revision.
 Development checks
 ------------------
 
+Constable and libmcompiler default to strict ISO C11 with
+`-Wall -Wextra -Wpedantic -pedantic-errors`. Production builds do not enable
+`DEBUG_TRACE`; developers who need the historical trace output can add
+`-DDEBUG_TRACE` explicitly to their `CFLAGS`.
+
 The normal Linux build and semantic corpus run with:
 
 ```sh
