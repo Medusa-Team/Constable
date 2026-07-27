@@ -1,7 +1,7 @@
 
 # $Id: Makefile,v 1.2 2002/10/23 10:25:43 marek Exp $
 
-OBJECTS = users.o roles.o load.o save.o adm.o adm_perm.o kobjects.o proc.o
+OBJECTS = users.o roles.o load.o save.o rotate.o adm.o adm_perm.o kobjects.o proc.o
 
 all:	module.o
 
@@ -18,4 +18,3 @@ clean:
 
 mrproper:
 	rm -f *.o
-
