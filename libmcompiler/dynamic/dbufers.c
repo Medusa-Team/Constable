@@ -1,179 +1,290 @@
-/* Library of dynamic structures  V1.0   6.12.1997	*/
-/*	copyright (c)1997 by Marek Zelem		*/ 
-/*	e-mail: marek@fornax.elf.stuba.sk		*/
-/* $Id: dbufers.c,v 1.2 2002/10/23 10:25:44 marek Exp $	*/
+/* SPDX-License-Identifier: GPL-2.0 */
+/* Dynamic FIFO/LIFO buffer, originally (c)1998 by Marek Zelem. */
 
 #include <mcompiler/dynamic.h>
+
+#include <limits.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
-/* Dynamic FIFO / LIFO	buffer */
-
-dfifo_t *dfifo_create( int size, int minlen )
-{ dfifo_t *df;
-    if( (df=malloc(sizeof(dfifo_t)))==NULL )
-        return(NULL);
-    if( (df->buf=malloc(minlen*size))==NULL )
-    { free(df); return(NULL); }
-    df->size=size; df->ml=minlen; df->len=minlen;
-    df->n=0; df->pos=0;
-    return(df);
-}
-
-int dfifo_delete( dfifo_t *df )
+static int allocation_size(int elements, int unit_size, size_t *bytes)
 {
-    if( df==NULL )
-        return(2);
-    if( df->buf != NULL )
-        free(df->buf);
-    free(df);
-    return(1);
+	if (elements <= 0 || unit_size <= 0 ||
+	    (size_t)elements > SIZE_MAX / (size_t)unit_size)
+		return 0;
+	*bytes = (size_t)elements * (size_t)unit_size;
+	return 1;
 }
 
-int dfifo_clear( dfifo_t *df )
+static int resize_fifo(dfifo_t *fifo, int capacity)
 {
-    df->pos=0;
-    df->n=0;
-    return(0);
+	void *replacement;
+	size_t bytes;
+
+	if (!allocation_size(capacity, fifo->size, &bytes))
+		return 0;
+	replacement = realloc(fifo->buf, bytes);
+	if (!replacement)
+		return 0;
+	fifo->buf = replacement;
+	fifo->len = capacity;
+	return 1;
 }
 
-int dfifo_write( dfifo_t *df, void *buf, int len )
+static int fifo_valid(const dfifo_t *fifo)
 {
-    if( (df->len-df->n)<len )
-    {
-        df->len= df->n+len+df->ml;
-        if( (df->buf=realloc(df->buf,(df->len*df->size)))==NULL )
-        { return(-1); }
-    }
-    memcpy(df->buf+((df->n)*(df->size)),buf,len*(df->size));
-    df->n+=len;
-    return(len);
+	return fifo && fifo->size > 0 && fifo->ml > 0 && fifo->len > 0 &&
+	       fifo->pos >= 0 && fifo->n >= fifo->pos &&
+	       fifo->len >= fifo->n;
 }
 
-int dfifo_read( dfifo_t *df, void *buf, int len )
+static int ensure_capacity(dfifo_t *fifo, int additional)
 {
-    if( ((df->pos)+len) > df->n )
-    {	len=(df->n)-(df->pos);	}
-    if( len<=0 )	return(0);
-    if( buf!=NULL )
-        memcpy(buf,df->buf+((df->pos)*(df->size)),len*(df->size));
-    df->pos+=len;
-    if( df->pos == df->n )
-    {	df->len=df->ml;
-        if( (df->buf=realloc(df->buf,(df->len*df->size)))==NULL )
-        {	return(-1);	}
-        df->n=0; df->pos=0;
-    }
-    return(len);
+	int needed;
+	int capacity;
+
+	if (!fifo_valid(fifo) || additional < 0 ||
+	    fifo->n > INT_MAX - additional)
+		return 0;
+	needed = fifo->n + additional;
+	if (needed <= fifo->len)
+		return 1;
+	if (needed > INT_MAX - fifo->ml)
+		return 0;
+	capacity = needed + fifo->ml;
+	return resize_fifo(fifo, capacity);
 }
 
-int dfifo_normalize( dfifo_t *df )
-{ int i;
-    i=df->pos;
-    if( i<0 )	return(0);
-    if( i>0 )
-    {	memmove(df->buf,df->buf+(i*(df->size)),(df->n-i)*(df->size));
-        df->pos=0; df->n-=i;
-    }
-    df->len=df->n + df->ml;
-    if( (df->buf=realloc(df->buf,(df->len*df->size)))==NULL )
-    {	return(-1);	}
-    return(df->n);
-}
-
-int dfifo_unread( dfifo_t *df, void *buf, int len )
-{ int i;
-    if( (df->pos) < len )
-    {	i=len-(df->pos);
-        if( ((df->len)-(df->n))<i )
-        { df->len=df->n + i + df->ml;
-            if( (df->buf=realloc(df->buf,(df->len*df->size)))==NULL )
-            { return(-1); }
-        }
-        memmove(df->buf+(len*df->size),df->buf+(df->pos*df->size),((df->n)-(df->pos))*(df->size));
-        df->pos=len;
-        df->n+=i;
-    }
-    df->pos-=len;
-    memcpy(df->buf+(df->pos*df->size),buf,len*(df->size));
-    return(len);
-}
-
-int dlifo_read( dfifo_t *df, void *buf, int len )
-{ int i;
-    if( ((df->n)-(df->pos)) < len )
-    {	len=(df->n)-(df->pos);	}
-    if( len<=0 )	return(0);
-    if( buf!=NULL )
-    {
-        for(i=0;i<len;i++)
-        {	memcpy((char *)buf+i*(df->size),
-		       df->buf+((df->n-i-1)*(df->size)), (df->size));
-        }
-    }
-    df->n-=len;
-    if( df->pos == df->n && df->pos != 0 )
-    {	df->len=df->ml;
-        if( (df->buf=realloc(df->buf,(df->len*df->size)))==NULL )
-        {	return(-1);	}
-        df->n=0; df->pos=0;
-    }
-    return(len);
-}
-
-int dfifo_first( dfifo_t *df, void *buf, int len )
+dfifo_t *dfifo_create(int size, int minlen)
 {
-    if( ((df->pos)+len) > df->n )
-    {	len=(df->n)-(df->pos);	}
-    if( len<=0 )	return(0);
-    memcpy(buf,df->buf+((df->pos)*(df->size)),len*(df->size));
-    return(len);
+	dfifo_t *fifo;
+	size_t bytes;
+
+	if (!allocation_size(minlen, size, &bytes))
+		return NULL;
+	fifo = malloc(sizeof(*fifo));
+	if (!fifo)
+		return NULL;
+	fifo->buf = malloc(bytes);
+	if (!fifo->buf) {
+		free(fifo);
+		return NULL;
+	}
+	fifo->size = size;
+	fifo->ml = minlen;
+	fifo->len = minlen;
+	fifo->n = 0;
+	fifo->pos = 0;
+	return fifo;
 }
 
-int dfifo_last( dfifo_t *df, void *buf, int len )
-{ int i;
-    if( ((df->n)-(df->pos)) < len )
-    {	len=(df->n)-(df->pos);	}
-    if( len<=0 )	return(0);
-    for(i=0;i<len;i++)
-    {	memcpy((char *)buf+i*(df->size),
-	       df->buf+((df->n-i-1)*(df->size)), (df->size));
-    }
-    return(len);
+int dfifo_delete(dfifo_t *fifo)
+{
+	if (!fifo)
+		return 2;
+	free(fifo->buf);
+	free(fifo);
+	return 1;
 }
 
-int dfifo_copy( dfifo_t *in, dfifo_t *out )
-{ long len;
-    len=in->n-in->pos;
-    if( in->size != out->size )
-        len=len*in->size / out->size; /* !!! POZOR nie vzdy korektne */
-    if( (out->len-out->n)<len )
-    {
-        out->len= out->n+len+out->ml;
-        if( (out->buf=realloc(out->buf,(out->len*out->size)))==NULL )
-        { return(-1); }
-    }
-    memcpy(out->buf+((out->n)*(out->size)),in->buf+((in->pos)*(in->size))
-           ,len*(out->size));
-    out->n+=len;
-    return(len);
+int dfifo_clear(dfifo_t *fifo)
+{
+	if (!fifo)
+		return -1;
+	fifo->pos = 0;
+	fifo->n = 0;
+	return 0;
 }
 
-ddata_t *dfifo_to_ddata( dfifo_t *df )
-{ int i;
-    ddata_t *dd;
-    if( (dd=malloc(sizeof(ddata_t)))==NULL )
-        return(NULL);
-    i=df->pos;
-    if( i>0 )
-    {	memmove(df->buf,df->buf+(i*(df->size)),(df->n-i)*(df->size));
-        df->pos=0; df->n-=i;
-    }
-    dd->buf=df->buf;
-    dd->len=df->len;
-    dd->n=df->n;
-    dd->size=df->size;
-    dd->ml=df->ml;
-    free(df);
-    return(dd);
+int dfifo_write(dfifo_t *fifo, void *buffer, int length)
+{
+	if (!fifo || length < 0 || (length && !buffer) ||
+	    !ensure_capacity(fifo, length))
+		return -1;
+	if (length)
+		memcpy(fifo->buf + (size_t)fifo->n * (size_t)fifo->size,
+		       buffer, (size_t)length * (size_t)fifo->size);
+	fifo->n += length;
+	return length;
+}
+
+int dfifo_read(dfifo_t *fifo, void *buffer, int length)
+{
+	int available;
+
+	if (!fifo_valid(fifo) || length < 0)
+		return -1;
+	available = fifo->n - fifo->pos;
+	if (length > available)
+		length = available;
+	if (!length)
+		return 0;
+	if (buffer)
+		memcpy(buffer,
+		       fifo->buf + (size_t)fifo->pos * (size_t)fifo->size,
+		       (size_t)length * (size_t)fifo->size);
+	fifo->pos += length;
+	if (fifo->pos == fifo->n) {
+		fifo->n = 0;
+		fifo->pos = 0;
+		(void)resize_fifo(fifo, fifo->ml);
+	}
+	return length;
+}
+
+int dfifo_normalize(dfifo_t *fifo)
+{
+	int active;
+
+	if (!fifo_valid(fifo))
+		return -1;
+	active = fifo->n - fifo->pos;
+	if (fifo->pos && active)
+		memmove(fifo->buf,
+			fifo->buf + (size_t)fifo->pos * (size_t)fifo->size,
+			(size_t)active * (size_t)fifo->size);
+	fifo->pos = 0;
+	fifo->n = active;
+	if (active <= INT_MAX - fifo->ml)
+		(void)resize_fifo(fifo, active + fifo->ml);
+	return active;
+}
+
+int dfifo_unread(dfifo_t *fifo, void *buffer, int length)
+{
+	int active;
+
+	if (!fifo_valid(fifo) || length < 0 || (length && !buffer))
+		return -1;
+	if (!length)
+		return 0;
+
+	if (fifo->pos >= length) {
+		fifo->pos -= length;
+	} else {
+		int additional = length - fifo->pos;
+
+		active = fifo->n - fifo->pos;
+		if (!ensure_capacity(fifo, additional))
+			return -1;
+		memmove(fifo->buf + (size_t)length * (size_t)fifo->size,
+			fifo->buf + (size_t)fifo->pos * (size_t)fifo->size,
+			(size_t)active * (size_t)fifo->size);
+		fifo->pos = 0;
+		fifo->n = active + length;
+	}
+	memcpy(fifo->buf + (size_t)fifo->pos * (size_t)fifo->size,
+	       buffer, (size_t)length * (size_t)fifo->size);
+	return length;
+}
+
+int dlifo_read(dfifo_t *fifo, void *buffer, int length)
+{
+	int available;
+	int index;
+
+	if (!fifo_valid(fifo) || length < 0)
+		return -1;
+	available = fifo->n - fifo->pos;
+	if (length > available)
+		length = available;
+	if (!length)
+		return 0;
+	if (buffer)
+		for (index = 0; index < length; index++)
+			memcpy((char *)buffer +
+			       (size_t)index * (size_t)fifo->size,
+			       fifo->buf +
+			       (size_t)(fifo->n - index - 1) *
+			       (size_t)fifo->size,
+			       (size_t)fifo->size);
+	fifo->n -= length;
+	if (fifo->pos == fifo->n) {
+		fifo->n = 0;
+		fifo->pos = 0;
+		(void)resize_fifo(fifo, fifo->ml);
+	}
+	return length;
+}
+
+int dfifo_first(dfifo_t *fifo, void *buffer, int length)
+{
+	int available;
+
+	if (!fifo_valid(fifo) || length < 0 || (length && !buffer))
+		return -1;
+	available = fifo->n - fifo->pos;
+	if (length > available)
+		length = available;
+	if (length)
+		memcpy(buffer,
+		       fifo->buf + (size_t)fifo->pos * (size_t)fifo->size,
+		       (size_t)length * (size_t)fifo->size);
+	return length;
+}
+
+int dfifo_last(dfifo_t *fifo, void *buffer, int length)
+{
+	int available;
+	int index;
+
+	if (!fifo_valid(fifo) || length < 0 || (length && !buffer))
+		return -1;
+	available = fifo->n - fifo->pos;
+	if (length > available)
+		length = available;
+	for (index = 0; index < length; index++)
+		memcpy((char *)buffer + (size_t)index * (size_t)fifo->size,
+		       fifo->buf +
+		       (size_t)(fifo->n - index - 1) * (size_t)fifo->size,
+		       (size_t)fifo->size);
+	return length;
+}
+
+int dfifo_copy(dfifo_t *input, dfifo_t *output)
+{
+	size_t available_bytes;
+	size_t output_units;
+
+	if (!fifo_valid(input) || !fifo_valid(output))
+		return -1;
+	available_bytes =
+		(size_t)(input->n - input->pos) * (size_t)input->size;
+	output_units = available_bytes / (size_t)output->size;
+	if (output_units > INT_MAX ||
+	    !ensure_capacity(output, (int)output_units))
+		return -1;
+	if (output_units)
+		memcpy(output->buf +
+		       (size_t)output->n * (size_t)output->size,
+		       input->buf +
+		       (size_t)input->pos * (size_t)input->size,
+		       output_units * (size_t)output->size);
+	output->n += (int)output_units;
+	return (int)output_units;
+}
+
+ddata_t *dfifo_to_ddata(dfifo_t *fifo)
+{
+	ddata_t *data;
+	int active;
+
+	if (!fifo_valid(fifo))
+		return NULL;
+	active = fifo->n - fifo->pos;
+	if (fifo->pos && active)
+		memmove(fifo->buf,
+			fifo->buf + (size_t)fifo->pos * (size_t)fifo->size,
+			(size_t)active * (size_t)fifo->size);
+	data = malloc(sizeof(*data));
+	if (!data)
+		return NULL;
+	data->buf = fifo->buf;
+	data->len = fifo->len;
+	data->n = active;
+	data->size = fifo->size;
+	data->ml = fifo->ml;
+	free(fifo);
+	return data;
 }
