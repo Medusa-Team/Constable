@@ -242,8 +242,7 @@ static char *store_string(char *s)
 		*errstr = Out_of_memory;
 		return NULL;
 	}
-	strcpy(n->str, s);
-	n->next = (*p);
+	memcpy(n->str, s, strlen(s) + 1);
 	n->next = (*p);
 	(*p) = n;
 	return n->str;

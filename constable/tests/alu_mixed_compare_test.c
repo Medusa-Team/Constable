@@ -82,9 +82,30 @@ static int check64(uint8_t left_type, uint64_t left_value, int op,
 	return -1;
 }
 
+static int check_string_append(const char *prefix, uint8_t right_type,
+			       const void *right_value, size_t right_size,
+			       const char *expected)
+{
+	struct register_s left;
+	struct register_s right;
+
+	init_register(&left, MED_TYPE_STRING, prefix, strlen(prefix) + 1);
+	init_register(&right, right_type, right_value, right_size);
+	do_bin_op(oADD, &left, &right);
+	checks++;
+	if (!strcmp(left.data, expected) &&
+	    left.attr->length == strlen(expected) + 1)
+		return 0;
+	fprintf(stderr, "string append check %u failed: got '%s'\n",
+		checks, left.data);
+	return -1;
+}
+
 int main(void)
 {
 	int failures = 0;
+	const uint8_t high_byte = 0xff;
+	const int32_t minimum = INT32_MIN;
 
 	failures += check32(MED_TYPE_UNSIGNED, 0, oLT,
 			    MED_TYPE_SIGNED, UINT32_MAX, 1);
@@ -107,6 +128,10 @@ int main(void)
 			    MED_TYPE_UNSIGNED, 0, 1);
 	failures += check64(MED_TYPE_SIGNED, UINT64_MAX - 1, oLT,
 			    MED_TYPE_SIGNED, UINT64_MAX, 1);
+	failures += check_string_append("x", MED_TYPE_BITMAP, &high_byte,
+					sizeof(high_byte), "xff");
+	failures += check_string_append("", MED_TYPE_SIGNED, &minimum,
+					sizeof(minimum), "-2147483648");
 
 	if (failures)
 		return 1;

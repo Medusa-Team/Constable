@@ -18,6 +18,7 @@
 #include "comm.h"
 #include "language/execute.h"
 #include "space.h"
+#include "string_utils.h"
 #include "threading.h"
 #include "mcp/mcp.h"
 
@@ -84,7 +85,10 @@ struct comm_s *comm_new(char *name, int user_size)
 	if (!c)
 		return NULL;
 
-	strncpy(c->name, name, sizeof(c->name) - 1);
+	if (string_copy(c->name, sizeof(c->name), name)) {
+		free(c);
+		return NULL;
+	}
 	c->fd = -1;
 	c->conn = comm_nr_connections++;
 	c->state_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
@@ -363,9 +367,8 @@ int comm_error(const char *fmt, ...)
 	char buf[4096];
 
 	va_start(ap, fmt);
-	vsnprintf(buf, 4000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), "", fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 
 	return -1;
@@ -377,9 +380,8 @@ int comm_info(const char *fmt, ...)
 	char buf[4096];
 
 	va_start(ap, fmt);
-	vsnprintf(buf, 4000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), "", fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 
 	return -1;

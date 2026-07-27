@@ -13,6 +13,7 @@
 #include "../constable.h"
 #include "../init.h"
 #include "../language/error.h"
+#include "../string_utils.h"
 #include <stdlib.h>
 #include <pthread.h>
 
@@ -167,6 +168,7 @@ int rbac_init( struct module_s *m )
 {
     struct event_handler_s *eh;
     struct event_names_s *event;
+    int name_length;
 
     (void)m;
     if( rbac_object_init()<0 )
@@ -202,8 +204,12 @@ int rbac_init( struct module_s *m )
         free(((struct proc_class_handler_s*)rbac_proc_ch)->attr_uid);
         return(-1);
     }
-    strcpy(eh->op_name,"rbac:");
-    strncpy(eh->op_name+5,event->name,MEDUSA_OPNAME_MAX-5);
+    name_length = snprintf(eh->op_name, MEDUSA_OPNAME_MAX, "rbac:%s",
+                           event->name);
+    if (name_length < 0 || name_length >= MEDUSA_OPNAME_MAX)
+    {	free(eh);
+        return(init_error("rbac: event handler name is too long"));
+    }
     eh->handler=rbac_proc_setuid_handler_notify;
     eh->local_vars=NULL;
     if( register_event_handler(eh,event,&(event->handlers_hash[EHH_NOTIFY_ALLOW]),ALL_OBJ,ALL_OBJ)<0 )

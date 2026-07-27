@@ -8,6 +8,7 @@
 #include "constable.h"
 #include "comm.h"
 #include "space.h"
+#include "string_utils.h"
 
 #include <stdio.h>
 #include <pthread.h>
@@ -166,7 +167,7 @@ struct space_s *space_create(char *name, bool primary)
 		return NULL;
 	}
 
-	strcpy(t->name, name);	/* the space will be declared */
+	memcpy(t->name, name, strlen(name) + 1);	/* declared space */
 	for (a = 0; a < NR_ACCESS_TYPES; a++)
 		vs_clear(t->vs[a]);
 	vs_clear(t->vs_id);	/* the space is not defined yet */
@@ -1232,7 +1233,7 @@ int space_vs_to_str(vs_t *vs, char *out, int size)
 				pos++;
 				size--;
 			}
-			strcpy(out+pos, space->name);
+			memcpy(out + pos, space->name, (size_t)l);
 			pos += l;
 			size -= l;
 		}
@@ -1252,13 +1253,15 @@ int space_vs_to_str(vs_t *vs, char *out, int size)
 				out[pos++] = ':';
 				size--;
 			}
-			sprintf(out+pos, "%02x", ((char *)tvs)[l]);
+			string_hex_byte(out + pos,
+					((unsigned char *)tvs)[l]);
 			pos += 2;
 			size -= 2;
 		}
 #else
 		for (l = sizeof(tvs)-1; l >= 0; l--) {
-			sprintf(out+pos, "%02x", ((char *)tvs)[l]);
+			string_hex_byte(out + pos,
+					((unsigned char *)tvs)[l]);
 			pos += 2;
 			size -= 2;
 			if (l > 0 && (l & 0x03) == 0) {

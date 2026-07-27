@@ -27,6 +27,20 @@ only when paired with a kernel that supports
 `MEDUSA_COMM_AUTHREQUEST_PROGRESS`; automatic feature negotiation is planned
 for the next protocol revision.
 
+Protocol-v3 input validation
+----------------------------
+
+Constable treats dynamically announced class, event, operand, and attribute
+names as fixed-width wire fields, not trusted C strings. Each field must
+contain a terminating NUL; class, event, and attribute names must be non-empty;
+and every non-terminal attribute must have a positive width contained within
+its announced object. Malformed definitions close the connection rather than
+being silently truncated into a different policy name.
+
+Policy handler names are also checked against the protocol-v3 operation-name
+width. An overlong function, event, or tree handler is rejected during policy
+compilation with a source diagnostic.
+
 Development checks
 ------------------
 

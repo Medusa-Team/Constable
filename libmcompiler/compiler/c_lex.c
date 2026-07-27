@@ -159,7 +159,7 @@ void clex_gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t 
     }
     v->typ=VT_ID;
     v->size=len;
-    strncpy(v->value,buf,len);
+    memcpy(v->value,buf,len);
     v->value[len]=0;
     *sym=CL_ID;
     *data=(uintptr_t)v;

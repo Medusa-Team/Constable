@@ -9,7 +9,8 @@ temporary=${TMPDIR:-/tmp}/constable-policy-test.$$
 
 cleanup()
 {
-	rm -f "$temporary.valid" "$temporary.invalid" "$temporary.duplicate"
+	rm -f "$temporary.valid" "$temporary.invalid" "$temporary.duplicate" \
+		"$temporary.overlong"
 }
 trap cleanup EXIT HUP INT TERM
 
@@ -45,4 +46,17 @@ if ! grep -Fq 'Duplicate definition of function duplicate' \
 	exit 1
 fi
 
-echo "policy compiler: valid corpus accepted; syntax and duplicate definitions rejected"
+if "$constable" -t -c "$fixtures/policy-overlong-handler.conf" \
+	"$fixtures/offline.conf" >"$temporary.overlong" 2>&1; then
+	echo "overlong handler name unexpectedly compiled" >&2
+	exit 1
+fi
+
+if ! grep -Fq "Handler name 'func:handler_name_that_exceeds_the_protocol_field' is too long" \
+	"$temporary.overlong"; then
+	echo "overlong handler name did not produce the expected diagnostic" >&2
+	sed -n '1,120p' "$temporary.overlong" >&2
+	exit 1
+fi
+
+echo "policy compiler: valid corpus accepted; invalid, duplicate, and overlong definitions rejected"

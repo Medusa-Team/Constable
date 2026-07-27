@@ -8,6 +8,7 @@
 #include "event.h"
 #include "tree.h"
 #include "comm.h"
+#include "string_utils.h"
 #include <sys/param.h>
 
 #include <stdio.h>
@@ -136,8 +137,13 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 	memcpy(&(e->acctype), m, sizeof(struct medusa_acctype_s));
 	e->operation_class->m.size = e->acctype.size;
 	e->operation_class->m.name[0] = 0;
-	strncpy(e->operation_class->m.name, e->acctype.name,
-		MIN(MEDUSA_CLASSNAME_MAX, MEDUSA_OPNAME_MAX));
+	if (string_copy_field(e->operation_class->m.name,
+			      sizeof(e->operation_class->m.name),
+			      e->acctype.name, sizeof(e->acctype.name))) {
+		free(e->operation_class);
+		free(e);
+		return NULL;
+	}
 	memcpy(e->operation_class->attr, a, l);
 	e->operation_class->comm = comm;
 
@@ -193,7 +199,8 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 			debug_def_out(debug_def_arg, "-");
 
 		debug_def_out(debug_def_arg, " (");
-		sprintf(buf, "%d", (e->acctype.actbit)&0x00ff);
+		snprintf(buf, sizeof(buf), "%d",
+			 (e->acctype.actbit) & 0x00ff);
 		debug_def_out(debug_def_arg, buf);
 		debug_def_out(debug_def_arg, ")");
 
@@ -265,7 +272,11 @@ struct event_names_s *event_type_find_name(char *name, bool alloc_new)
 	for (i = 0; i < EHH_LISTS; i++)
 		e->handlers_hash[i] = NULL;
 	e->name = (char *)(e + 1);
-	strcpy(e->name, name);
+	if (string_copy(e->name, strlen(name) + 1, name)) {
+		free(e->events);
+		free(e);
+		return NULL;
+	}
 
 	pthread_mutex_lock(&events_lock);
 	e->next = events;

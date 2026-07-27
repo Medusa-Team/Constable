@@ -5,13 +5,17 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include <mcompiler/compiler.h>
 
-int compiler_verlib(char *ver)
+int compiler_verlib(char *ver, size_t ver_size)
 {
-    if(ver!=NULL)
-        strcpy(ver,"Compiler library V1.0 (c)11.7.1999,9.6.2002 by Marek Zelem");
+    static const char version[] =
+        "Compiler library V1.0 (c)11.7.1999,9.6.2002 by Marek Zelem";
+
+    if(ver!=NULL && ver_size > 0)
+        snprintf(ver, ver_size, "%s", version);
     return(0x0100);
 }
 

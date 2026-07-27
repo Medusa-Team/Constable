@@ -7,6 +7,7 @@
 #include "constable.h"
 #include "object.h"
 #include "event.h"
+#include "string_utils.h"
 #include <sys/param.h>
 
 int object_is_invalid(struct object_s *o)
@@ -199,6 +200,8 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 	char buf[1024];
 	unsigned long tmp;
 	unsigned long long tmpl;
+	signed long signed_tmp;
+	signed long long signed_tmpl;
 
 	out(arg, "[\"");
 	out(arg, o->class->comm->name);
@@ -218,20 +221,22 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 		case MED_COMM_TYPE_UNSIGNED:
 			if (a[i].length > sizeof(tmp)) {
 				object_get_val(o, a+i, &tmpl, sizeof(tmpl));
-				sprintf(buf, "0x%llx", tmpl);
+				snprintf(buf, sizeof(buf), "0x%llx", tmpl);
 			} else {
 				object_get_val(o, a+i, &tmp, sizeof(tmp));
-				sprintf(buf, "0x%lx", tmp);
+				snprintf(buf, sizeof(buf), "0x%lx", tmp);
 			}
 			out(arg, buf);
 			break;
 		case MED_COMM_TYPE_SIGNED:
 			if (a[i].length > sizeof(tmp)) {
-				object_get_val(o, a+i, &tmpl, sizeof(tmpl));
-				sprintf(buf, "%lld", tmpl);
+				object_get_val(o, a+i, &signed_tmpl,
+					       sizeof(signed_tmpl));
+				snprintf(buf, sizeof(buf), "%lld", signed_tmpl);
 			} else {
-				object_get_val(o, a+i, &tmp, sizeof(tmp));
-				sprintf(buf, "%ld", tmp);
+				object_get_val(o, a+i, &signed_tmp,
+					       sizeof(signed_tmp));
+				snprintf(buf, sizeof(buf), "%ld", signed_tmp);
 			}
 			out(arg, buf);
 			break;
@@ -263,8 +268,16 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 						buf[bp] = 'a';
 						break;
 					default:
-						sprintf(buf+bp, "\\x%02x", buf[bp]);
-						bp += 3;
+						{
+							unsigned char byte =
+								(unsigned char)buf[bp];
+
+							buf[bp++] = '\\';
+							buf[bp++] = 'x';
+							string_hex_byte(buf + bp,
+									byte);
+							bp++;
+						}
 					}
 				}
 				bp++;
@@ -280,12 +293,16 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 			for (j = 0; j < a[i].length; j++) {
 				if (j > 0 && (j&0x03) == 0)
 					out(arg, ":");
-				sprintf(buf, "%02x", ((unsigned char *)(o->data+a[i].offset))[j]);
+				string_hex_byte(buf,
+					((unsigned char *)(o->data +
+							  a[i].offset))[j]);
 				out(arg, buf);
 			}
 #else
 			for (j = a[i].length-1; j >= 0; j--) {
-				sprintf(buf, "%02x", ((unsigned char *)(o->data+a[i].offset))[j]);
+				string_hex_byte(buf,
+					((unsigned char *)(o->data +
+							  a[i].offset))[j]);
 				out(arg, buf);
 				if (j > 0 && (j&0x03) == 0)
 					out(arg, ":");

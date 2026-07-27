@@ -42,9 +42,9 @@ typedef struct { char *buf;
 #define	dd_n(dd)	((dd)->n)
 #define dd_entry(dd,pos)	((void *)(((dd)->buf)+(pos)*((dd)->size)))
 
-int lds_verlib(char *ver);
+int lds_verlib(char *ver, size_t ver_size);
 
-int dl_verlib(char *ver);	/* historical */
+int dl_verlib(char *ver, size_t ver_size);	/* historical */
 
 /* prototypy funkcii */
 

@@ -217,7 +217,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                         init_error(Out_of_memory);
                         return(-1);
                     }
-                    strncpy(rbac_t_user->name, "user", strlen("user")+1);
+                    memcpy(rbac_t_user->name, "user", sizeof("user"));
                     rbac_t_user->size=sizeof(struct tree_s);
                     rbac_t_user->class_handler=ch;
                     rbac_t_user->init=NULL;
@@ -244,7 +244,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                         init_error(Out_of_memory);
                         return(-1);
                     }
-                    strncpy(rbac_t_user->name, "perm", strlen("perm")+1);
+                    memcpy(rbac_t_user->name, "perm", sizeof("perm"));
                     rbac_t_perm->size=sizeof(struct tree_s);
                     rbac_t_perm->class_handler=ch;
                     rbac_t_perm->init=NULL;
@@ -271,7 +271,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                         init_error(Out_of_memory);
                         return(-1);
                     }
-                    strncpy(rbac_t_user->name, "role", strlen("role")+1);
+                    memcpy(rbac_t_user->name, "role", sizeof("role"));
                     rbac_t_role->size=sizeof(struct tree_s);
                     rbac_t_role->class_handler=ch;
                     rbac_t_role->init=NULL;
@@ -298,7 +298,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                         init_error(Out_of_memory);
                         return(-1);
                     }
-                    strncpy(rbac_t_user->name, "ROLE", strlen("ROLE")+1);
+                    memcpy(rbac_t_user->name, "ROLE", sizeof("ROLE"));
                     rbac_t_ROLE->size=sizeof(struct tree_s);
                     rbac_t_ROLE->class_handler=ch;
                     rbac_t_ROLE->init=NULL;

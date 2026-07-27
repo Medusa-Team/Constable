@@ -48,7 +48,7 @@ static struct fcs_s *load_force_code(char *file)
 		return(NULL);
 	}
 	p->name = (char*)(p+1);
-	strcpy(p->name,file);
+	memcpy(p->name, file, strlen(file) + 1);
 	p->next = fcs_tab;
 	fcs_tab = p;
 	return(p);
@@ -264,4 +264,3 @@ int force_init(void)
 	lex_addkeyword("force_code",Tbuildin,(uintptr_t)cmd_force_code);
 	return 0;
 }
-

@@ -11,6 +11,7 @@
 #include "../comm.h"
 #include "../language/error.h"
 #include "../language/language.h"
+#include "../string_utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <sys/param.h>
@@ -31,7 +32,9 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
     c->operation.attr.offset=0;
     c->operation.attr.length=t->acctype.size;
     c->operation.attr.type=MED_TYPE_END;
-    strncpy(c->operation.attr.name,t->acctype.name,MIN(MEDUSA_ATTRNAME_MAX,MEDUSA_OPNAME_MAX));
+    (void)string_copy_field(c->operation.attr.name,
+            sizeof(c->operation.attr.name), t->acctype.name,
+            sizeof(t->acctype.name));
     c->operation.flags=comm->flags;
     c->operation.class=t->operation_class;
     c->operation.data=(char*)(op);
@@ -39,14 +42,18 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
     c->subject.next=&(c->object);
     c->subject.attr.offset=c->subject.attr.length=0;
     c->subject.attr.type=MED_TYPE_END;
-    strncpy(c->subject.attr.name,t->acctype.op_name[0],MEDUSA_ATTRNAME_MAX);
+    (void)string_copy_field(c->subject.attr.name,
+            sizeof(c->subject.attr.name), t->acctype.op_name[0],
+            sizeof(t->acctype.op_name[0]));
     c->subject.flags=subject->flags;
     c->subject.class=subject->class;
     c->subject.data=subject->data;
     c->object.next=NULL;
     c->object.attr.offset=c->object.attr.length=0;
     c->object.attr.type=MED_TYPE_END;
-    strncpy(c->object.attr.name,t->acctype.op_name[1],MEDUSA_ATTRNAME_MAX);
+    (void)string_copy_field(c->object.attr.name,
+            sizeof(c->object.attr.name), t->acctype.op_name[1],
+            sizeof(t->acctype.op_name[1]));
     c->object.flags=comm->flags;
     c->object.class=t->op[1];
     c->object.data=(char*)(object);
@@ -263,6 +270,11 @@ int rbac_adm_perm( int add, struct comm_buffer_s *to_wait, char *role, char *acc
 { struct comm_buffer_s *p;
     struct role_s *r;
     struct perm_s *perm;
+    if (strlen(space) >= sizeof(perm->space))
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Name_too_long;
+        return(-1);
+    }
     if( (r=rbac_role_find(role))==NULL )
     {	char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
@@ -278,7 +290,8 @@ int rbac_adm_perm( int add, struct comm_buffer_s *to_wait, char *role, char *acc
     memset(perm,0,sizeof(struct perm_s));
     //	perm->object.
     perm->access=str2at(access);
-    strncpy(perm->space,space,sizeof(perm->space)-1);
+    if (string_copy(perm->space, sizeof(perm->space), space))
+        return(-1);
 
     p->event=(event_type_find_name("permission_assign", true))->events[rbac_comm->conn];
     p->completed=rbac_adm_perm_do1;

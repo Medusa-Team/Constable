@@ -9,6 +9,7 @@
 #include "../constable.h"
 #include "../comm.h"
 #include "../init.h"
+#include "../string_utils.h"
 #include "mcp.h"
 #include <errno.h>
 #include <stdarg.h>
@@ -252,15 +253,15 @@ static int mcp_error(const char *fmt, ...)
 {
 	va_list ap;
 	char buf[2048];
+	char prefix[96];
 
-	sprintf(buf, "%.40s [%d,%d]: Error: ",
-		mcp_compiler->lex->filename,
-		mcp_compiler->lex->row,
-		mcp_compiler->lex->col);
+	snprintf(prefix, sizeof(prefix), "%.40s [%d,%d]: Error: ",
+		 mcp_compiler->lex->filename,
+		 mcp_compiler->lex->row,
+		 mcp_compiler->lex->col);
 	va_start(ap, fmt);
-	vsnprintf(buf + strlen(buf), 1000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), prefix, fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 	mcp_compiler->err->errors++;
 	return 0;
@@ -270,15 +271,15 @@ static int mcp_warning(const char *fmt, ...)
 {
 	va_list ap;
 	char buf[2048];
+	char prefix[96];
 
-	sprintf(buf, "%.40s [%d,%d]: Warning: ",
-		mcp_compiler->lex->filename,
-		mcp_compiler->lex->row,
-		mcp_compiler->lex->col);
+	snprintf(prefix, sizeof(prefix), "%.40s [%d,%d]: Warning: ",
+		 mcp_compiler->lex->filename,
+		 mcp_compiler->lex->row,
+		 mcp_compiler->lex->col);
 	va_start(ap, fmt);
-	vsnprintf(buf + strlen(buf), 1000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), prefix, fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 	mcp_compiler->err->warnings++;
 	return 0;
@@ -310,7 +311,7 @@ static char *sym2str(sym_t sym)
 			return l->keyword;
 		l++;
 	}
-	sprintf(buf, "?%04x?", sym);
+	snprintf(buf, sizeof(buf), "?%04x?", sym);
 	return buf;
 }
 

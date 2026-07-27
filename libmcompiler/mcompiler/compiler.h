@@ -9,8 +9,9 @@
 #define _COMPILER_H
 
 #include <stdint.h>
+#include <stddef.h>
 
-int compiler_verlib(char *ver);
+int compiler_verlib(char *ver, size_t ver_size);
 
 typedef unsigned short sym_t;
 
@@ -228,4 +229,3 @@ struct compiler_preprocessor_class *gcc_preprocessor_create( char *filename );
     } while(0)
 
 #endif /* _COMPILER_H */
-

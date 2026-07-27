@@ -16,6 +16,7 @@
 #include "../medusa_object.h"
 #include "../object.h"
 #include "../event.h"
+#include "../string_utils.h"
 #include <sys/param.h>
 #include <endian.h>
 #include <errno.h>
@@ -25,6 +26,7 @@
 #include <arpa/inet.h>
 
 #include "mcp.h"
+#include "validate.h"
 
 extern struct event_handler_s *function_init;
 static struct comm_s *all_comms;
@@ -72,8 +74,10 @@ static int get_event_context(struct comm_s *comm,
 	c->operation.attr.offset = 0;
 	c->operation.attr.length = t->acctype.size;
 	c->operation.attr.type = MED_TYPE_END;
-	strncpy(c->operation.attr.name, t->acctype.name,
-		MIN(MEDUSA_ATTRNAME_MAX, MEDUSA_OPNAME_MAX));
+	if (string_copy_field(c->operation.attr.name,
+			      sizeof(c->operation.attr.name),
+			      t->acctype.name, sizeof(t->acctype.name)))
+		return -EPROTO;
 	c->operation.flags = comm->flags;
 	c->operation.class = t->operation_class;
 	c->operation.data = (char *)(data) + 2 * sizeof(MCPptr_t);
@@ -82,7 +86,11 @@ static int get_event_context(struct comm_s *comm,
 	c->subject.attr.offset = 0;
 	c->subject.attr.length = 0;
 	c->subject.attr.type = MED_TYPE_END;
-	strncpy(c->subject.attr.name, t->acctype.op_name[0], MEDUSA_ATTRNAME_MAX);
+	if (string_copy_field(c->subject.attr.name,
+			      sizeof(c->subject.attr.name),
+			      t->acctype.op_name[0],
+			      sizeof(t->acctype.op_name[0])))
+		return -EPROTO;
 	c->subject.flags = comm->flags;
 	c->subject.class = t->op[0];
 	c->subject.data = (char *)(data) + 2 * sizeof(MCPptr_t) + (t->acctype.size);
@@ -90,7 +98,11 @@ static int get_event_context(struct comm_s *comm,
 	c->object.attr.offset = 0;
 	c->object.attr.length = 0;
 	c->object.attr.type = MED_TYPE_END;
-	strncpy(c->object.attr.name, t->acctype.op_name[1], MEDUSA_ATTRNAME_MAX);
+	if (string_copy_field(c->object.attr.name,
+			      sizeof(c->object.attr.name),
+			      t->acctype.op_name[1],
+			      sizeof(t->acctype.op_name[1])))
+		return -EPROTO;
 	c->object.flags = comm->flags;
 	c->object.class = t->op[1];
 	c->object.data = (char *)(data) + 2 * sizeof(MCPptr_t) + (t->acctype.size);
@@ -478,7 +490,11 @@ static enum read_result mcp_r_head(struct comm_buffer_s *b)
  */
 static enum read_result mcp_r_query(struct comm_buffer_s *b)
 {
-	get_event_context(b->comm, &b->context, b->event, b->comm_buf);
+	if (get_event_context(b->comm, &b->context, b->event, b->comm_buf)) {
+		comm_error("comm %s: Invalid event name in authorization request",
+			   b->comm->name);
+		return READ_ERROR;
+	}
 	b->ehh_list = EHH_VS_ALLOW;
 	pthread_mutex_lock(&b->comm->state_lock);
 
@@ -738,19 +754,32 @@ static void unify_bitmap_types(struct medusa_comm_attribute_s *a)
 static enum read_result mcp_r_classdef_attr(struct comm_buffer_s *b)
 {
 	struct class_s *cl;
+	struct medusa_class_s *definition;
+	struct medusa_attribute_s *attributes;
+	enum mcp_definition_validation validation;
+	size_t attribute_count;
 	char *last_attr = b->comm_buf + b->len - sizeof(struct medusa_comm_attribute_s);
 
 	if (((struct medusa_comm_attribute_s *)(last_attr))->type != MED_TYPE_END) {
 		b->want = b->len + sizeof(struct medusa_comm_attribute_s);
 		return READ_DONE;
 	}
-	byte_reorder_class(b->comm->flags, (struct medusa_class_s *)(b->comm_buf + OFF_ATTR));
-	byte_reorder_attrs(b->comm->flags,
-			   (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS));
-	unify_bitmap_types((struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS));
-	cl = add_class(b->comm,
-		       (struct medusa_class_s *)(b->comm_buf + OFF_ATTR),
-		       (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS));
+	definition = (struct medusa_class_s *)(b->comm_buf + OFF_ATTR);
+	attributes = (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS);
+	attribute_count = ((size_t)b->len - OFF_ATTR_CLASS) /
+			  sizeof(*attributes);
+	byte_reorder_class(b->comm->flags, definition);
+	byte_reorder_attrs(b->comm->flags, attributes);
+	validation = mcp_validate_class_definition(definition, attributes,
+						   attribute_count);
+	if (validation != MCP_DEFINITION_VALID) {
+		comm_error("comm %s: Invalid class definition: %s",
+			   b->comm->name,
+			   mcp_definition_validation_message(validation));
+		return READ_ERROR;
+	}
+	unify_bitmap_types(attributes);
+	cl = add_class(b->comm, definition, attributes);
 	if (unlikely(!cl))
 		comm_error("comm %s: Can't add class", b->comm->name);
 	b->completed = NULL;
@@ -760,19 +789,32 @@ static enum read_result mcp_r_classdef_attr(struct comm_buffer_s *b)
 static enum read_result mcp_r_acctypedef_attr(struct comm_buffer_s *b)
 {
 	struct event_type_s *ev;
+	struct medusa_acctype_s *definition;
+	struct medusa_attribute_s *attributes;
+	enum mcp_definition_validation validation;
+	size_t attribute_count;
 	char *last_attr = b->comm_buf + b->len - sizeof(struct medusa_comm_attribute_s);
 
 	if (((struct medusa_comm_attribute_s *)(last_attr))->type != MED_TYPE_END) {
 		b->want = b->len + sizeof(struct medusa_comm_attribute_s);
 		return READ_DONE;
 	}
-	byte_reorder_acctype(b->comm->flags, (struct medusa_acctype_s *)(b->comm_buf + OFF_ATTR));
-	byte_reorder_attrs(b->comm->flags,
-			   (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE));
-	unify_bitmap_types((struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE));
-	ev = event_type_add(b->comm,
-			    (struct medusa_acctype_s *)(b->comm_buf + OFF_ATTR),
-			    (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE));
+	definition = (struct medusa_acctype_s *)(b->comm_buf + OFF_ATTR);
+	attributes = (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE);
+	attribute_count = ((size_t)b->len - OFF_ATTR_ACCTYPE) /
+			  sizeof(*attributes);
+	byte_reorder_acctype(b->comm->flags, definition);
+	byte_reorder_attrs(b->comm->flags, attributes);
+	validation = mcp_validate_acctype_definition(definition, attributes,
+						     attribute_count);
+	if (validation != MCP_DEFINITION_VALID) {
+		comm_error("comm %s: Invalid event definition: %s",
+			   b->comm->name,
+			   mcp_definition_validation_message(validation));
+		return READ_ERROR;
+	}
+	unify_bitmap_types(attributes);
+	ev = event_type_add(b->comm, definition, attributes);
 	if (unlikely(!ev))
 		comm_error("comm %s: Can't add acctype", b->comm->name);
 	b->completed = NULL;
@@ -1162,12 +1204,12 @@ static int mcp_conf_error(struct comm_s *comm, const char *fmt, ...)
 {
 	va_list ap;
 	char buf[4096];
+	char prefix[96];
 
-	sprintf(buf, "comm %s: ", comm->name);
+	snprintf(prefix, sizeof(prefix), "comm %.63s: ", comm->name);
 	va_start(ap, fmt);
-	vsnprintf(buf + strlen(buf), 4000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), prefix, fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 
 	return -1;

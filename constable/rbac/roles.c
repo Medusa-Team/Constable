@@ -10,6 +10,7 @@
 #include "../space.h"
 #include "../generic.h"
 #include "../language/error.h"
+#include "../string_utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
@@ -43,7 +44,14 @@ struct role_s * rbac_role_add( char *name )
     memset(n,0,sizeof(struct role_s));
     //	for(x=0;i<NR_ACCESS_TYPES;x++)
     //		vs_clear(n->vs[x]);
-    strncpy(n->name,name,sizeof(n->name));
+    if (string_copy(n->name, sizeof(n->name), name)) {
+        char **errstr = (char **)pthread_getspecific(errstr_key);
+
+        *errstr = Name_too_long;
+        free(n);
+        pthread_rwlock_unlock(&rbac_roles_lock);
+        return NULL;
+    }
     n->ua=NULL;
     n->perm=NULL;
     n->sup=n->sub=NULL;
@@ -344,4 +352,3 @@ int rbac_role_del_perm( struct role_s *role, int which, struct space_s *t )
     *errstr=Out_of_memory;
     return(-1);
 }
-

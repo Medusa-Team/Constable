@@ -67,14 +67,15 @@ int tree_init(void)
 	global_root_type = calloc(1, sizeof(struct tree_type_s)+strlen(GLOBAL_ROOT_NAME)+1);
 	if (!global_root_type)
 		return -1;
-	strncpy(global_root_type->name, GLOBAL_ROOT_NAME, strlen(GLOBAL_ROOT_NAME)+1);
+	memcpy(global_root_type->name, GLOBAL_ROOT_NAME,
+	       sizeof(GLOBAL_ROOT_NAME));
 
 	global_root = calloc(1, sizeof(struct tree_s)+strlen(GLOBAL_ROOT_NAME)+1);
 	if (!global_root)
 		goto free_global_root_type;
 
 	global_root->type = global_root_type;
-	strncpy(global_root->name, GLOBAL_ROOT_NAME, strlen(GLOBAL_ROOT_NAME)+1);
+	memcpy(global_root->name, GLOBAL_ROOT_NAME, sizeof(GLOBAL_ROOT_NAME));
 
 	/*
 	 * Allocate ->events array only for dummy use in tree_comm_reinit()
@@ -182,7 +183,7 @@ static void *regcompile(char *reg)
 		return NULL;
 
 	tmp[0] = '^';
-	strcpy(tmp+1, reg);
+	memcpy(tmp + 1, reg, (size_t)l);
 	tmp[l+1] = '$';
 	tmp[l+2] = 0;
 	if (regcomp(r, tmp, REG_EXTENDED|REG_NOSUB) != 0) {
@@ -258,7 +259,7 @@ static struct tree_s *create_one_i(struct tree_s *base, char *name, int regexp)
 
 	memset(p, 0, type->size+l+1);
 	p->type = type;
-	strncpy(p->name, name, l);
+	memcpy(p->name, name, (size_t)l);
 	p->name[l] = 0;
 	p->parent = base;
 	p->child = NULL;
@@ -320,7 +321,7 @@ static struct tree_s *create_one(struct tree_s *base, char **name)
 	{
 		char tmp[l+1];
 
-		strncpy(tmp, *name, l);
+		memcpy(tmp, *name, (size_t)l);
 		tmp[l] = 0;
 		*name = n;
 		return create_one_i(base, tmp, isreg(tmp));
@@ -410,7 +411,7 @@ static struct tree_s *find_one2(struct tree_s *base, char **name)
 	{
 		char s[b - (*name) + 1];
 
-		strncpy(s, *name, b - (*name));
+		memcpy(s, *name, (size_t)(b - *name));
 		s[b - (*name)] = 0;
 		for (p = base->regex_child; p != NULL; p = p->next) {
 			if (!regcmp(p->compiled_regex, s)) {
@@ -632,6 +633,8 @@ char *tree_get_path(struct tree_s *t)
 {
 	static char buf[4096];
 	static int pos;
+	size_t name_length;
+	size_t remaining;
 
 	if (t->parent == NULL) {
 		buf[(pos = 0)] = 0;
@@ -639,14 +642,17 @@ char *tree_get_path(struct tree_s *t)
 	}
 
 	tree_get_path(t->parent);
-	if (pos > 0)
+	if (pos >= (int)sizeof(buf) - 1)
+		return buf;
+	if (pos > 0 && pos < (int)sizeof(buf) - 1)
 		buf[pos++] = '/';
 
-	strncpy(buf + pos, t->name, 4095 - pos);
-	pos += strlen(t->name);
-
-	if (pos > 4095)
-		pos = 4095;
+	remaining = sizeof(buf) - 1 - (size_t)pos;
+	name_length = strlen(t->name);
+	if (name_length > remaining)
+		name_length = remaining;
+	memcpy(buf + pos, t->name, name_length);
+	pos += (int)name_length;
 	buf[pos] = 0;
 
 	return buf;

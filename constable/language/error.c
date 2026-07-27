@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <pthread.h>
 #include "../constable.h"
+#include "../string_utils.h"
 #include "error.h"
 #include "language.h"
 
@@ -21,21 +22,22 @@ pthread_key_t errstr_key;
 char *Out_of_memory = "Out of memory";
 char *Space_already_defined = "Space already defined";
 char *Out_of_vs = "Out of available VS";
+char *Name_too_long = "Name is too long";
 
 int error(const char *fmt, ...)
 {
 	va_list ap;
 	char buf[4096];
+	char prefix[96];
 
-	sprintf(buf, "%.40s [%d,%d]: Error: ",
-		global_compiler->lex->filename,
-		global_compiler->lex->row,
-		global_compiler->lex->col);
+	snprintf(prefix, sizeof(prefix), "%.40s [%d,%d]: Error: ",
+		 global_compiler->lex->filename,
+		 global_compiler->lex->row,
+		 global_compiler->lex->col);
 
 	va_start(ap, fmt);
-	vsnprintf(buf + strlen(buf), 4000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), prefix, fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 	global_compiler->err->errors++;
 	if (global_compiler->err->errors > 15)
@@ -47,16 +49,16 @@ int warning(const char *fmt, ...)
 {
 	va_list ap;
 	char buf[4096];
+	char prefix[96];
 
-	sprintf(buf, "%.40s [%d,%d]: Warning: ",
-		global_compiler->lex->filename,
-		global_compiler->lex->row,
-		global_compiler->lex->col);
+	snprintf(prefix, sizeof(prefix), "%.40s [%d,%d]: Warning: ",
+		 global_compiler->lex->filename,
+		 global_compiler->lex->row,
+		 global_compiler->lex->col);
 
 	va_start(ap, fmt);
-	vsnprintf(buf + strlen(buf), 4000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), prefix, fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 	global_compiler->err->warnings++;
 	return 0;
@@ -97,7 +99,7 @@ static char *sym2str(sym_t sym)
 			return(l->keyword);
 		l++;
 	}
-	sprintf(buf, "?%04x?", sym);
+	snprintf(buf, sizeof(buf), "?%04x?", sym);
 	return buf;
 }
 static sym_t err_warning(struct compiler_err_class *this, sym_t errsym, sym_t info)

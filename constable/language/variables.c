@@ -8,6 +8,7 @@
 
 #include "variables.h"
 #include "../constable.h"
+#include "../string_utils.h"
 
 struct object_s *alloc_var(char *name, struct medusa_attribute_s *attr, struct class_s *class)
 {
@@ -38,7 +39,10 @@ struct object_s *alloc_var(char *name, struct medusa_attribute_s *attr, struct c
 		v->data = (char *)(v + 1);
 	}
 	//memset(v->data, 0, l); // Just for valgrind
-	strncpy(v->attr.name, name, MEDUSA_ATTRNAME_MAX);
+	if (string_copy(v->attr.name, sizeof(v->attr.name), name)) {
+		free(v);
+		return NULL;
+	}
 	return v;
 }
 
@@ -56,7 +60,10 @@ struct object_s *data_alias_var(char *name, struct object_s *o)
 	v->attr = o->attr;
 	v->class = o->class;
 	v->data = o->data;
-	strncpy(v->attr.name, name, MEDUSA_ATTRNAME_MAX);
+	if (string_copy(v->attr.name, sizeof(v->attr.name), name)) {
+		free(v);
+		return NULL;
+	}
 	return v;
 }
 

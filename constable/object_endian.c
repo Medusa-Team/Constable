@@ -24,12 +24,20 @@ int object_get_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, 
 	int n;
 	int s = 0;
 
+	if (!o || !a || !buf || maxlen <= 0 || a->length == 0)
+		return -1;
+
 	switch (a->type & 0x0f) {
-	case MED_TYPE_STRING:
-		n = MIN(a->length, maxlen);
-		strncpy(buf, o->data+a->offset, n);
-		((char *)(buf))[(maxlen > n ? n : n-1)] = 0;
+	case MED_TYPE_STRING: {
+		size_t source_length;
+		size_t copy_length;
+
+		source_length = strnlen(o->data + a->offset, a->length);
+		copy_length = MIN(source_length, (size_t)maxlen - 1);
+		memcpy(buf, o->data + a->offset, copy_length);
+		((char *)buf)[copy_length] = '\0';
 		return 0;
+	}
 	case MED_TYPE_BITMAP:
 		n = MIN(a->length, maxlen);
 		memcpy(buf, o->data+a->offset, n);
@@ -78,12 +86,21 @@ int object_set_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, 
 	int n;
 	int s = 0;
 
+	if (!o || !a || !buf || maxlen <= 0 || a->length == 0)
+		return -1;
+
 	switch (a->type & 0x0f) {
-	case MED_TYPE_STRING:
-		n = MIN(a->length, maxlen);
-		strncpy(o->data+a->offset, buf, n);
-		((char *)(o->data+a->offset))[(a->length > n?n:n-1)] = 0;
+	case MED_TYPE_STRING: {
+		size_t source_length;
+		size_t copy_length;
+
+		source_length = strnlen(buf, (size_t)maxlen);
+		copy_length = MIN(source_length, (size_t)a->length - 1);
+		memcpy(o->data + a->offset, buf, copy_length);
+		memset(o->data + a->offset + copy_length, 0,
+		       (size_t)a->length - copy_length);
 		return 0;
+	}
 	case MED_TYPE_BITMAP:
 		n = MIN(a->length, maxlen);
 		memcpy(o->data+a->offset, buf, n);

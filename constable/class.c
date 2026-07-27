@@ -7,6 +7,7 @@
 #include "constable.h"
 #include "object.h"
 #include "comm.h"
+#include "string_utils.h"
 
 #include <stdio.h>
 #include <pthread.h>
@@ -37,7 +38,11 @@ struct class_names_s *get_class_by_name(char *name)
 	}
 
 	c->name = (char *)(c + 1);
-	strcpy(c->name, name);
+	if (string_copy(c->name, strlen(name) + 1, name)) {
+		free(c->classes);
+		free(c);
+		return NULL;
+	}
 	c->class_handler = NULL;
 
 	pthread_mutex_lock(&classes_lock);
@@ -251,7 +256,8 @@ void attr_print(struct medusa_attribute_s *a, void (*out)(int arg, char *), int 
 		out(arg, "\t");
 		out(arg, a[i].name);
 		out(arg, "\t");
-		sprintf(buf, "(%d: %d)", a[i].offset, a[i].length);
+		snprintf(buf, sizeof(buf), "(%d: %d)",
+			 a[i].offset, a[i].length);
 		out(arg, buf);
 		out(arg, "\n");
 	}

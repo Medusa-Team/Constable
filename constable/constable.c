@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include "constable.h"
+#include "string_utils.h"
 
 char *retprintf(const char *fmt, ...)
 {
@@ -28,9 +29,8 @@ int init_error(const char *fmt, ...)
 	char buf[4096];
 
 	va_start(ap, fmt);
-	vsnprintf(buf, 4000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), "", fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 
 	return -1;
@@ -44,25 +44,26 @@ int runtime(const char *fmt, ...)
 {
 	va_list ap;
 	char buf[4096];
+	const char *prefix = "Runtime error : ";
 
-#ifndef DEBUG_TRACE
-	sprintf(buf, "Runtime error : ");
-#else
+#ifdef DEBUG_TRACE
 	char *runtime_file;
 	char *runtime_pos;
+	char runtime_prefix[160];
 
 	runtime_file = (char *) pthread_getspecific(runtime_file_key);
 	runtime_pos = (char *) pthread_getspecific(runtime_pos_key);
-	if (strlen(runtime_file) && strlen(runtime_pos))
-		sprintf(buf, "Runtime error [\"%s\" %s]: ", runtime_file, runtime_pos);
-	else
-		sprintf(buf, "Runtime error : ");
+	if (runtime_file && runtime_pos && runtime_file[0] && runtime_pos[0]) {
+		snprintf(runtime_prefix, sizeof(runtime_prefix),
+			 "Runtime error [\"%.64s\" %.12s]: ",
+			 runtime_file, runtime_pos);
+		prefix = runtime_prefix;
+	}
 #endif
 	va_start(ap, fmt);
-	vsnprintf(buf + strlen(buf), 4000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), prefix, fmt, ap);
 	va_end(ap);
 	//medusa_printlog("%s", buf);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 
 	return 0;
@@ -73,12 +74,10 @@ int fatal(const char *fmt, ...)
 	va_list ap;
 	char buf[4096];
 
-	sprintf(buf, "Fatal error : ");
 	va_start(ap, fmt);
-	vsnprintf(buf + strlen(buf), 4000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), "Fatal error : ", fmt, ap);
 	va_end(ap);
 	//medusa_printlog("%s", buf);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 
 	exit(-1);

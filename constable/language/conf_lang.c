@@ -13,6 +13,7 @@
 #include "../tree.h"
 #include "../space.h"
 #include "../generic.h"
+#include "../string_utils.h"
 
 #include "conf_lang.h"
 
@@ -154,6 +155,20 @@ struct compiler_out_class s_canf_lang_out = {
 	0,
 	conf_lang_out,
 };
+
+static int set_handler_name(char *destination, const char *prefix,
+			    const char *name)
+{
+	int result;
+
+	result = snprintf(destination, MEDUSA_OPNAME_MAX, "%s%s", prefix, name);
+	if (result < 0 || result >= MEDUSA_OPNAME_MAX) {
+		destination[0] = '\0';
+		error("Handler name '%s%s' is too long", prefix, name);
+		return -1;
+	}
+	return 0;
+}
 
 void conf_lang_param_out(struct compiler_class *c, sym_t s)
 {
@@ -325,8 +340,12 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 			error("NULL function handler");
 			break;
 		}
-		strcpy(handler->op_name, "func:");
-		strncpy(handler->op_name+5, op_name, MEDUSA_OPNAME_MAX-5);
+		if (set_handler_name(handler->op_name, "func:", op_name)) {
+			free(handler->data);
+			free(handler);
+			handler = NULL;
+			break;
+		}
 		if (!strcmp(op_name, "_init"))
 			function_init = handler;
 		else if (!strcmp(op_name, "_debug"))
@@ -388,7 +407,13 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 			error("NULL event name");
 			break;
 		}
-		strncpy(handler->op_name, op_name, MEDUSA_OPNAME_MAX);
+		if (set_handler_name(handler->op_name, "", op_name)) {
+			free(handler->data);
+			free(handler);
+			handler = NULL;
+			op_name = NULL;
+			break;
+		}
 		op_name = NULL;
 		if (space_add_event(handler, ehh_list, space1, space2, path1, path2) < 0)
 			error("Can't register handler - Unknown operation %s", handler->op_name);
@@ -401,7 +426,14 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 		}
 		event = NULL;
 		if (handler != NULL) {
-			strncpy(handler->op_name, tree_name, MEDUSA_OPNAME_MAX);
+			if (set_handler_name(handler->op_name, "", tree_name)) {
+				free(handler->data);
+				free(handler);
+				handler = NULL;
+				op_name = NULL;
+				tree_name = NULL;
+				break;
+			}
 			if (op_name == NULL) {
 				error("NULL event name");
 				break;

@@ -34,7 +34,7 @@ static int open_file( pre_t *p, char *filename )
     if( (f=malloc(sizeof(struct pre_file_s)+strlen(filename)+1))==NULL )
         return(-1);
     f->filename=(char*)(f+1);
-    strcpy(f->filename,filename);
+    memcpy(f->filename,filename,strlen(filename)+1);
     if( strcmp(f->filename,"-") )
     {	if( (f->fd=open(f->filename,O_RDONLY))<0 )
         {	free(f);
@@ -63,8 +63,8 @@ static int open_file_relative( pre_t *p, char *filename )
         return(open_file(p,filename));
     if( (l=strrchr(p->file->filename,'/'))==NULL )
         return(open_file(p,filename));
-    strncpy(buf,p->file->filename,(l-p->file->filename)+1);
-    strcpy(buf+(l-p->file->filename)+1,filename);
+    memcpy(buf,p->file->filename,(size_t)(l-p->file->filename)+1);
+    memcpy(buf+(l-p->file->filename)+1,filename,strlen(filename)+1);
     return(open_file(p,buf));
 }
 

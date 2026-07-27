@@ -74,15 +74,16 @@ static void rbac_save_roles( FILE *f )
 static void file_rotate( char *filename, int limit )
 { char s[strlen(filename)+16];
     char t[strlen(filename)+16];
+    size_t path_size = sizeof(s);
     if( limit==0 )
     {	unlink(filename);
         return;
     }
-    sprintf(s,"%s.%d",filename,limit);
+    snprintf(s, path_size, "%s.%d", filename, limit);
     unlink(s);
     for(limit--;limit>0;limit--)
-    {	sprintf(s,"%s.%d",filename,limit);
-        sprintf(t,"%s.%d",filename,limit+1);
+    {	snprintf(s, path_size, "%s.%d", filename, limit);
+        snprintf(t, sizeof(t), "%s.%d", filename, limit+1);
         rename(s,t);
     }
     rename(filename,s);

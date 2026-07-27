@@ -32,7 +32,8 @@ int main(int argc, char *argv[])
 	if (argc > 4)
 		s3 = argv[4];
 
-	strcpy(buf, "Not supported by the kernel");
+	memcpy(buf, "Not supported by the kernel",
+	       sizeof("Not supported by the kernel"));
 	//rbac_adm(op, s1, s2, s3, buf);
 	syscall(__NR_rbac_adm, op, s1, s2, s3, buf);
 	printf("Result: %s\n", buf);

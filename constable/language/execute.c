@@ -8,6 +8,7 @@
  */
 
 #include "execute.h"
+#include "../string_utils.h"
 #include "language.h"
 #include "variables.h"
 #include "../constable.h"
@@ -325,8 +326,9 @@ static int execute_handler_do(struct execute_s *e)
 	char *runtime_pos;
 
 	runtime_file = (char *)pthread_getspecific(runtime_file_key);
-	strncpy(runtime_file, e->h->op_name + MEDUSA_OPNAME_MAX, sizeof(RUNTIME_FILE_TYPE));
-	runtime_file[sizeof(RUNTIME_FILE_TYPE) - 1] = 0;
+	(void)string_copy_field(runtime_file, sizeof(RUNTIME_FILE_TYPE),
+			       e->h->op_name + MEDUSA_OPNAME_MAX,
+			       DT_POS_MAX);
 #endif
 	for (;;) {
 		cmd_p = e->p;

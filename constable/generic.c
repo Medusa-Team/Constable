@@ -6,6 +6,7 @@
 
 #include "constable.h"
 #include "generic.h"
+#include "string_utils.h"
 #include "comm.h"
 #include <stdlib.h>
 #include <stdio.h>
@@ -382,7 +383,12 @@ int generic_init(char *name, struct event_handler_s *subhandler, struct event_na
 		return -1;
 	}
 
-	strcpy(type->name, name);
+	if (string_copy(type->name, strlen(name) + 1, name)) {
+		free(type);
+		free(ch->cinfo_offset);
+		free(ch);
+		return init_error("Invalid tree type name");
+	}
 	type->size = sizeof(struct tree_s);
 	type->class_handler = ch;
 	type->init = NULL;
@@ -405,6 +411,8 @@ int generic_init(char *name, struct event_handler_s *subhandler, struct event_na
 
 	//printf("ZZZZZZZZZZZZZZ name=%s subhandler=%p event=%p\n", name, subhandler, event);
 	if (subhandler && event) {
+		int name_length;
+
 		eh = calloc(2, sizeof(*eh));
 		if (eh == NULL) {
 			init_error(Out_of_memory);
@@ -414,8 +422,13 @@ int generic_init(char *name, struct event_handler_s *subhandler, struct event_na
 			return -1;
 		}
 
-		eh->h.op_name[0] = ':';
-		strncpy(eh->h.op_name + 1, type->name, MEDUSA_OPNAME_MAX - 1);
+		name_length = snprintf(eh->h.op_name, MEDUSA_OPNAME_MAX, ":%s",
+				       type->name);
+		if (name_length < 0 || name_length >= MEDUSA_OPNAME_MAX) {
+			free(eh);
+			return init_error("Tree handler name ':%s' is too long",
+					  type->name);
+		}
 		eh->h.handler = generic_hierarchy_handler_decide;
 		eh->h.local_vars = NULL;
 		eh->subhandler = subhandler;

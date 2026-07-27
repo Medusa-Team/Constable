@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include "../constable.h"
 #include "../medusa_object.h"
+#include "../string_utils.h"
 #include "execute.h"
 #include "language.h"
 #include <sys/param.h>
@@ -332,7 +333,7 @@ static void r_add_cc(struct register_s *v, struct register_s *d)
 #define OPci(t2, f) \
 static void r_add_c##t2(struct register_s *v, struct register_s *d) \
 {							\
-	int l, nd;					\
+	int l, nd, written;				\
 	t2##_int64_t y;					\
 							\
 	l = v->attr->length;				\
@@ -346,11 +347,15 @@ static void r_add_c##t2(struct register_s *v, struct register_s *d) \
 		y = ((t2##_int32_t *)(d->data))[0];	\
 	else						\
 		y = ((t2##_int64_t *)(d->data))[0];	\
-	v->attr->length = l + nd*10 + 1;		\
-	if (v->attr->length < MAX_REG_SIZE)		\
-		sprintf(v->data + l, f, y);		\
-	else						\
+	written = snprintf(v->data + l, MAX_REG_SIZE - l, f, y);	\
+	if (written < 0) {				\
+		v->data[l] = '\0';			\
+		v->attr->length = l + 1;			\
+	} else if (written >= MAX_REG_SIZE - l) {	\
 		v->attr->length = MAX_REG_SIZE;		\
+	} else {					\
+		v->attr->length = l + written + 1;	\
+	}						\
 }
 
 OPci(u, "%" PRIu64)
@@ -373,12 +378,12 @@ static void r_add_cb(struct register_s *v, struct register_s *d)
 	for (j = 0; j < n; j++) {
 		if (j > 0 && (j & 0x03) == 0)
 			v->data[l++] = ':';
-		sprintf(v->data + l, "%02x", d->data[j]);
+		string_hex_byte(v->data + l, (unsigned char)d->data[j]);
 		l += 2;
 	}
 #else
 	for (j = n - 1; j >= 0; j--) {
-		sprintf(v->data + l, "%02x", d->data[j]);
+		string_hex_byte(v->data + l, (unsigned char)d->data[j]);
 		l += 2;
 		if (j > 0 && (j & 0x03) == 0)
 			v->data[l++] = ':';
