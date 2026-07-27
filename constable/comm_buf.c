@@ -48,7 +48,7 @@ static inline void comm_buf_init(struct comm_buffer_s *b, struct comm_s *comm)
 
 struct comm_buffer_s *comm_buf_get(int size, struct comm_s *comm)
 {
-	int i;
+	size_t i;
 	struct comm_buffer_s *b;
 	unsigned int id;
 

@@ -79,8 +79,8 @@ int object_add_event(struct object_s *o, struct event_mask_s *e)
 	/* object */
 	n = o->class->event_size;
 	if (n > 0) {
-		if (n > sizeof(e->bitmap))
-			n = sizeof(e->bitmap);
+		if (n > (int)sizeof(e->bitmap))
+			n = (int)sizeof(e->bitmap);
 		f = e[1].bitmap;
 		t = o->data + o->class->event_offset;
 		for (i = 0; i < n; i++)
@@ -91,8 +91,8 @@ int object_add_event(struct object_s *o, struct event_mask_s *e)
 	/* subject */
 	n = o->class->subject.event_size;
 	if (n > 0) {
-		if (n > sizeof(e->bitmap))
-			n = sizeof(e->bitmap);
+		if (n > (int)sizeof(e->bitmap))
+			n = (int)sizeof(e->bitmap);
 		f = e[0].bitmap;
 		t = o->data + o->class->subject.event_offset;
 		for (i = 0; i < n; i++)
@@ -238,7 +238,7 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 		case MED_COMM_TYPE_STRING:
 			out(arg, "\"");
 			for (j = 0, bp = 0; j < a[i].length; j++) {
-				if (bp >= sizeof(buf)-8) {
+				if ((size_t)bp >= sizeof(buf)-8) {
 					buf[bp] = 0;
 					out(arg, buf);
 					bp = 0;

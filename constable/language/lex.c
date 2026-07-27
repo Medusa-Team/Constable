@@ -213,7 +213,7 @@ lexstattab_t lex_tab[] = {
 	{LS_comment, NULL, rules_comment, NULL, NULL},
 	{LS_comment2, NULL, rules_comment2, NULL, NULL},
 	{LS_comment_line, NULL, rules_comment_line, NULL, NULL},
-	{END}
+	{END, NULL, NULL, NULL, NULL}
 };
 
 struct str_archive_s {
@@ -253,6 +253,7 @@ static void gen_lex_ident(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t
 {
 	lextab_t *l = keywords2;
 
+	(void)len;
 	if (l != NULL && want != T_id) {
 		while (l->keyword != NULL) {
 			if (!strcmp(l->keyword, buf)) {
@@ -271,6 +272,8 @@ static void gen_lex_ident(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t
 
 static void gen_lex_string(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_str;
 	*data = (uintptr_t)store_string(buf);
 	if (*data == 0)
@@ -279,6 +282,8 @@ static void gen_lex_string(char *buf, int len, sym_t *sym, uintptr_t *data, sym_
 
 static void gen_lex_et(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_path;
 	*data = (uintptr_t)(create_path(buf));
 	if (*data == 0)
@@ -287,6 +292,8 @@ static void gen_lex_et(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t wa
 
 static void gen_lex_char(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_num;
 	*data = (uintptr_t)(buf[0]);
 	if (buf[0] == 0 || buf[1] != 0) {
@@ -299,6 +306,8 @@ static void gen_lex_char(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t 
 
 static void gen_lex_num(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_num;
 	errno = 0;
 	*data = (uintptr_t)strtol(buf, NULL, 0);
@@ -312,6 +321,8 @@ static void gen_lex_num(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t w
 
 static void gen_lex_arg(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_arg;
 	errno = 0;
 	*data = (uintptr_t)strtol(buf, NULL, 0);

@@ -26,6 +26,9 @@ static struct class_handler_s *rbac_proc_ch;
 
 static struct tree_s *rbac_proc_get_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )
 {
+    (void)h;
+    (void)comm;
+    (void)o;
     /*
     !!!!!!!! pozor, lebo ich je viacej, co chcem vratit !!!!!!!!!!!!
     tak nie.
@@ -98,11 +101,15 @@ static int rbac_proc_get_vs( struct class_handler_s *h, struct comm_s *comm, str
 
 static struct space_s *rbac_proc_get_primary_space( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )
 {
+    (void)h;
+    (void)comm;
+    (void)o;
     return(NULL);
 }
 
 static int rbac_proc_setuid_handler_notify( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
 {
+    (void)h;
     CINFO(&(c->subject),rbac_proc_ch,cb->comm)=~(uintptr_t)0;
     object_do_sethandler(&(c->subject));
     c->result=RESULT_ALLOW;
@@ -112,6 +119,10 @@ static int rbac_proc_setuid_handler_notify( struct comm_buffer_s *cb, struct eve
 static int rbac_proc_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, struct tree_s *node )
 {
     char **errstr = (char**) pthread_getspecific(errstr_key);
+    (void)h;
+    (void)comm;
+    (void)o;
+    (void)node;
     *errstr=Out_of_memory;
     return(-1);
 }
@@ -157,6 +168,7 @@ int rbac_init( struct module_s *m )
     struct event_handler_s *eh;
     struct event_names_s *event;
 
+    (void)m;
     if( rbac_object_init()<0 )
         return(-1);
     if( rbac_adm_perm_init()<0 )

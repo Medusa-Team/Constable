@@ -17,6 +17,8 @@
 
 static int rbac_h_create_role( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
 {
+    (void)cb;
+    (void)h;
     if( !generic_test_vs_tree(AT_CREATE,c,rbac_t_role->class_handler->root) &&
             !generic_test_vs_tree(AT_CREATE,c,rbac_t_ROLE->class_handler->root) )
         c->result=RESULT_DENY;
@@ -26,6 +28,8 @@ static int rbac_h_create_role( struct comm_buffer_s *cb, struct event_handler_s 
 
 static int rbac_h_delete_role( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
 {
+    (void)cb;
+    (void)h;
     if( !generic_test_vs(AT_ERASE,c) )
         c->result=RESULT_DENY;
     else	c->result=RESULT_ALLOW;
@@ -34,6 +38,8 @@ static int rbac_h_delete_role( struct comm_buffer_s *cb, struct event_handler_s 
 
 static int rbac_h_role_hierarchy( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
 {
+    (void)cb;
+    (void)h;
     if( !generic_test_vs(AT_CREATE,c) )
         c->result=RESULT_DENY;
     else	c->result=RESULT_ALLOW;
@@ -42,6 +48,8 @@ static int rbac_h_role_hierarchy( struct comm_buffer_s *cb, struct event_handler
 
 static int rbac_h_user_assign( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
 {
+    (void)cb;
+    (void)h;
     if( !generic_test_vs(AT_CONTROL,c) )
         c->result=RESULT_DENY;
     else	c->result=RESULT_ALLOW;
@@ -50,6 +58,8 @@ static int rbac_h_user_assign( struct comm_buffer_s *cb, struct event_handler_s 
 
 static int rbac_h_role_assign( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
 {
+    (void)cb;
+    (void)h;
     if( !generic_test_vs(AT_CONTROL,c) )
         c->result=RESULT_DENY;
     else	c->result=RESULT_ALLOW;
@@ -58,6 +68,8 @@ static int rbac_h_role_assign( struct comm_buffer_s *cb, struct event_handler_s 
 
 static int rbac_h_perm_assign( struct comm_buffer_s *cb, struct event_handler_s *h, struct event_context_s *c )
 {
+    (void)cb;
+    (void)h;
     if( !generic_test_vs(AT_CONTROL,c) )
         c->result=RESULT_DENY;
     else	c->result=RESULT_ALLOW;

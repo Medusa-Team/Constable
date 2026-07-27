@@ -16,7 +16,7 @@
 static char *at2str( int a )
 { lextab_t *l=keywords;
     while(l->keyword!=NULL)
-    {	if( l->sym==Taccess && l->data==a )
+    {	if( l->sym==Taccess && l->data==(uintptr_t)a )
             return(l->keyword);
         l++;
     }
@@ -97,4 +97,3 @@ int rbac_save( char *file, int rotate )
     fclose(f);
     return(0);
 }
-

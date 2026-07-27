@@ -114,6 +114,9 @@ static struct medusa_comm_class_s rbac_user_mclass={
 
                 static int rbac_set_roles( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )
                 {
+                    (void)h;
+                    (void)comm;
+                    (void)o;
                     VALIDATE_ROLES();
                     return(0);
                 }
@@ -123,6 +126,8 @@ static struct medusa_comm_class_s rbac_user_mclass={
                     char space[64];
                     struct space_s *s;
                     struct tree_s *t;
+                    (void)h;
+                    (void)comm;
                     if( object_get_val(o,get_attribute(o->class,"access"),&access,sizeof(access))<0
                             || object_get_val(o,get_attribute(o->class,"space"),&space,sizeof(space))<0 )
                         return(-1);
@@ -142,6 +147,10 @@ static struct medusa_comm_class_s rbac_user_mclass={
                 static int rbac_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, struct tree_s *node )
                 {
                     char **errstr = (char**) pthread_getspecific(errstr_key);
+                    (void)h;
+                    (void)comm;
+                    (void)o;
+                    (void)node;
                     *errstr=Out_of_memory;
                     return(-1);
                 }
@@ -152,6 +161,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
 
                 int rbac_comm_alloc( struct module_s *m )
                 {
+                    (void)m;
                     if( (rbac_comm=comm_new("_RBAC",sizeof(struct comm_s)))==NULL )
                         return(-1);
                     rbac_comm->state=0;
@@ -166,6 +176,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
 
                 int rbac_comm_init( struct module_s *m )
                 {
+                    (void)m;
                     if( (rbac_user_class=add_class(rbac_comm,&rbac_user_mclass,rbac_user_attr))==NULL )
                         return(init_error("rbac: Can't register user class"));
                     if( (rbac_perm_class=add_class(rbac_comm,&rbac_perm_mclass,rbac_perm_attr))==NULL )
@@ -324,4 +335,3 @@ static struct medusa_comm_class_s rbac_user_mclass={
                 {
                     return(add_module(&rbac_module));
                 }
-

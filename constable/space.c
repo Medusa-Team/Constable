@@ -1239,7 +1239,7 @@ int space_vs_to_str(vs_t *vs, char *out, int size)
 	} // for space in global spaces
 
 	if (!vs_isclear(tvs)) {
-		if ((sizeof(tvs)*9)/8+3 >= size)
+		if (size <= 0 || (sizeof(tvs)*9)/8+3 >= (size_t)size)
 			return -1;
 		if (pos > 0) {
 			out[pos] = '|';

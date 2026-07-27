@@ -35,6 +35,13 @@ static int comm_var_data_size; /**< TODO: is manipulation with this global varia
 				 * thread and/or per buffer safe?
 				 */
 
+static void *read_loop(void *arg)
+{
+	struct comm_s *comm = arg;
+
+	return (void *)(intptr_t)comm->read(comm);
+}
+
 void *comm_new_array(int size)
 {
 	void *v;
@@ -128,8 +135,7 @@ int comm_do(void)
 			c->close(c);
 			continue;
 		}
-		if (pthread_create(&c->read_thread, NULL,
-				   (void *(*)(void *)) c->read, c)) {
+		if (pthread_create(&c->read_thread, NULL, read_loop, c)) {
 			puts("Cannot create read thread");
 			return -1;
 		}
@@ -170,6 +176,7 @@ void *comm_worker(void *arg)
 {
 	int r = 0;
 
+	(void)arg;
 	if (tls_alloc_init())
 		return (void *)-1;
 

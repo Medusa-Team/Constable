@@ -136,12 +136,14 @@ int usage(char *me)
 
 void init_sig_handler(int signum)
 {
+	(void)signum;
 }
 
 static int run_init(int argc, char *argv[])
 {
 	int i;
 
+	(void)argc;
 	switch ((i = fork())) {
 	case -1:
 		return 0;

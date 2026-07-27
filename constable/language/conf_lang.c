@@ -111,7 +111,7 @@ struct compile_tab_s conf_lang[] = {
 	{S6, {Tby, END}, {Tby, T_id, Pprogstart, S_exp, oRET, Ptreereg, T|';', START, END}},
 	{S6, {END}, {Ptreereg, T|';', START, END}},
 
-	{END}
+	{END, {END}, {END}}
 };
 
 static struct event_handler_s *handler;
@@ -120,6 +120,7 @@ static int handler_pos;
 
 void conf_lang_out(struct compiler_out_class *o, sym_t s, uintptr_t d)
 {
+	(void)o;
 	if (s == TEND)
 		return;
 	if (handler == NULL) {
@@ -145,6 +146,7 @@ void conf_lang_out(struct compiler_out_class *o, sym_t s, uintptr_t d)
 
 static void out_destroy(struct compiler_out_class *this)
 {
+	(void)this;
 }
 
 struct compiler_out_class s_canf_lang_out = {
@@ -192,6 +194,7 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 	switch (s) {
 	case Ppspace:
 		pspace = true;
+		/* fall through */
 	case Pspace:
 		if (c->l.data != 0) {
 			space = space_find((char *)(c->l.data));

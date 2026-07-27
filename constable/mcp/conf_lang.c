@@ -92,7 +92,7 @@ struct compile_tab_s mcp_conf_lang[] = {
 	{S1m, {END}, {Pmaskfull, END}},
 	{S1p, {T | ':', END}, { T | ':', T_num, Pport, END}},
 	{S1p, {END}, {Pport0, END}},
-	{END}
+	{END, {END}, {END}}
 };
 
 enum {
@@ -202,7 +202,7 @@ static lexstattab_t mcp_lex_tab[] = {
 	{LS_comment, NULL, rules_comment, NULL, NULL},
 	{LS_comment2, NULL, rules_comment2, NULL, NULL},
 	{LS_comment_line, NULL, rules_comment_line, NULL, NULL},
-	{END}
+	{END, NULL, NULL, NULL, NULL}
 };
 
 static int mcp_error(const char *fmt, ...);
@@ -210,6 +210,8 @@ static int mcp_warning(const char *fmt, ...);
 
 static void gen_lex_ident(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_id;
 	*data = (uintptr_t)strdup(buf);
 	if (!*data)
@@ -218,6 +220,8 @@ static void gen_lex_ident(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t
 
 static void gen_lex_str(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_str;
 	*data = (uintptr_t)strdup(buf);
 	if (!*data)
@@ -226,6 +230,8 @@ static void gen_lex_str(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t w
 
 static void gen_lex_num(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_num;
 	*data = (uintptr_t)strtol(buf, NULL, 0);
 	if (errno == ERANGE)
@@ -234,6 +240,8 @@ static void gen_lex_num(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t w
 
 static void gen_lex_ip(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_ip;
 	*data = (uintptr_t)inet_addr(buf);
 }
@@ -308,6 +316,7 @@ static char *sym2str(sym_t sym)
 
 static sym_t err_warning(struct compiler_err_class *this, sym_t errsym, sym_t info)
 {
+	(void)this;
 	if (errsym == TEND)
 		return 0;
 	if (errsym == END && (info & TYP) == E)
@@ -323,6 +332,7 @@ static sym_t err_error(struct compiler_err_class *this, sym_t errsym, sym_t info
 {
 	char **errstr;
 
+	(void)this;
 	if (errsym == TEND)
 		return 0;
 	if (errsym == END && info == eLEXERR) {
@@ -346,6 +356,7 @@ static sym_t err_error(struct compiler_err_class *this, sym_t errsym, sym_t info
 
 static void err_destroy(struct compiler_err_class *this)
 {
+	(void)this;
 }
 
 struct compiler_err_class mcp_s_error = {
@@ -359,10 +370,14 @@ struct compiler_err_class mcp_s_error = {
 
 static void conf_lang_out(struct compiler_out_class *o, sym_t s, unsigned long d)
 {
+	(void)o;
+	(void)s;
+	(void)d;
 }
 
 static void out_destroy(struct compiler_out_class *this)
 {
+	(void)this;
 }
 
 struct compiler_out_class mcp_s_canf_lang_out = {
@@ -425,6 +440,7 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		break;
 	case Pmaskfull:
 		c->l.data = 32;
+		/* fall through */
 	case Pmasknum:
 		if (c->l.data < 32)
 			mask = ((1 << (c->l.data)) - 1) << (32 - (c->l.data));
@@ -433,6 +449,7 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		break;
 	case Pport0:
 		c->l.data = 0;
+		/* fall through */
 	case Pport:
 		port = (in_port_t)(c->l.data);
 		break;

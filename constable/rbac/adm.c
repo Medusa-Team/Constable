@@ -60,6 +60,7 @@ static int get_event_context( struct comm_s *comm, struct event_context_s *c, st
 
 int rbac_comm_answer( struct comm_s *c, struct comm_buffer_s *b)
 {
+    (void)c;
     ((struct comm_buffer_s*)(b->user1))->user_data=b->context.result;
     switch( b->context.result )
     {

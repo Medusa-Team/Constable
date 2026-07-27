@@ -695,8 +695,8 @@ int mcp_renew_authrequest(struct comm_buffer_s *request)
 		MCPptr_t id;
 	} __attribute__((packed)) *message;
 
-	if (!request || !request->comm ||
-	    request->len < 2 * sizeof(MCPptr_t))
+	if (!request || !request->comm || request->len < 0 ||
+	    (size_t)request->len < 2 * sizeof(MCPptr_t))
 		return -EINVAL;
 
 	output = comm_buf_get(sizeof(*message), request->comm);

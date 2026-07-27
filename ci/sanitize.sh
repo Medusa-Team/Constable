@@ -20,7 +20,7 @@ esac
 
 repo=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
 compiler=${CC:-gcc}
-common_flags="-std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -g -D_GNU_SOURCE"
+common_flags="-std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -Werror -g -D_GNU_SOURCE"
 lib_flags="$common_flags -fPIC $sanitizer_flags -fno-omit-frame-pointer"
 constable_flags="$common_flags -DRBAC -I$repo/libmcompiler \
 $sanitizer_flags -fno-omit-frame-pointer"

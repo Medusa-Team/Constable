@@ -27,7 +27,7 @@ int event_mask_clear2(struct event_mask_s *e)
 
 int event_mask_setbit(struct event_mask_s *e, int b)
 {
-	if (b < 0 || b >= sizeof(e->bitmap)*8)
+	if (b < 0 || (size_t)b >= sizeof(e->bitmap)*8)
 		return -1;
 	setbit(e->bitmap, b);
 	return 0;
@@ -35,7 +35,7 @@ int event_mask_setbit(struct event_mask_s *e, int b)
 
 int event_mask_clrbit(struct event_mask_s *e, int b)
 {
-	if (b < 0 || b >= sizeof(e->bitmap)*8)
+	if (b < 0 || (size_t)b >= sizeof(e->bitmap)*8)
 		return -1;
 	clrbit(e->bitmap, b);
 	return 0;

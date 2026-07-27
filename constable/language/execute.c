@@ -80,7 +80,7 @@ void obj_to_reg(struct register_s *r, struct object_s *o, char *attr)
 void R_pop(struct execute_s *e, struct register_s *r)
 {
 	uintptr_t x;
-	int i, n;
+	size_t i, n;
 
 	/* init register */
 	r->flags = OBJECT_FLAG_LOCAL;
@@ -319,10 +319,10 @@ static int execute_handler_do(struct execute_s *e)
 	uintptr_t *cmd_p;
 	struct register_s *r0 = pthread_getspecific(r0_key);
 	struct register_s *r1 = pthread_getspecific(r1_key);
-	char *runtime_pos;
 
 #ifdef DEBUG_TRACE
 	char *runtime_file;
+	char *runtime_pos;
 
 	runtime_file = (char *)pthread_getspecific(runtime_file_key);
 	strncpy(runtime_file, e->h->op_name + MEDUSA_OPNAME_MAX, sizeof(RUNTIME_FILE_TYPE));
@@ -540,6 +540,8 @@ static int execute_handler_do(struct execute_s *e)
 			} else
 				push((uintptr_t)(r0->class->comm->name));
 			push(LTS);
+			/* Preserve the historical conversion into a class reference. */
+			/* fall through */
 		case oS2C:
 			r_pop(r0);
 			if ((r0->attr->type & 0x0f) != MED_TYPE_STRING) {
@@ -566,6 +568,8 @@ static int execute_handler_do(struct execute_s *e)
 			e->comm = comm_find((char *)r0->data);
 			if (e->comm != NULL)
 				break;
+			/* An unknown connection restores the request's connection. */
+			/* fall through */
 		case oSCD:
 			e->comm = e->my_comm_buff->comm;
 			break;

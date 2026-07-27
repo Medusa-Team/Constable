@@ -17,6 +17,8 @@
 
 static BUILDIN_FUNC(cmd_constable_pid)
 {
+	(void)e;
+	(void)getarg;
 	*((uintptr_t *)(ret->data)) = (uintptr_t)getpid();
 	return 0;
 }
@@ -44,6 +46,7 @@ static BUILDIN_FUNC(cmd_hex)
 
 static BUILDIN_FUNC(cmd_comm)
 {
+	(void)getarg;
 	ret->attr = &(execute_attr_str);
 	strncpy(ret->data, e->my_comm_buff->comm->name, MAX_REG_SIZE);
 	return 0;
@@ -51,18 +54,21 @@ static BUILDIN_FUNC(cmd_comm)
 
 static BUILDIN_FUNC(cmd_operation)
 {
+	(void)getarg;
 	obj_to_reg(ret, &(e->c->operation), NULL);
 	return 0;
 }
 
 static BUILDIN_FUNC(cmd_subject)
 {
+	(void)getarg;
 	obj_to_reg(ret, &(e->c->subject), NULL);
 	return 0;
 }
 
 static BUILDIN_FUNC(cmd_object)
 {
+	(void)getarg;
 	obj_to_reg(ret, &(e->c->object), NULL);
 	return 0;
 }
@@ -328,5 +334,4 @@ int cmds_init(void)
 	lex_addkeyword("sizeof", Tbuildin, (uintptr_t)cmd_sizeof);
 	return 0;
 }
-
 

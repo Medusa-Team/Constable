@@ -12,21 +12,40 @@ permissions:
 
 jobs:
   build:
-    name: Constable reference server
+    name: Constable reference server (${{ matrix.compiler }})
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler:
+          - gcc
+          - clang
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools
         run: |
           sudo apt-get update
-          sudo apt-get install --yes build-essential
+          sudo apt-get install --yes build-essential clang
       - name: Build libmcompiler
-        run: make -C libmcompiler
+        run: |
+          common_flags="-std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -Werror -g -D_GNU_SOURCE"
+          make -C libmcompiler \
+            CC="${{ matrix.compiler }}" \
+            LD="${{ matrix.compiler }}" \
+            CFLAGS="$common_flags -fPIC"
       - name: Build Constable
-        run: make -C constable
+        run: |
+          common_flags="-std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -Werror -g -D_GNU_SOURCE"
+          make -C constable \
+            CC="${{ matrix.compiler }}" \
+            CFLAGS="$common_flags -DRBAC -I$GITHUB_WORKSPACE/libmcompiler"
       - name: Test Constable semantics
-        run: make -C constable test
+        run: |
+          common_flags="-std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -Werror -g -D_GNU_SOURCE"
+          make -C constable test \
+            CC="${{ matrix.compiler }}" \
+            CFLAGS="$common_flags -DRBAC -I$GITHUB_WORKSPACE/libmcompiler"
 
   sanitizer:
     name: ${{ matrix.name }}

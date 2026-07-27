@@ -165,12 +165,12 @@ struct class_s *add_class(struct comm_s *comm, struct medusa_class_s *mc, struct
  */
 int class_alloc_cinfo(u_int16_t cinfo_size, uintptr_t *cinfo_mask, u_int16_t cinfo_offset)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; (i < cinfo_size / DWORDS_PER_PTR) && (i < sizeof(cinfo_mask) * 8); i++) {
-		if (!(*cinfo_mask & 1 << i)) {
+		if (!(*cinfo_mask & (uintptr_t)1 << i)) {
 			/* found a free block */
-			*cinfo_mask |= 1 << i;
+			*cinfo_mask |= (uintptr_t)1 << i;
 			return cinfo_offset + i * sizeof(uintptr_t);
 		}
 	}

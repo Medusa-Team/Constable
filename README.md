@@ -33,7 +33,8 @@ Development checks
 Constable and libmcompiler default to strict ISO C11 with
 `-Wall -Wextra -Wpedantic -pedantic-errors`. Production builds do not enable
 `DEBUG_TRACE`; developers who need the historical trace output can add
-`-DDEBUG_TRACE` explicitly to their `CFLAGS`.
+`-DDEBUG_TRACE` explicitly to their `CFLAGS`. CI builds the complete tree with
+both GCC and Clang and promotes every warning to an error.
 
 The normal Linux build and semantic corpus run with:
 

@@ -17,6 +17,14 @@
 /* !!!!!!!!!!!!!!!!!!!!!! */
 typedef	int32_t	s_int32_t;
 typedef	int64_t	s_int64_t;
+typedef u_int32_t uu_int32_t;
+typedef u_int32_t us_int32_t;
+typedef u_int32_t su_int32_t;
+typedef s_int32_t ss_int32_t;
+typedef u_int64_t uu_int64_t;
+typedef u_int64_t us_int64_t;
+typedef u_int64_t su_int64_t;
+typedef s_int64_t ss_int64_t;
 
 #define TYPE_u	MED_TYPE_UNSIGNED
 #define TYPE_s	MED_TYPE_SIGNED
@@ -110,15 +118,15 @@ static void r_##name##_##t1##t2(struct register_s *v, struct register_s *d) \
 	v->tmp_attr.type = MED_TYPE_UNSIGNED;		\
 	v->attr = &(v->tmp_attr);			\
 	if (n == 1) {					\
-		t1##_int32_t x;				\
-		t2##_int32_t y;				\
+		t1##t2##_int32_t x;			\
+		t1##t2##_int32_t y;			\
 							\
 		x = ((t1##_int32_t *)(v->data))[0];	\
 		y = ((t2##_int32_t *)(d->data))[0];	\
 		((u_int32_t *)(v->data))[0] = (u_int32_t)(op); \
 	} else {					\
-		t1##_int64_t x;				\
-		t2##_int64_t y;				\
+		t1##t2##_int64_t x;			\
+		t1##t2##_int64_t y;			\
 							\
 		x = ((t1##_int64_t *)(v->data))[0];	\
 		y = ((t2##_int64_t *)(d->data))[0];	\
@@ -497,4 +505,3 @@ void do_bin_op(int op, struct register_s *v, struct register_s *d)
 	}
 	op_func[op - oADD][t1][t2](v, d);
 }
-

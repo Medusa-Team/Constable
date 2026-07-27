@@ -38,6 +38,7 @@ int object_get_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, 
 		return 0;
 	case MED_TYPE_SIGNED:
 		s = 1;
+		/* fall through */
 	case MED_TYPE_UNSIGNED:
 		n = MIN(a->length, maxlen);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -91,6 +92,7 @@ int object_set_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, 
 		return 0;
 	case MED_TYPE_SIGNED:
 		s = 1;
+		/* fall through */
 	case MED_TYPE_UNSIGNED:
 		n = MIN(a->length, maxlen);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -227,6 +229,7 @@ int object_resize_data(void *buf, struct medusa_attribute_s *a, int newlen)
 		return 0;
 	case MED_TYPE_SIGNED:
 		s = 1;
+		/* fall through */
 	case MED_TYPE_UNSIGNED:
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 		if (s && ((char *)buf)[a->length-1] & 0x80)

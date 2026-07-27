@@ -102,6 +102,7 @@ static char *sym2str(sym_t sym)
 }
 static sym_t err_warning(struct compiler_err_class *this, sym_t errsym, sym_t info)
 {
+	(void)this;
 	if (errsym == TEND)
 		return 0;
 	if (errsym == END && (info & TYP) == E)
@@ -114,6 +115,7 @@ static sym_t err_warning(struct compiler_err_class *this, sym_t errsym, sym_t in
 }
 static sym_t err_error(struct compiler_err_class *this, sym_t errsym, sym_t info)
 {
+	(void)this;
 	if (errsym == TEND)
 		return 0;
 	if (errsym == END && info == eLEXERR) {
@@ -154,6 +156,7 @@ static sym_t err_error(struct compiler_err_class *this, sym_t errsym, sym_t info
 
 static void err_destroy(struct compiler_err_class *this)
 {
+	(void)this;
 }
 
 struct compiler_err_class s_error = {

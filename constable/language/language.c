@@ -83,5 +83,5 @@ struct compile_tab_s language[] = {
 
 	{CMDS, {END}, {CR, SRET0, oRET, END}},
 
-	{END}
+	{END, {END}, {END}}
 };
