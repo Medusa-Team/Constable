@@ -5,6 +5,7 @@ TESTS = decision_test dynamic_argv_test alu_mixed_compare_test string_utils_test
 	mcp_validate_test object_string_test version_buffer_test mlibc_format_test
 TESTS += dynamic_buffer_test comm_buffer_test register_bounds_test
 TESTS += checked_math_test lexer_growth_test
+TESTS += linked_list_test tree_path_test
 
 .PHONY: all clean
 
@@ -22,6 +23,8 @@ all: $(TESTS) ../constable
 	./register_bounds_test
 	./checked_math_test
 	./lexer_growth_test
+	./linked_list_test
+	./tree_path_test
 	sh ./policy_compile_test.sh ../constable fixtures
 
 ../constable:
@@ -79,6 +82,14 @@ checked_math_test: checked_math_test.c
 lexer_growth_test: lexer_growth_test.c ../../libmcompiler/libmcompiler.a
 	$(CC) $(CFLAGS) -std=c11 -I../../libmcompiler -o $@ $< \
 		../../libmcompiler/libmcompiler.a
+
+linked_list_test: linked_list_test.c ../../libmcompiler/libmcompiler.a
+	$(CC) $(CFLAGS) -std=c11 -I../../libmcompiler -o $@ $< \
+		../../libmcompiler/libmcompiler.a
+
+tree_path_test: tree_path_test.c ../tree.c
+	$(CC) $(CFLAGS) -std=c11 -I.. -I../../libmcompiler -o $@ \
+		tree_path_test.c ../tree.c
 
 clean:
 	rm -rf $(TESTS) $(addsuffix .dSYM,$(TESTS))
