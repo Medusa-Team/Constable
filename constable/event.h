@@ -120,6 +120,9 @@ int do_event(struct comm_buffer_s *cb);
 int event_free_all_events(struct comm_s *comm);
 struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s *m, struct medusa_attribute_s *a);
 struct event_names_s *event_type_find_name(char *name, bool alloc_new);
+typedef int (*event_name_visitor_t)(const struct event_names_s *event,
+				    void *argument);
+int event_names_visit(event_name_visitor_t visitor, void *argument);
 
 int event_mask_clear(struct event_mask_s *e);
 int event_mask_clear2(struct event_mask_s *e);

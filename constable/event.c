@@ -93,6 +93,23 @@ int event_mask_sub(struct event_mask_s *e, struct event_mask_s *f)
 static pthread_mutex_t events_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct event_names_s *events;
 
+int event_names_visit(event_name_visitor_t visitor, void *argument)
+{
+	struct event_names_s *event;
+	int result = 0;
+
+	if (!visitor)
+		return -1;
+	pthread_mutex_lock(&events_lock);
+	for (event = events; event; event = event->next) {
+		result = visitor(event, argument);
+		if (result)
+			break;
+	}
+	pthread_mutex_unlock(&events_lock);
+	return result;
+}
+
 int event_free_all_events(struct comm_s *comm)
 {
 	struct event_names_s *e;

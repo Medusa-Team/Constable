@@ -35,6 +35,7 @@ all: $(TESTS) ../constable
 	sh ./policy_compile_test.sh ../constable fixtures
 	sh ./historical_policy_test.sh ../constable
 	sh ./policy_runtime_test.sh ../constable fixtures
+	sh ./policy_inspect_test.sh ../constable fixtures
 
 ../constable:
 	$(MAKE) -C .. constable

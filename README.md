@@ -84,6 +84,10 @@ Preserved policies and their compiled virtual-space semantics are covered by
 the compatibility corpus described in
 [docs/policy-compatibility.md](docs/policy-compatibility.md).
 
+`constable -I` emits the compiled policy as non-mutating JSON for review and
+tooling; its schema and offline guarantees are documented in
+[docs/policy-inspection.md](docs/policy-inspection.md).
+
 Usage
 -----
 run constable with parameter minimal/constable.conf that blocks all syscalls

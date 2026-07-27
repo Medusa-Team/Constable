@@ -20,6 +20,7 @@
 #include "space.h"
 #include "tree.h"
 #include "constable.h"
+#include "policy_inspect.h"
 
 #ifndef MEDUSA_INITNAME
 #define MEDUSA_INITNAME "/sbin/init"
@@ -30,6 +31,7 @@ int medusa_config_file_explicit;
 
 static int test;
 static int policy_self_test;
+static char *policy_inspection_file;
 
 static struct module_s *first_module;
 static struct module_s *active_modules;
@@ -129,9 +131,10 @@ int init_all(char *filename)
 int usage(char *me)
 {
 	fprintf(stderr,
-		"Usage: %s [-t] [-T] [-d <tree debug file>] [-D[D] <class/events debug file>] [<config. file>]\n\n"
+		"Usage: %s [-t] [-T] [-I <policy JSON>] [-d <tree debug file>] [-D[D] <class/events debug file>] [<config. file>]\n\n"
 		"    -t and/or -d causes Constable to shut down before initiating communication\n"
-		"    -T executes function _debug offline and succeeds only on FORCE_ALLOW\n",
+		"    -T executes function _debug offline and succeeds only on FORCE_ALLOW\n"
+		"    -I writes non-mutating policy inspection JSON and implies -t\n",
 		me);
 	return 0;
 }
@@ -262,6 +265,9 @@ int main(int argc, char *argv[])
 			} else if (argv[a][1] == 'T') {
 				test = 1;
 				policy_self_test = 1;
+			} else if (argv[a][1] == 'I' && a + 1 < argc) {
+				test = 1;
+				policy_inspection_file = argv[++a];
 			} else if (argv[a][1] == 'd' && a + 1 < argc) {
 				a++;
 				debug_fd = comm_open_skip_stdfds(argv[a],
@@ -304,6 +310,10 @@ int main(int argc, char *argv[])
 
 	if (debug_fd >= 0)
 		tree_print_node(global_root, 0, debug_fd_write, debug_fd);
+
+	if (policy_inspection_file &&
+	    policy_inspect_path(policy_inspection_file) < 0)
+		return init_error("Cannot write policy inspection output");
 
 	if (policy_self_test && run_policy_self_test() < 0)
 		return -1;
