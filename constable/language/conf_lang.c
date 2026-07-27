@@ -16,6 +16,8 @@
 #include "../string_utils.h"
 
 #include "conf_lang.h"
+#include <limits.h>
+#include <mcompiler/checked_math.h>
 
 struct event_handler_s *function_init;
 struct event_handler_s *function_debug;
@@ -129,11 +131,20 @@ void conf_lang_out(struct compiler_out_class *o, sym_t s, uintptr_t d)
 		return;
 	}
 	if (handler_pos >= handler_size) {
-		int new_size = handler_pos + BYTECODE_CHUNK_SIZE;
-		uintptr_t *new_data =
-			realloc(handler->data, new_size * sizeof(*new_data));
+		int new_size;
+		size_t bytes;
+		uintptr_t *new_data;
 
-		if (new_data == NULL) {
+		if (handler_pos > INT_MAX - BYTECODE_CHUNK_SIZE ||
+		    !checked_size_multiply(
+			    (size_t)(handler_pos + BYTECODE_CHUNK_SIZE),
+			    sizeof(*new_data), &bytes)) {
+			error("Compiled handler is too large");
+			return;
+		}
+		new_size = handler_pos + BYTECODE_CHUNK_SIZE;
+		new_data = realloc(handler->data, bytes);
+		if (!new_data) {
 			error(Out_of_memory);
 			return;
 		}

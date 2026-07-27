@@ -12,6 +12,8 @@
 #include <mcompiler/compiler.h>
 #include <mcompiler/dynamic.h>
 
+#include <mcompiler/checked_math.h>
+
 struct pre_file_s {
     struct pre_file_s *prev;
     char *filename;
@@ -31,10 +33,18 @@ typedef struct	{
 
 static int open_file( pre_t *p, char *filename )
 { struct pre_file_s *f;
-    if( (f=malloc(sizeof(struct pre_file_s)+strlen(filename)+1))==NULL )
+    size_t filename_length;
+    size_t allocation;
+    if( p==NULL || filename==NULL )
+        return(-1);
+    filename_length=strlen(filename);
+    if( !checked_size_add(sizeof(struct pre_file_s),filename_length,
+                          &allocation) ||
+        !checked_size_add(allocation,1,&allocation) ||
+        (f=malloc(allocation))==NULL )
         return(-1);
     f->filename=(char*)(f+1);
-    memcpy(f->filename,filename,strlen(filename)+1);
+    memcpy(f->filename,filename,filename_length+1);
     if( strcmp(f->filename,"-") )
     {	if( (f->fd=open(f->filename,O_RDONLY))<0 )
         {	free(f);
@@ -57,15 +67,31 @@ static int open_file( pre_t *p, char *filename )
 }
 
 static int open_file_relative( pre_t *p, char *filename )
-{ char buf[strlen(filename)+strlen(p->file->filename)+2];
+{ char *buf;
     char *l;
+    size_t prefix_length;
+    size_t filename_length;
+    size_t allocation;
+    int result;
+    if( p==NULL || p->file==NULL || filename==NULL )
+        return(-1);
     if( filename[0]=='/' )
         return(open_file(p,filename));
     if( (l=strrchr(p->file->filename,'/'))==NULL )
         return(open_file(p,filename));
-    memcpy(buf,p->file->filename,(size_t)(l-p->file->filename)+1);
-    memcpy(buf+(l-p->file->filename)+1,filename,strlen(filename)+1);
-    return(open_file(p,buf));
+    prefix_length=(size_t)(l-p->file->filename)+1;
+    filename_length=strlen(filename);
+    if( !checked_size_add(prefix_length,filename_length,&allocation) ||
+        !checked_size_add(allocation,1,&allocation) )
+        return(-1);
+    buf=malloc(allocation);
+    if( buf==NULL )
+        return(-1);
+    memcpy(buf,p->file->filename,prefix_length);
+    memcpy(buf+prefix_length,filename,filename_length+1);
+    result=open_file(p,buf);
+    free(buf);
+    return(result);
 }
 
 static int close_file( pre_t *p )

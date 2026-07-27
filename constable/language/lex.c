@@ -12,9 +12,11 @@
 #include "../event.h"
 #include "../tree.h"
 #include <stdlib.h>
+#include <limits.h>
 #include <errno.h>
 #include <string.h>
 #include <pthread.h>
+#include <mcompiler/checked_math.h>
 
 enum {
 	LS_start = (LS | 1),
@@ -362,7 +364,12 @@ int lex_updatekeyword(char *keyword, sym_t sym, uintptr_t data)
 int lex_addkeyword(char *keyword, sym_t sym, uintptr_t data)
 {
 	lextab_t *l = keywords2;
+	lextab_t *replacement;
+	size_t bytes;
+	int new_count;
 
+	if (!keyword)
+		return -1;
 	if (l) {
 		while (l->keyword != NULL) {
 			if (!strcmp(l->keyword, keyword))
@@ -370,13 +377,22 @@ int lex_addkeyword(char *keyword, sym_t sym, uintptr_t data)
 			l++;
 		}
 	}
-	keywords2_nr++;
-	keywords2 = realloc(keywords2, (keywords2_nr + 1) * sizeof(lextab_t));
-	keywords2[keywords2_nr - 1].keyword = keyword;
-	keywords2[keywords2_nr - 1].sym = sym;
-	keywords2[keywords2_nr - 1].data = data;
-	keywords2[keywords2_nr].keyword = NULL;
-	keywords2[keywords2_nr].sym = 0;
-	keywords2[keywords2_nr].data = 0;
+	if (keywords2_nr == INT_MAX)
+		return -1;
+	new_count = keywords2_nr + 1;
+	if (!checked_size_multiply((size_t)new_count + 1,
+				   sizeof(*replacement), &bytes))
+		return -1;
+	replacement = realloc(keywords2, bytes);
+	if (!replacement)
+		return -1;
+	keywords2 = replacement;
+	keywords2[new_count - 1].keyword = keyword;
+	keywords2[new_count - 1].sym = sym;
+	keywords2[new_count - 1].data = data;
+	keywords2[new_count].keyword = NULL;
+	keywords2[new_count].sym = 0;
+	keywords2[new_count].data = 0;
+	keywords2_nr = new_count;
 	return 0;
 }

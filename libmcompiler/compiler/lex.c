@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdlib.h>
+#include <limits.h>
 #include <mcompiler/lex.h>
 
 static lexstattab_t *find_end_of_tab( lexstattab_t *t )
@@ -160,12 +160,20 @@ Recursive:
             l->meta.col=l->pre->col; l->meta.row=l->pre->row;
         }
         if( l->buf_len+1>=l->buf_size )
-        {	l->buf_size=l->buf_len+1+16;
-            l->buf=realloc(l->buf,l->buf_size);
-            if( l->buf==NULL )
+        {	char *replacement;
+            int new_size;
+            if( l->buf_len > INT_MAX-17 )
             {	out->sym=eNOMEM;
                 return;
             }
+            new_size=l->buf_len+17;
+            replacement=realloc(l->buf,(size_t)new_size);
+            if( replacement==NULL )
+            {	out->sym=eNOMEM;
+                return;
+            }
+            l->buf=replacement;
+            l->buf_size=new_size;
         }
         if( oper )
         {	l->buf[l->buf_len]=l->c;
@@ -257,6 +265,8 @@ Err:	out->sym=eLEXERR;
 
 struct compiler_lex_class *lex_create( lexstattab_t *stattab, struct compiler_preprocessor_class *pre )
 { struct lexstruct_s *l;
+    if( stattab==NULL || pre==NULL || pre->filename==NULL )
+        return(NULL);
     if( (l=malloc(sizeof(struct lexstruct_s)))==NULL )
         return(NULL);
     l->meta.usecount=0;
@@ -264,6 +274,10 @@ struct compiler_lex_class *lex_create( lexstattab_t *stattab, struct compiler_pr
     l->meta.lex=(void(*)(struct compiler_lex_class*,struct lex_s*,sym_t))
             lex_lex;
     l->meta.filename=strdup(pre->filename);
+    if( l->meta.filename==NULL )
+    {	free(l);
+        return(NULL);
+    }
     l->meta.col=pre->col;
     l->meta.row=pre->row;
     l->add_tab=lex_add_tab;
