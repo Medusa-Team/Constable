@@ -13,6 +13,7 @@ kernel policy.
 
 The top-level object has format identifier `constable-policy-v1` and contains:
 
+- `classes`: every object class name referenced by the compiled policy;
 - `spaces`: each retained virtual space, its stable name, primary/used flags,
   member count, 64-bit identifier, and access sets;
 - `namespace`: a flat traversal of compiled paths, primary spaces, access
@@ -28,5 +29,5 @@ labels rather than ambiguous display strings.
 The document is read-only diagnostic output. It contains no command or field
 that can mutate the compiled policy, a process, an inode, or kernel state.
 Protocol-schema availability and active-kernel enforcement are intentionally
-separate validation dimensions; later validation can annotate this document
-without changing its compiled-policy facts.
+separate validation dimensions. Use `-V` to validate these compiled event and
+class names against a kernel's Medusa securityfs inventory.

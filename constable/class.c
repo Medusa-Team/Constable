@@ -15,6 +15,23 @@
 static pthread_mutex_t classes_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct class_names_s *classes;
 
+int class_names_visit(class_name_visitor_t visitor, void *argument)
+{
+	struct class_names_s *class_name;
+	int result = 0;
+
+	if (!visitor)
+		return -1;
+	pthread_mutex_lock(&classes_lock);
+	for (class_name = classes; class_name; class_name = class_name->next) {
+		result = visitor(class_name, argument);
+		if (result)
+			break;
+	}
+	pthread_mutex_unlock(&classes_lock);
+	return result;
+}
+
 struct class_names_s *get_class_by_name(char *name)
 {
 	struct class_names_s *c;

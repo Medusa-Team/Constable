@@ -107,6 +107,9 @@ struct object_s {
 #define OBJECT_FLAG_CHENDIAN	0x10	/* big<->little */
 
 struct class_names_s *get_class_by_name(char *name);
+typedef int (*class_name_visitor_t)(const struct class_names_s *class_name,
+				    void *argument);
+int class_names_visit(class_name_visitor_t visitor, void *argument);
 struct medusa_attribute_s *get_attribute(struct class_s *c, char *name);
 int class_free_all_clases(struct comm_s *comm);
 struct class_s *add_class(struct comm_s *comm, struct medusa_class_s *mc, struct medusa_attribute_s *a);

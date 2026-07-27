@@ -25,7 +25,11 @@ with open(sys.argv[1], encoding="utf-8") as stream:
     policy = json.load(stream)
 
 assert policy["format"] == "constable-policy-v1"
-assert {"spaces", "namespace", "events", "unreachable_rules"} <= policy.keys()
+assert {
+    "classes", "spaces", "namespace", "events", "unreachable_rules"
+} <= policy.keys()
+assert set(policy["classes"]) == {"file", "process"}
+assert len(policy["classes"]) == 2
 
 spaces = {space["name"]: space for space in policy["spaces"]}
 assert spaces["domains"]["primary"] is True
@@ -65,6 +69,8 @@ with open(sys.argv[1], encoding="utf-8") as stream:
     policy = json.load(stream)
 
 names = [space["name"] for space in policy["spaces"]]
+assert len(policy["classes"]) == len(set(policy["classes"]))
+assert {"file", "process"} <= set(policy["classes"])
 assert len(names) == len(set(names)) == 46
 assert len(policy["namespace"]) == 406
 assert len(policy["events"]) == 7

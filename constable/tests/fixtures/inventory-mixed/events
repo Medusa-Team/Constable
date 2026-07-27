@@ -1,0 +1,3 @@
+event=getfile subject_class=file object_class=file event_bit=0 enforcement=active trigger=subject trigger_bitmap=subject delegation=sleepable fallback=baseline
+event=getprocess subject_class=process object_class=process event_bit=1 enforcement=active trigger=subject trigger_bitmap=subject delegation=sleepable fallback=baseline
+event=mkdir subject_class=process object_class=file event_bit=2 enforcement=announced trigger=subject trigger_bitmap=subject delegation=sleepable fallback=baseline

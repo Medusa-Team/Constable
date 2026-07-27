@@ -1,0 +1,4 @@
+event=getfile subject_class=file object_class=file enforcement=active
+event=getprocess subject_class=process object_class=process enforcement=active
+event=mkdir subject_class=process object_class=file enforcement=active
+event=unlink subject_class=process object_class=file enforcement=active

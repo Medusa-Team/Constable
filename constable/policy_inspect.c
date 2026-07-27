@@ -4,6 +4,7 @@
 
 #include "access_types.h"
 #include "event.h"
+#include "object.h"
 #include "space.h"
 #include "tree.h"
 #include "vs.h"
@@ -276,6 +277,16 @@ static int write_event(const struct event_names_s *event, void *argument)
 	return fputs("]}", output->file) == EOF ? -1 : 0;
 }
 
+static int write_class(const struct class_names_s *class_name, void *argument)
+{
+	struct inspect_output *output = argument;
+
+	if (!output->first && fputc(',', output->file) == EOF)
+		return -1;
+	output->first = 0;
+	return json_string(output->file, class_name->name);
+}
+
 static int set_has_reachable_member(const vs_t *set)
 {
 	struct space_s *space;
@@ -334,8 +345,11 @@ static int policy_inspect_write(FILE *file)
 	struct space_s *space;
 	int first = 1;
 
-	if (fputs("{\"format\":\"constable-policy-v1\",\"spaces\":[",
+	if (fputs("{\"format\":\"constable-policy-v1\",\"classes\":[",
 		  file) == EOF)
+		return -1;
+	if (class_names_visit(write_class, &output) ||
+	    fputs("],\"spaces\":[", file) == EOF)
 		return -1;
 	for (space = global_spaces; space; space = space->next) {
 		if (!first && fputc(',', file) == EOF)
@@ -350,6 +364,7 @@ static int policy_inspect_write(FILE *file)
 	if (write_namespace_node(file, global_root, &first) ||
 	    fputs("],\"events\":[", file) == EOF)
 		return -1;
+	output.first = 1;
 	if (event_names_visit(write_event, &output) ||
 	    fputs("],\"unreachable_rules\":[", file) == EOF)
 		return -1;

@@ -88,6 +88,11 @@ the compatibility corpus described in
 tooling; its schema and offline guarantees are documented in
 [docs/policy-inspection.md](docs/policy-inspection.md).
 
+`constable -V /sys/kernel/security/medusa` rejects compiled policies that
+reference classes or events not actively enforced by the selected kernel. Its
+fail-closed behavior and inventory format are documented in
+[docs/policy-validation.md](docs/policy-validation.md).
+
 Usage
 -----
 run constable with parameter minimal/constable.conf that blocks all syscalls
