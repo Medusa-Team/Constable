@@ -6,6 +6,7 @@
 
 #include "object.h"
 #include <endian.h>
+#include <stdint.h>
 #include <sys/param.h>
 #include <string.h>
 
@@ -234,6 +235,9 @@ int object_resize_data(void *buf, struct medusa_attribute_s *a, int newlen)
 {
 	int s = 0;
 
+	if (!buf || !a || !a->length || newlen <= 0 ||
+	    newlen > (int)UINT16_MAX)
+		return -1;
 	if (a->length == newlen)
 		return 0;
 	if (a->length > newlen)

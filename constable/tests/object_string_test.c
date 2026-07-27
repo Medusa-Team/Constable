@@ -68,10 +68,35 @@ static void test_set_string(void)
 		    "a rejected zero-width write preserves the guard byte");
 }
 
+static void test_resize_bounds(void)
+{
+	char buffer[8] = "abcdefg";
+	struct medusa_attribute_s attribute = {
+		.offset = 0,
+		.length = 4,
+		.type = MED_TYPE_STRING,
+		.name = "name",
+	};
+
+	EXPECT_TRUE(object_resize_data(buffer, &attribute, 0) == -1,
+		    "a zero-length resize is rejected");
+	EXPECT_TRUE(object_resize_data(NULL, &attribute, 2) == -1,
+		    "a NULL resize buffer is rejected");
+	attribute.length = 0;
+	EXPECT_TRUE(object_resize_data(buffer, &attribute, 2) == -1,
+		    "a zero-width source attribute is rejected");
+	attribute.length = 4;
+	EXPECT_TRUE(object_resize_data(buffer, &attribute, 2) == 0,
+		    "a bounded string shrink succeeds");
+	EXPECT_TRUE(buffer[1] == '\0',
+		    "a shrunk string remains terminated");
+}
+
 int main(void)
 {
 	test_get_string();
 	test_set_string();
+	test_resize_bounds();
 
 	if (failures) {
 		fprintf(stderr, "object strings: %d failure(s)\n", failures);

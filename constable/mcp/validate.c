@@ -17,6 +17,26 @@ validate_name(const char *name, size_t capacity, int allow_empty)
 	return MCP_DEFINITION_VALID;
 }
 
+enum mcp_definition_validation
+mcp_validate_definition_extent(size_t message_length, size_t attributes_offset,
+			       size_t attribute_size, size_t *attribute_count)
+{
+	size_t payload_length;
+	size_t count;
+
+	if (!attribute_count || !attribute_size ||
+	    message_length < attributes_offset)
+		return MCP_DEFINITION_INVALID_ATTRIBUTE_LIST;
+	payload_length = message_length - attributes_offset;
+	if (!payload_length || payload_length % attribute_size)
+		return MCP_DEFINITION_INVALID_ATTRIBUTE_LIST;
+	count = payload_length / attribute_size;
+	if (count > MCP_DEFINITION_ATTRIBUTE_LIMIT)
+		return MCP_DEFINITION_TOO_MANY_ATTRIBUTES;
+	*attribute_count = count;
+	return MCP_DEFINITION_VALID;
+}
+
 static enum mcp_definition_validation
 validate_attributes(const struct medusa_attribute_s *attributes,
 		    size_t attribute_count, uint16_t object_size)
@@ -108,6 +128,8 @@ mcp_definition_validation_message(enum mcp_definition_validation result)
 		return "event name does not fit the operation attribute";
 	case MCP_DEFINITION_INVALID_ATTRIBUTE_LIST:
 		return "attribute list is malformed";
+	case MCP_DEFINITION_TOO_MANY_ATTRIBUTES:
+		return "attribute list exceeds the protocol limit";
 	case MCP_DEFINITION_ATTRIBUTE_OUT_OF_RANGE:
 		return "attribute extends beyond its object";
 	}

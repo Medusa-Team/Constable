@@ -13,6 +13,8 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <stdint.h>
 
 #include "constable.h"
 #include "comm.h"
@@ -22,9 +24,6 @@
 #include "threading.h"
 #include "mcp/mcp.h"
 
-int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q,
-			     struct comm_buffer_s *b);
-struct comm_buffer_s *comm_buf_from_queue_locked(struct comm_buffer_queue_s *q);
 static pthread_t comm_workers[N_WORKER_THREADS];
 
 extern struct event_handler_s *function_init;
@@ -47,7 +46,10 @@ void *comm_new_array(int size)
 {
 	void *v;
 
-	v = calloc(comm_nr_connections, size);
+	if (comm_nr_connections < 0 || size <= 0 ||
+	    (size_t)comm_nr_connections > SIZE_MAX / (size_t)size)
+		return NULL;
+	v = calloc((size_t)comm_nr_connections, (size_t)size);
 	if (!v)
 		return NULL;
 	return v;
@@ -57,6 +59,8 @@ int comm_alloc_buf_var_data(int size)
 {
 	int r;
 
+	if (size < 0 || comm_var_data_size > INT_MAX - size)
+		return -1;
 	r = comm_var_data_size;
 	comm_var_data_size += size;
 
@@ -66,22 +70,32 @@ int comm_alloc_buf_var_data(int size)
 static struct comm_buffer_s *comm_alloc_var_data(struct comm_buffer_s *b)
 {
 	int len = 0;
+	struct comm_buffer_s *resized;
 
 	if (b->p_comm_buf == b->comm_buf)
 		len = b->len;
-	b = comm_buf_resize(b, len + comm_var_data_size);
-	if (!b)
+	if (len < 0 || comm_var_data_size < 0 ||
+	    len > INT_MAX - comm_var_data_size)
 		return NULL;
-	b->var_data = b->comm_buf + len;
+	resized = comm_buf_resize(b, len + comm_var_data_size);
+	if (!resized)
+		return NULL;
+	resized->var_data = resized->comm_buf + len;
 
-	return b;
+	return resized;
 }
 
 struct comm_s *comm_new(char *name, int user_size)
 {
 	struct comm_s *c;
+	size_t allocation;
 
-	c = calloc(1, sizeof(struct comm_s) + user_size);
+	if (!name || user_size < 0 ||
+	    (size_t)user_size > SIZE_MAX - sizeof(struct comm_s) ||
+	    comm_nr_connections == INT_MAX)
+		return NULL;
+	allocation = sizeof(struct comm_s) + (size_t)user_size;
+	c = calloc(1, allocation);
 	if (!c)
 		return NULL;
 
@@ -90,13 +104,18 @@ struct comm_s *comm_new(char *name, int user_size)
 		return NULL;
 	}
 	c->fd = -1;
-	c->conn = comm_nr_connections++;
-	c->state_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	c->init_buffer = NULL;
-	sem_init(&c->output_sem, 0, 0);
-	c->wait_for_answer.lock =
-		(pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-	c->output.lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+	if (pthread_mutex_init(&c->state_lock, NULL))
+		goto free_comm;
+	if (pthread_mutex_init(&c->read_lock, NULL))
+		goto destroy_state_lock;
+	if (pthread_mutex_init(&c->wait_for_answer.lock, NULL))
+		goto destroy_read_lock;
+	if (pthread_mutex_init(&c->output.lock, NULL))
+		goto destroy_wait_lock;
+	if (sem_init(&c->output_sem, 0, 0))
+		goto destroy_output_lock;
+	c->conn = comm_nr_connections++;
 
 	if (!last_comm)
 		first_comm = c;
@@ -105,6 +124,18 @@ struct comm_s *comm_new(char *name, int user_size)
 	last_comm = c;
 
 	return c;
+
+destroy_output_lock:
+	pthread_mutex_destroy(&c->output.lock);
+destroy_wait_lock:
+	pthread_mutex_destroy(&c->wait_for_answer.lock);
+destroy_read_lock:
+	pthread_mutex_destroy(&c->read_lock);
+destroy_state_lock:
+	pthread_mutex_destroy(&c->state_lock);
+free_comm:
+	free(c);
+	return NULL;
 }
 
 struct comm_s *comm_find(char *name)
@@ -193,14 +224,17 @@ void *comm_worker(void *arg)
 		b = comm_buf_get_todo();
 		//printf("comm_worker: b->do_phase = %d, b->var_data = %p\n",
 		//		b->do_phase, b->var_data);
-		pthread_mutex_lock(&b->lock);
 		if (!b->var_data) {
-			b = comm_alloc_var_data(b);
-			if (!b) {
-				pthread_mutex_unlock(&b->lock);
+			struct comm_buffer_s *resized =
+				comm_alloc_var_data(b);
+
+			if (!resized) {
+				b->bfree(b);
 				return (void *)-1;
 			}
+			b = resized;
 		}
+		pthread_mutex_lock(&b->lock);
 
 		if (b->do_phase < 1000) {
 			/*

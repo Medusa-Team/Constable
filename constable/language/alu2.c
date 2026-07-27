@@ -51,6 +51,9 @@ void r_imm(struct register_s *r)
 	if (n > MAX_REG_SIZE) {
 		runtime("Variable too long");
 		n = LEN_MAX;
+		r->tmp_attr = *r->attr;
+		r->tmp_attr.length = (uint16_t)n;
+		r->attr = &r->tmp_attr;
 	}
 	if (r->attr->type == MED_TYPE_END && n > 0)
 		memcpy(r->buf, r->data + r->attr->offset, n);
@@ -111,6 +114,11 @@ void r_resize(struct register_s *v, int size)
 {
 	int nv;
 
+	if (!v || !v->attr || !v->data || size <= 0 ||
+	    size > MAX_REG_SIZE) {
+		runtime("Invalid variable resize");
+		return;
+	}
 	if (v->data != v->buf)
 		r_imm(v);
 	nv = v->attr->length;
@@ -124,5 +132,6 @@ void r_resize(struct register_s *v, int size)
 	}
 	if (nv >= size)
 		return;
-	object_resize_data(v->data, v->attr, size);
+	if (object_resize_data(v->data, v->attr, size) < 0)
+		runtime("Invalid variable resize");
 }

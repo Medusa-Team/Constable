@@ -170,7 +170,8 @@ int comm_error(const char *fmt, ...);
 int comm_info(const char *fmt, ...);
 
 int comm_buf_to_queue(struct comm_buffer_queue_s *q, struct comm_buffer_s *b);
-inline int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q, struct comm_buffer_s *b)
+static inline int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q,
+					    struct comm_buffer_s *b)
 {
 	int ret;
 
@@ -181,7 +182,8 @@ inline int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q, struct comm_b
 }
 
 struct comm_buffer_s *comm_buf_from_queue(struct comm_buffer_queue_s *q);
-inline struct comm_buffer_s *comm_buf_from_queue_locked(struct comm_buffer_queue_s *q)
+static inline struct comm_buffer_s *
+comm_buf_from_queue_locked(struct comm_buffer_queue_s *q)
 {
 	struct comm_buffer_s *ret;
 

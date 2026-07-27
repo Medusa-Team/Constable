@@ -29,6 +29,37 @@ static struct medusa_attribute_s valid_attributes[] = {
 	MED_ATTR_END,
 };
 
+static void test_definition_extent(void)
+{
+	size_t count = 0;
+	const size_t offset = 24;
+	const size_t attribute_size =
+		sizeof(struct medusa_comm_attribute_s);
+
+	EXPECT_EQ(mcp_validate_definition_extent(
+			  offset + 2 * attribute_size, offset,
+			  attribute_size, &count),
+		  MCP_DEFINITION_VALID,
+		  "a complete attribute extent is accepted");
+	EXPECT_EQ((int)count, 2,
+		  "the validated attribute count is returned");
+	EXPECT_EQ(mcp_validate_definition_extent(
+			  offset + attribute_size - 1, offset,
+			  attribute_size, &count),
+		  MCP_DEFINITION_INVALID_ATTRIBUTE_LIST,
+		  "a partial wire attribute is rejected");
+	EXPECT_EQ(mcp_validate_definition_extent(
+			  offset + (MCP_DEFINITION_ATTRIBUTE_LIMIT + 1) *
+			  attribute_size,
+			  offset, attribute_size, &count),
+		  MCP_DEFINITION_TOO_MANY_ATTRIBUTES,
+		  "an oversized remote definition is rejected");
+	EXPECT_EQ(mcp_validate_definition_extent(offset, offset,
+						 attribute_size, &count),
+		  MCP_DEFINITION_INVALID_ATTRIBUTE_LIST,
+		  "an empty remote attribute list is rejected");
+}
+
 static void test_class_definition(void)
 {
 	struct medusa_class_s definition = {
@@ -106,6 +137,7 @@ static void test_acctype_definition(void)
 
 int main(void)
 {
+	test_definition_extent();
 	test_class_definition();
 	test_acctype_definition();
 

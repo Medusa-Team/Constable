@@ -24,6 +24,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <limits.h>
 
 #include "mcp.h"
 #include "validate.h"
@@ -64,6 +65,15 @@ static int mcp_update_object(struct comm_s *c, int cont, struct object_s *o,
 			     struct comm_buffer_s *wake);
 static enum read_result mcp_r_update_answer(struct comm_buffer_s *b);
 static int mcp_conf_error(struct comm_s *c, const char *fmt, ...);
+
+static int mcp_extend_read(struct comm_buffer_s *buffer, size_t additional)
+{
+	if (!buffer || buffer->len < 0 ||
+	    additional > (size_t)INT_MAX - (size_t)buffer->len)
+		return -EOVERFLOW;
+	buffer->want = buffer->len + (int)additional;
+	return 0;
+}
 
 static int get_event_context(struct comm_s *comm,
 			     struct event_context_s *c,
@@ -327,6 +337,9 @@ static inline int mcp_check_size_and_read(struct comm_buffer_s **buf)
 	fd_set rd;
 	int r;
 
+	if (!buf || !*buf || (*buf)->want < 0 || (*buf)->len < 0 ||
+	    (*buf)->len > (*buf)->want)
+		return -1;
 	if ((*buf)->want > (*buf)->size && (*buf)->p_comm_buf == (*buf)->comm_buf) {
 		struct comm_buffer_s *b;
 
@@ -428,17 +441,21 @@ static enum read_result mcp_r_head(struct comm_buffer_s *b)
 
 	x = ((MCPptr_t *)(b->comm_buf))[0];
 	if (likely(x != 0)) {
+		size_t remaining;
+
 		// This is a decision request
 		b->event = (struct event_type_s *)hash_find(&b->comm->events, x);
 		if (unlikely(!b->event)) {
 			comm_error("comm %s: Unknown access type %p!", b->comm->name, x);
 			return READ_ERROR;
 		}
-		b->want = sizeof(uint32_t) + b->len + (b->event->acctype.size);
+		remaining = sizeof(uint32_t) + (size_t)b->event->acctype.size;
 		if (likely(b->event->op[0]))
-			b->want += b->event->op[0]->m.size;
+			remaining += b->event->op[0]->m.size;
 		if (b->event->op[1])
-			b->want += b->event->op[1]->m.size;
+			remaining += b->event->op[1]->m.size;
+		if (mcp_extend_read(b, remaining))
+			return READ_ERROR;
 		b->completed = mcp_r_query;
 
 		return READ_DONE;
@@ -447,28 +464,34 @@ static enum read_result mcp_r_head(struct comm_buffer_s *b)
 	switch (byte_reorder_get_int32(b->comm->flags,
 				       ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0])) {
 	case MEDUSA_COMM_CLASSDEF:
-		b->want = b->len + sizeof(struct medusa_comm_class_s)
-			  + sizeof(struct medusa_comm_attribute_s);
+		if (mcp_extend_read(b, sizeof(struct medusa_comm_class_s) +
+				   sizeof(struct medusa_comm_attribute_s)))
+			return READ_ERROR;
 		b->completed = mcp_r_classdef_attr;
 		break;
 	case MEDUSA_COMM_ACCTYPEDEF:
-		b->want = b->len + sizeof(struct medusa_comm_acctype_s)
-			  + sizeof(struct medusa_comm_attribute_s);
+		if (mcp_extend_read(b, sizeof(struct medusa_comm_acctype_s) +
+				   sizeof(struct medusa_comm_attribute_s)))
+			return READ_ERROR;
 		b->completed = mcp_r_acctypedef_attr;
 		break;
 	case MEDUSA_COMM_CLASSUNDEF:
 	case MEDUSA_COMM_ACCTYPEUNDEF:
 		runtime("Huh, I don't know how to undef class or acctype ;-|");
-		b->want = b->len + sizeof(unsigned int);
+		if (mcp_extend_read(b, sizeof(unsigned int)))
+			return READ_ERROR;
 		b->completed = mcp_r_discard;
 		break;
 	case MEDUSA_COMM_FETCH_ERROR:
 	case MEDUSA_COMM_FETCH_ANSWER:
-		b->want = b->len + 2 * sizeof(MCPptr_t); //+sizeof(unsigned int);
+		if (mcp_extend_read(b, 2 * sizeof(MCPptr_t)))
+			return READ_ERROR;
 		b->completed = mcp_r_fetch_answer;
 		break;
 	case MEDUSA_COMM_UPDATE_ANSWER:
-		b->want = b->len + 2 * sizeof(MCPptr_t) + sizeof(unsigned int);
+		if (mcp_extend_read(b, 2 * sizeof(MCPptr_t) +
+				   sizeof(unsigned int)))
+			return READ_ERROR;
 		b->completed = mcp_r_update_answer;
 		break;
 	case MEDUSA_COMM_READY_REQUEST:
@@ -758,32 +781,46 @@ static enum read_result mcp_r_classdef_attr(struct comm_buffer_s *b)
 	struct medusa_attribute_s *attributes;
 	enum mcp_definition_validation validation;
 	size_t attribute_count;
-	char *last_attr = b->comm_buf + b->len - sizeof(struct medusa_comm_attribute_s);
+	char *last_attr;
+
+	validation = mcp_validate_definition_extent(
+		(size_t)b->len, OFF_ATTR_CLASS,
+		sizeof(struct medusa_comm_attribute_s), &attribute_count);
+	if (validation != MCP_DEFINITION_VALID)
+		goto invalid;
+	last_attr = b->comm_buf + b->len -
+		    sizeof(struct medusa_comm_attribute_s);
 
 	if (((struct medusa_comm_attribute_s *)(last_attr))->type != MED_TYPE_END) {
-		b->want = b->len + sizeof(struct medusa_comm_attribute_s);
+		if (attribute_count == MCP_DEFINITION_ATTRIBUTE_LIMIT) {
+			validation = MCP_DEFINITION_TOO_MANY_ATTRIBUTES;
+			goto invalid;
+		}
+		if (mcp_extend_read(b,
+				   sizeof(struct medusa_comm_attribute_s)))
+			return READ_ERROR;
 		return READ_DONE;
 	}
 	definition = (struct medusa_class_s *)(b->comm_buf + OFF_ATTR);
 	attributes = (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS);
-	attribute_count = ((size_t)b->len - OFF_ATTR_CLASS) /
-			  sizeof(*attributes);
 	byte_reorder_class(b->comm->flags, definition);
 	byte_reorder_attrs(b->comm->flags, attributes);
 	validation = mcp_validate_class_definition(definition, attributes,
 						   attribute_count);
-	if (validation != MCP_DEFINITION_VALID) {
-		comm_error("comm %s: Invalid class definition: %s",
-			   b->comm->name,
-			   mcp_definition_validation_message(validation));
-		return READ_ERROR;
-	}
+	if (validation != MCP_DEFINITION_VALID)
+		goto invalid;
 	unify_bitmap_types(attributes);
 	cl = add_class(b->comm, definition, attributes);
 	if (unlikely(!cl))
 		comm_error("comm %s: Can't add class", b->comm->name);
 	b->completed = NULL;
 	return READ_FREE;
+
+invalid:
+	comm_error("comm %s: Invalid class definition: %s",
+		   b->comm->name,
+		   mcp_definition_validation_message(validation));
+	return READ_ERROR;
 }
 
 static enum read_result mcp_r_acctypedef_attr(struct comm_buffer_s *b)
@@ -793,32 +830,46 @@ static enum read_result mcp_r_acctypedef_attr(struct comm_buffer_s *b)
 	struct medusa_attribute_s *attributes;
 	enum mcp_definition_validation validation;
 	size_t attribute_count;
-	char *last_attr = b->comm_buf + b->len - sizeof(struct medusa_comm_attribute_s);
+	char *last_attr;
+
+	validation = mcp_validate_definition_extent(
+		(size_t)b->len, OFF_ATTR_ACCTYPE,
+		sizeof(struct medusa_comm_attribute_s), &attribute_count);
+	if (validation != MCP_DEFINITION_VALID)
+		goto invalid;
+	last_attr = b->comm_buf + b->len -
+		    sizeof(struct medusa_comm_attribute_s);
 
 	if (((struct medusa_comm_attribute_s *)(last_attr))->type != MED_TYPE_END) {
-		b->want = b->len + sizeof(struct medusa_comm_attribute_s);
+		if (attribute_count == MCP_DEFINITION_ATTRIBUTE_LIMIT) {
+			validation = MCP_DEFINITION_TOO_MANY_ATTRIBUTES;
+			goto invalid;
+		}
+		if (mcp_extend_read(b,
+				   sizeof(struct medusa_comm_attribute_s)))
+			return READ_ERROR;
 		return READ_DONE;
 	}
 	definition = (struct medusa_acctype_s *)(b->comm_buf + OFF_ATTR);
 	attributes = (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE);
-	attribute_count = ((size_t)b->len - OFF_ATTR_ACCTYPE) /
-			  sizeof(*attributes);
 	byte_reorder_acctype(b->comm->flags, definition);
 	byte_reorder_attrs(b->comm->flags, attributes);
 	validation = mcp_validate_acctype_definition(definition, attributes,
 						     attribute_count);
-	if (validation != MCP_DEFINITION_VALID) {
-		comm_error("comm %s: Invalid event definition: %s",
-			   b->comm->name,
-			   mcp_definition_validation_message(validation));
-		return READ_ERROR;
-	}
+	if (validation != MCP_DEFINITION_VALID)
+		goto invalid;
 	unify_bitmap_types(attributes);
 	ev = event_type_add(b->comm, definition, attributes);
 	if (unlikely(!ev))
 		comm_error("comm %s: Can't add acctype", b->comm->name);
 	b->completed = NULL;
 	return READ_FREE;
+
+invalid:
+	comm_error("comm %s: Invalid event definition: %s",
+		   b->comm->name,
+		   mcp_definition_validation_message(validation));
+	return READ_ERROR;
 }
 
 #undef OFF_ATTR
@@ -1052,7 +1103,8 @@ static enum read_result mcp_r_fetch_answer(struct comm_buffer_s *b)
 			return READ_ERROR;
 		}
 		fatal("comm %s: %s", b->comm->name, errmsg);
-		b->want = b->len + cl->m.size;
+		if (mcp_extend_read(b, cl->m.size))
+			return READ_ERROR;
 		b->completed = mcp_r_discard;
 	}
 	return READ_DONE;

@@ -6,7 +6,10 @@
 
 #include "comm.h"
 #include "constable.h"
+#include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -27,20 +30,27 @@ static struct comm_buffer_s *malloc_buf(int size);
 
 static inline void comm_buf_init(struct comm_buffer_s *b, struct comm_s *comm)
 {
+	struct stack_s *stack = b->execute.stack;
+
 	b->comm = comm;
 	b->open_counter = comm->open_counter;
-	b->to_wake.lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
-	b->lock = (pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER;
-	b->execute.pos = 0;
-	b->execute.base = 0;
-	b->execute.h = NULL;
-	b->execute.c = NULL;
-	b->execute.keep_stack = 0;
+	b->user1 = NULL;
+	b->user2 = NULL;
+	b->user_data = 0;
+	memset(&b->execute, 0, sizeof(b->execute));
+	b->execute.stack = stack;
 	b->do_phase = 0;
 	b->ehh_list = EHH_VS_ALLOW;
+	b->hh = NULL;
+	b->ch = NULL;
+	memset(&b->context, 0, sizeof(b->context));
 	b->context.cb = b;
+	b->event = NULL;
+	b->init_handler = NULL;
 	b->var_data = NULL;
 
+	b->to_wake.first = NULL;
+	b->to_wake.last = NULL;
 	b->waiting.to = 0;
 	b->waiting.cid = 0;
 	b->waiting.seq = 0;
@@ -51,6 +61,9 @@ struct comm_buffer_s *comm_buf_get(int size, struct comm_s *comm)
 	size_t i;
 	struct comm_buffer_s *b;
 	unsigned int id;
+
+	if (size < 0 || !comm)
+		return NULL;
 
 	pthread_mutex_lock(&buffers_lock);
 	id = buf_id++;
@@ -73,46 +86,115 @@ struct comm_buffer_s *comm_buf_get(int size, struct comm_s *comm)
 
 	pthread_mutex_unlock(&buffers_lock);
 	b = malloc_buf(size);
+	if (!b)
+		return NULL;
 	b->id = id;
 	comm_buf_init(b, comm);
 	return b;
 }
 
+static void *rebase_buffer_pointer(const struct comm_buffer_s *source,
+				   struct comm_buffer_s *destination,
+				   void *pointer)
+{
+	uintptr_t address;
+	uintptr_t base;
+	size_t offset;
+
+	if (!pointer)
+		return NULL;
+	address = (uintptr_t)pointer;
+	base = (uintptr_t)source->comm_buf;
+	if (address < base)
+		return pointer;
+	offset = (size_t)(address - base);
+	if (offset > (size_t)source->size)
+		return pointer;
+	return destination->comm_buf + offset;
+}
+
+static void transfer_buffer_state(struct comm_buffer_s *destination,
+				  struct comm_buffer_s *source)
+{
+	struct stack_s *replacement_stack = destination->execute.stack;
+
+	destination->comm = source->comm;
+	destination->open_counter = source->open_counter;
+	if (source->comm && source->comm->init_buffer == source)
+		source->comm->init_buffer = destination;
+	destination->user1 = source->user1 == source ?
+			     destination :
+			     rebase_buffer_pointer(source, destination,
+						   source->user1);
+	destination->user2 = source->user2 == source ?
+			     destination :
+			     rebase_buffer_pointer(source, destination,
+						   source->user2);
+	destination->user_data = source->user_data;
+
+	destination->execute = source->execute;
+	source->execute.stack = replacement_stack;
+	if (destination->execute.my_comm_buff == source)
+		destination->execute.my_comm_buff = destination;
+
+	destination->do_phase = source->do_phase;
+	destination->ehh_list = source->ehh_list;
+	destination->hh = source->hh;
+	destination->ch = source->ch;
+	destination->context = source->context;
+	destination->context.cb = destination;
+	if (destination->context.operation.next == &source->context.subject)
+		destination->context.operation.next =
+			&destination->context.subject;
+	if (destination->context.subject.next == &source->context.object)
+		destination->context.subject.next = &destination->context.object;
+	destination->context.operation.data =
+		rebase_buffer_pointer(source, destination,
+				      source->context.operation.data);
+	destination->context.subject.data =
+		rebase_buffer_pointer(source, destination,
+				      source->context.subject.data);
+	destination->context.object.data =
+		rebase_buffer_pointer(source, destination,
+				      source->context.object.data);
+	if (destination->execute.c == &source->context)
+		destination->execute.c = &destination->context;
+
+	destination->event = source->event;
+	destination->init_handler = source->init_handler;
+	destination->to_wake.first = source->to_wake.first;
+	destination->to_wake.last = source->to_wake.last;
+	source->to_wake.first = NULL;
+	source->to_wake.last = NULL;
+	destination->waiting = source->waiting;
+	destination->len = source->len;
+	destination->want = source->want;
+	destination->completed = source->completed;
+	destination->var_data =
+		rebase_buffer_pointer(source, destination, source->var_data);
+	destination->p_comm_buf =
+		rebase_buffer_pointer(source, destination, source->p_comm_buf);
+}
+
 struct comm_buffer_s *comm_buf_resize(struct comm_buffer_s *b, int size)
 {
+	if (!b || size < 0 || b->size < 0 || b->len < 0 ||
+	    b->len > b->size || size < b->len)
+		return NULL;
+
 	if (size > b->size) {
 		struct comm_buffer_s *n;
-		int z__n, z_size;
-		unsigned int z_id;
-		struct comm_buffer_s *z_next, *z_context_cb;
-		void (*z_free)(struct comm_buffer_s *cb);
 
-		if (b->var_data != NULL) {
-			fatal("Can't resize comm buffer with var_data!");
+		if (b->var_data != NULL)
 			return NULL;
-		}
 
 		n = comm_buf_get(size, b->comm);
-		if (n == NULL) {
-			fatal(Out_of_memory);
+		if (!n)
 			return NULL;
-		}
 
-		z_id = n->id;
-		z__n = n->_n;
-		z_size = n->size;
-		z_next = n->next;
-		z_context_cb = n->context.cb;
-		z_free = n->bfree;
-		*n = *b;
-		n->id = z_id;
-		n->_n = z__n;
-		n->size = z_size;
-		n->next = z_next;
-		n->context.cb = z_context_cb;
-		n->bfree = z_free;
-		memcpy(n->comm_buf, b->comm_buf, n->len);
-		b->to_wake.first = b->to_wake.last = NULL;
+		transfer_buffer_state(n, b);
+		if (n->len)
+			memcpy(n->comm_buf, b->comm_buf, (size_t)n->len);
 		b->bfree(b);
 		return n;
 	}
@@ -144,6 +226,8 @@ static void comm_buf_free(struct comm_buffer_s *b)
 		pthread_mutex_unlock(&buffers_lock);
 	} else {
 		execute_put_stack(b->execute.stack);
+		pthread_mutex_destroy(&b->to_wake.lock);
+		pthread_mutex_destroy(&b->lock);
 		free(b);
 	}
 }
@@ -151,18 +235,36 @@ static void comm_buf_free(struct comm_buffer_s *b)
 static struct comm_buffer_s *malloc_buf(int size)
 {
 	struct comm_buffer_s *b;
+	size_t allocation;
 
-	b = calloc(1, sizeof(struct comm_buffer_s) + size);
-	if (b == NULL) {
-		fatal(Out_of_memory);
+	if (size < 0 ||
+	    (size_t)size > SIZE_MAX - sizeof(struct comm_buffer_s))
 		return NULL;
-	}
+	allocation = sizeof(struct comm_buffer_s) + (size_t)size;
+	b = calloc(1, allocation);
+	if (!b)
+		return NULL;
 
 	b->bfree = comm_buf_free;
 	b->_n = -1;
 	b->size = size;
 
+	if (pthread_mutex_init(&b->lock, NULL)) {
+		free(b);
+		return NULL;
+	}
+	if (pthread_mutex_init(&b->to_wake.lock, NULL)) {
+		pthread_mutex_destroy(&b->lock);
+		free(b);
+		return NULL;
+	}
 	b->execute.stack = execute_get_stack();
+	if (!b->execute.stack) {
+		pthread_mutex_destroy(&b->to_wake.lock);
+		pthread_mutex_destroy(&b->lock);
+		free(b);
+		return NULL;
+	}
 	b->len = 0;
 	b->want = 0;
 	b->p_comm_buf = b->comm_buf;
@@ -224,8 +326,13 @@ sem_t comm_todo_sem;
 
 int comm_buf_to_queue(struct comm_buffer_queue_s *q, struct comm_buffer_s *b)
 {
-	struct queue_item_s *item = new_item(b);
+	struct queue_item_s *item;
 
+	if (!q || !b)
+		return -EINVAL;
+	item = new_item(b);
+	if (!item)
+		return -ENOMEM;
 	if (q->last) {
 		q->last->next = item;
 		q->last = item;
