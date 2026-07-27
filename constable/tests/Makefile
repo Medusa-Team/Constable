@@ -9,6 +9,7 @@ TESTS += linked_list_test tree_path_test
 TESTS += rbac_roles_test
 TESTS += rbac_rotate_test
 TESTS += vs_test
+TESTS += cli_options_test
 
 .PHONY: all clean
 
@@ -31,6 +32,8 @@ all: $(TESTS) ../constable
 	./rbac_roles_test
 	./rbac_rotate_test
 	./vs_test
+	./cli_options_test
+	sh ./cli_integration_test.sh ../constable
 	sh ./retired_components_test.sh
 	sh ./policy_compile_test.sh ../constable fixtures
 	sh ./historical_policy_test.sh ../constable
@@ -113,6 +116,10 @@ rbac_rotate_test: rbac_rotate_test.c ../rbac/rotate.c
 
 vs_test: vs_test.c ../vs.c ../vs.h
 	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ vs_test.c ../vs.c -pthread
+
+cli_options_test: cli_options_test.c ../cli_options.c ../cli_options.h
+	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ cli_options_test.c \
+		../cli_options.c
 
 clean:
 	rm -rf $(TESTS) $(addsuffix .dSYM,$(TESTS))

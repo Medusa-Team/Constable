@@ -1,17 +1,35 @@
-Constable
-=========
-This is partially ported version of Constable 64-bit from 32-bit version of Constable.
-It is still under developement.
+# Constable
 
-Constable is the authorization server for security system Medusa Voyager that runs in user space.
-It is a process that decides which actions will Medusa permit or not. It is the only process, 
-that is excluded from Medusa. Constable configuration consists of two parts:
+Constable is the readable C reference authorization server for Medusa. The
+kernel announces its object classes and events at connection time; Constable
+compiles a policy, maintains the userspace model of virtual spaces, and answers
+the decisions that cannot be resolved by the kernel's installed baseline or
+cache.
 
-0. Constable configuration
-0. Configuration of rules for security system Medusa
+The repository preserves protocol v3 and its policy language while providing a
+strict ISO C11 build, sanitizer coverage, offline policy inspection, active
+kernel-surface validation, and semantic tests for historical policies. See
+[the architecture guide](docs/architecture.md) before changing ownership,
+threading, request, or policy-evaluation code.
 
-Constable is completely independent from kernel, which is ensured by kernel sending all supported 
-entities to Constable at the start.
+## Build and run
+
+```sh
+make -C libmcompiler
+make -C constable
+make -C constable test
+```
+
+For an offline policy build:
+
+```sh
+constable/constable -t -c constable/minimal/medusa.conf \
+  constable/minimal/constable.conf
+```
+
+Run `constable/constable --help` for all command-line modes. Production use
+requires a matching Medusa kernel and normally supplies both the Constable
+communication configuration and the Medusa policy configuration.
 
 Long-running decisions
 ----------------------
@@ -41,8 +59,7 @@ Policy handler names are also checked against the protocol-v3 operation-name
 width. An overlong function, event, or tree handler is rejected during policy
 compilation with a source diagnostic.
 
-Development checks
-------------------
+## Development checks
 
 Constable and libmcompiler default to strict ISO C11 with
 `-Wall -Wextra -Wpedantic -pedantic-errors`. Production builds do not enable
@@ -72,8 +89,7 @@ retired. Their rationale and the boundary enforced by tests are documented in
 mini-libc formatter is bounded and unit-tested independently; it is not a
 supported force-code execution path.
 
-Policy language
----------------
+## Policy language
 
 The protocol-v3 policy grammar, handler ordering, and multi-handler answer
 composition are documented in [docs/policy-language.md](docs/policy-language.md).
@@ -93,10 +109,11 @@ reference classes or events not actively enforced by the selected kernel. Its
 fail-closed behavior and inventory format are documented in
 [docs/policy-validation.md](docs/policy-validation.md).
 
-Usage
------
-run constable with parameter minimal/constable.conf that blocks all syscalls
-```
-constable minimal/constable.conf
-```
-At this time, the only supported syscall in Medusa Voyager is symlink
+## Compatibility boundary
+
+Protocol v3 uses dynamically announced native-layout definitions. It is kept
+for the migrated Linux 7.1 baseline, not proposed as a new stable UAPI.
+Protocol v4 is expected to replace it with fixed-width framed messages. The
+reference implementation deliberately keeps transport, schema, policy, and
+decision layers visible so that migration can be checked against the preserved
+semantic corpus.

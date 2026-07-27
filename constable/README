@@ -1,40 +1,20 @@
 
-			Medusa Authorization Server
-				Constable
+Constable
+=========
 
-RCS: $Id: README,v 1.3 2002/12/06 17:59:17 anonymous Exp $
+This directory contains the Medusa authorization server. The maintained
+overview, build instructions, architecture, policy-language documentation, and
+test commands are in ../README.md and ../docs/.
 
-What you need:
+Quick build:
 
-	1) Installed Medusa DS9 kernel patch.
-	2) Installed libmcompiler-1.0 or later.
-		http://terminus.sk/~marek/prog/libmcompiler.shtml (slovak language)
-		http://terminus.sk/~marek/prog/libmcompiler-1.0.tgz (C language ;-)
-
-Configuration:
-
-	Edit Makefile
-
-Compilation:
-
+	make -C ../libmcompiler
 	make
+	make test
 
-The historical force-code loader has been retired. Its Linux-2.x
-implementation depended on removed syscall wrappers and 32-bit interfaces and
-was already excluded from the supported build. The retained mini-libc
-formatter is bounded and independently tested, but is not a supported
-force-code execution path. See `../docs/retired-components.md`.
+Command-line help:
 
-Installation:
+	./constable --help
 
-	make install
-
-Help:
-
-	constable -h
-
-Documentation:
-
-	Now only in Slovak language. File Dokumentacia.
-
- ;-) Sorry. Some usefull documentation come soon.
+The Linux-2.x force-code loader and incomplete C preprocessor are intentionally
+retired. See ../docs/retired-components.md.

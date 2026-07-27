@@ -23,6 +23,7 @@
 #include "policy_event_test.h"
 #include "policy_inspect.h"
 #include "policy_validate.h"
+#include "cli_options.h"
 
 #ifndef MEDUSA_INITNAME
 #define MEDUSA_INITNAME "/sbin/init"
@@ -133,16 +134,21 @@ int init_all(char *filename)
 	return 0;
 }
 
-int usage(char *me)
+int usage(const char *me)
 {
 	fprintf(stderr,
-		"Usage: %s [-t] [-T] [-E <comm>] [-H <comm>] [-I <policy JSON>] [-V <kernel inventory dir>] [-d <tree debug file>] [-D[D] <class/events debug file>] [<config. file>]\n\n"
+		"Usage: %s [options] [<constable config>]\n\n"
+		"    -h, --help prints this help without loading a policy\n"
+		"    -c <policy file> selects the Medusa policy source\n"
 		"    -t and/or -d causes Constable to shut down before initiating communication\n"
 		"    -T executes function _debug offline and succeeds only on FORCE_ALLOW\n"
 		"    -E executes the controlled _debug_event policy self-test offline\n"
 		"    -H executes preserved historical getfile handlers offline\n"
 		"    -I writes non-mutating policy inspection JSON and implies -t\n"
-		"    -V rejects policy events not actively enforced by a kernel inventory\n",
+		"    -V rejects policy events not actively enforced by a kernel inventory\n"
+		"    -d <file> writes the compiled tree and implies -t\n"
+		"    -D <file> writes class/event definitions; -DD also traces events\n"
+		"    -- ends option processing\n",
 		me);
 	return 0;
 }
@@ -257,60 +263,56 @@ int tls_alloc_init(void)
 
 int main(int argc, char *argv[])
 {
-	char *conf_name = "/etc/constable.conf";
-	int a;
+	struct constable_cli_options options;
+	enum constable_cli_result parse_result;
+	const char *problem_argument;
+	char *conf_name;
 	int kill_init = 0;
 	int debug_fd = -1;
 	//struct sched_param schedpar;
 
-	if (getpid() <= 1)
-		kill_init = run_init(argc, argv);
+	parse_result = constable_cli_parse(argc, argv, &options,
+					   &problem_argument);
+	if (parse_result == CONSTABLE_CLI_HELP)
+		return usage(argv[0]);
+	if (parse_result != CONSTABLE_CLI_OK) {
+		if (parse_result == CONSTABLE_CLI_MISSING_ARGUMENT)
+			fprintf(stderr, "Option %s requires an argument\n",
+				problem_argument);
+		else
+			fprintf(stderr, "Unknown option: %s\n", problem_argument);
+		usage(argv[0]);
+		return 2;
+	}
 
-	for (a = 1; a < argc; a++) {
-		if (argv[a][0] == '-') {
-			if (argv[a][1] == 't') {
-				test = 1;
-			} else if (argv[a][1] == 'T') {
-				test = 1;
-				policy_self_test = 1;
-			} else if (argv[a][1] == 'E' && a + 1 < argc) {
-				test = 1;
-				policy_event_self_test_comm = argv[++a];
-			} else if (argv[a][1] == 'H' && a + 1 < argc) {
-				test = 1;
-				policy_historical_event_test_comm = argv[++a];
-			} else if (argv[a][1] == 'I' && a + 1 < argc) {
-				test = 1;
-				policy_inspection_file = argv[++a];
-			} else if (argv[a][1] == 'V' && a + 1 < argc) {
-				policy_validation_file = argv[++a];
-			} else if (argv[a][1] == 'd' && a + 1 < argc) {
-				a++;
-				debug_fd = comm_open_skip_stdfds(argv[a],
-								 O_WRONLY | O_CREAT | O_TRUNC,
-								 0600);
-				test = 1;
-			} else if (argv[a][1] == 'D' && a + 1 < argc) {
-				a++;
-				debug_def_out = debug_fd_write;
-				debug_def_arg = comm_open_skip_stdfds(argv[a],
-								      O_WRONLY | O_CREAT | O_TRUNC,
-								      0600);
-				if (argv[a - 1][2] == 'D') {
-					debug_do_out = debug_fd_write;
-					debug_do_arg = debug_def_arg;
-				}
-			} else if (argv[a][1] == 'c' && a + 1 < argc) {
-				a++;
-				medusa_config_file = argv[a];
-				medusa_config_file_explicit = 1;
-			} else {
-				return usage(argv[0]);
-			}
-		} else {
-			conf_name = argv[a];
+	conf_name = options.config_file;
+	medusa_config_file = options.medusa_config_file;
+	medusa_config_file_explicit = options.medusa_config_file_explicit;
+	test = options.test_only;
+	policy_self_test = options.policy_self_test;
+	policy_event_self_test_comm = options.policy_event_self_test_comm;
+	policy_historical_event_test_comm =
+		options.policy_historical_event_test_comm;
+	policy_inspection_file = options.policy_inspection_file;
+	policy_validation_file = options.policy_validation_file;
+
+	if (options.tree_debug_file)
+		debug_fd = comm_open_skip_stdfds(options.tree_debug_file,
+						 O_WRONLY | O_CREAT | O_TRUNC,
+						 0600);
+	if (options.definition_debug_file) {
+		debug_def_out = debug_fd_write;
+		debug_def_arg =
+			comm_open_skip_stdfds(options.definition_debug_file,
+					     O_WRONLY | O_CREAT | O_TRUNC, 0600);
+		if (options.debug_events) {
+			debug_do_out = debug_fd_write;
+			debug_do_arg = debug_def_arg;
 		}
 	}
+
+	if (getpid() <= 1)
+		kill_init = run_init(argc, argv);
 
 	if (tls_create_init())
 		return -1;
