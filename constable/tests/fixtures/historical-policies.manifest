@@ -1,0 +1,6 @@
+# name tree-lines sha256 policy
+root 3 cbf4fa72b93bfefebb67279800cb2c163ac29a41bec1999348f90a5447cb44c2 medusa.conf
+minimal-full 7 a031f17249a65dfbd81eec0b9773ca80f9340921c6be316c0105f6f6d2dcfd2b minimal/medusa.conf
+minimal-base 7 a031f17249a65dfbd81eec0b9773ca80f9340921c6be316c0105f6f6d2dcfd2b minimal/minimal.conf
+minimal-ipc 7 a031f17249a65dfbd81eec0b9773ca80f9340921c6be316c0105f6f6d2dcfd2b minimal/y.conf
+modular 406 f36b0f792c12121d935a27414b9579263408698cddb544ddb46083efce499744 etc/medusa.conf

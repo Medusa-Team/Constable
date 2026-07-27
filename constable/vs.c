@@ -37,7 +37,8 @@ int vs_alloc(vs_t *id)
 	}
 
 	vs_clear(id);
-	id[vs_cnt/BITS_PER_VS_WORD] |= 1 << (vs_cnt % BITS_PER_VS_WORD);
+	id[vs_cnt / BITS_PER_VS_WORD] |=
+		(vs_t)1U << (vs_cnt % BITS_PER_VS_WORD);
 	vs_cnt += 1;
 
 	return 0;

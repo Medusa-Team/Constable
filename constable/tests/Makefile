@@ -8,6 +8,7 @@ TESTS += checked_math_test lexer_growth_test
 TESTS += linked_list_test tree_path_test
 TESTS += rbac_roles_test
 TESTS += rbac_rotate_test
+TESTS += vs_test
 
 .PHONY: all clean
 
@@ -29,8 +30,10 @@ all: $(TESTS) ../constable
 	./tree_path_test
 	./rbac_roles_test
 	./rbac_rotate_test
+	./vs_test
 	sh ./retired_components_test.sh
 	sh ./policy_compile_test.sh ../constable fixtures
+	sh ./historical_policy_test.sh ../constable
 
 ../constable:
 	$(MAKE) -C .. constable
@@ -103,6 +106,9 @@ rbac_roles_test: rbac_roles_test.c ../rbac/roles.c ../string_utils.c
 rbac_rotate_test: rbac_rotate_test.c ../rbac/rotate.c
 	$(CC) $(CFLAGS) -std=c11 -I.. -I../../libmcompiler -o $@ \
 		rbac_rotate_test.c ../rbac/rotate.c
+
+vs_test: vs_test.c ../vs.c ../vs.h
+	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ vs_test.c ../vs.c -pthread
 
 clean:
 	rm -rf $(TESTS) $(addsuffix .dSYM,$(TESTS))

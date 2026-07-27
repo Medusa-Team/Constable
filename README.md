@@ -80,6 +80,10 @@ composition are documented in [docs/policy-language.md](docs/policy-language.md)
 The document records implemented behavior so later compiler modernization can
 be checked for semantic equivalence.
 
+Preserved policies and their compiled virtual-space semantics are covered by
+the compatibility corpus described in
+[docs/policy-compatibility.md](docs/policy-compatibility.md).
+
 Usage
 -----
 run constable with parameter minimal/constable.conf that blocks all syscalls
