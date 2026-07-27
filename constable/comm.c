@@ -67,7 +67,7 @@ int comm_alloc_buf_var_data(int size)
 	return r;
 }
 
-static struct comm_buffer_s *comm_alloc_var_data(struct comm_buffer_s *b)
+struct comm_buffer_s *comm_buf_alloc_var_data(struct comm_buffer_s *b)
 {
 	int len = 0;
 	struct comm_buffer_s *resized;
@@ -226,7 +226,7 @@ void *comm_worker(void *arg)
 		//		b->do_phase, b->var_data);
 		if (!b->var_data) {
 			struct comm_buffer_s *resized =
-				comm_alloc_var_data(b);
+				comm_buf_alloc_var_data(b);
 
 			if (!resized) {
 				b->bfree(b);

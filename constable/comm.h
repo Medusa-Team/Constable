@@ -149,6 +149,7 @@ struct comm_s {
 
 struct comm_buffer_s *comm_buf_get(int size, struct comm_s *comm);
 struct comm_buffer_s *comm_buf_resize(struct comm_buffer_s *b, int size);
+struct comm_buffer_s *comm_buf_alloc_var_data(struct comm_buffer_s *buffer);
 
 void *comm_new_array(int size);
 int comm_alloc_buf_var_data(int size);

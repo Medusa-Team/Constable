@@ -20,6 +20,7 @@
 #include "space.h"
 #include "tree.h"
 #include "constable.h"
+#include "policy_event_test.h"
 #include "policy_inspect.h"
 #include "policy_validate.h"
 
@@ -32,6 +33,8 @@ int medusa_config_file_explicit;
 
 static int test;
 static int policy_self_test;
+static char *policy_event_self_test_comm;
+static char *policy_historical_event_test_comm;
 static char *policy_inspection_file;
 static char *policy_validation_file;
 
@@ -133,9 +136,11 @@ int init_all(char *filename)
 int usage(char *me)
 {
 	fprintf(stderr,
-		"Usage: %s [-t] [-T] [-I <policy JSON>] [-V <kernel inventory dir>] [-d <tree debug file>] [-D[D] <class/events debug file>] [<config. file>]\n\n"
+		"Usage: %s [-t] [-T] [-E <comm>] [-H <comm>] [-I <policy JSON>] [-V <kernel inventory dir>] [-d <tree debug file>] [-D[D] <class/events debug file>] [<config. file>]\n\n"
 		"    -t and/or -d causes Constable to shut down before initiating communication\n"
 		"    -T executes function _debug offline and succeeds only on FORCE_ALLOW\n"
+		"    -E executes the controlled _debug_event policy self-test offline\n"
+		"    -H executes preserved historical getfile handlers offline\n"
 		"    -I writes non-mutating policy inspection JSON and implies -t\n"
 		"    -V rejects policy events not actively enforced by a kernel inventory\n",
 		me);
@@ -268,6 +273,12 @@ int main(int argc, char *argv[])
 			} else if (argv[a][1] == 'T') {
 				test = 1;
 				policy_self_test = 1;
+			} else if (argv[a][1] == 'E' && a + 1 < argc) {
+				test = 1;
+				policy_event_self_test_comm = argv[++a];
+			} else if (argv[a][1] == 'H' && a + 1 < argc) {
+				test = 1;
+				policy_historical_event_test_comm = argv[++a];
 			} else if (argv[a][1] == 'I' && a + 1 < argc) {
 				test = 1;
 				policy_inspection_file = argv[++a];
@@ -323,6 +334,15 @@ int main(int argc, char *argv[])
 	if (policy_validation_file &&
 	    policy_validate_inventory_path(policy_validation_file, stdout) != 0)
 		return init_error("Policy references classes or events without active enforcement");
+
+	if (policy_event_self_test_comm &&
+	    policy_event_self_test(policy_event_self_test_comm, stdout) < 0)
+		return -1;
+
+	if (policy_historical_event_test_comm &&
+	    policy_historical_event_self_test(policy_historical_event_test_comm,
+					      stdout) < 0)
+		return -1;
 
 	if (policy_self_test && run_policy_self_test() < 0)
 		return -1;
