@@ -38,6 +38,9 @@ These files must not be silently normalized and presented as compatibility
 evidence. Porting them requires an explicit grammar migration with expected
 semantic output.
 
-The compiled-tree corpus is a parser/compiler and namespace-semantics gate.
-Runtime handler equivalence remains a separate Phase 4 requirement and must be
-tested by executing handlers with controlled event objects.
+The `-T` offline self-test mode executes a policy's `_debug` function through
+the real bytecode interpreter and treats only `FORCE_ALLOW` as success.
+`policy_runtime_test.sh` freezes compiled function calls, arguments, loops,
+switches, return values, and both passing and denying outcomes. Runtime
+equivalence for handlers that mutate controlled kernel event objects remains a
+separate Phase 4 requirement.

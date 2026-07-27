@@ -29,6 +29,7 @@ char *medusa_config_file = "/etc/medusa.conf";
 int medusa_config_file_explicit;
 
 static int test;
+static int policy_self_test;
 
 static struct module_s *first_module;
 static struct module_s *active_modules;
@@ -128,9 +129,56 @@ int init_all(char *filename)
 int usage(char *me)
 {
 	fprintf(stderr,
-		"Usage: %s [-t] [-d <tree debug file>] [-D[D] <class/events debug file>] [<config. file>]\n\n"
-		"    -t and/or -d causes Constable to shut down before initiating communication\n",
+		"Usage: %s [-t] [-T] [-d <tree debug file>] [-D[D] <class/events debug file>] [<config. file>]\n\n"
+		"    -t and/or -d causes Constable to shut down before initiating communication\n"
+		"    -T executes function _debug offline and succeeds only on FORCE_ALLOW\n",
 		me);
+	return 0;
+}
+
+static void release_execute_stacks(struct stack_s *stack)
+{
+	struct stack_s *next;
+
+	if (!stack)
+		return;
+	while (stack->prev)
+		stack = stack->prev;
+	while (stack) {
+		next = stack->next;
+		stack->prev = NULL;
+		stack->next = NULL;
+		execute_put_stack(stack);
+		stack = next;
+	}
+}
+
+static int run_policy_self_test(void)
+{
+	struct comm_buffer_s buffer = { 0 };
+	struct event_context_s context = { 0 };
+	int status;
+	int result;
+
+	if (!function_debug)
+		return init_error("Policy self-test requires function _debug");
+	if (execute_registers_init() < 0)
+		return init_error("Cannot allocate policy self-test registers");
+
+	buffer.execute.stack = execute_get_stack();
+	if (!buffer.execute.stack)
+		return init_error("Cannot allocate policy self-test stack");
+	context.cb = &buffer;
+
+	status = function_debug->handler(&buffer, function_debug, &context);
+	result = context.result;
+	release_execute_stacks(buffer.execute.stack);
+
+	if (status != 0)
+		return init_error("Policy self-test attempted asynchronous work");
+	printf("Policy self-test result: %d\n", result);
+	if (result != RESULT_FORCE_ALLOW)
+		return init_error("Policy self-test did not return FORCE_ALLOW");
 	return 0;
 }
 
@@ -211,6 +259,9 @@ int main(int argc, char *argv[])
 		if (argv[a][0] == '-') {
 			if (argv[a][1] == 't') {
 				test = 1;
+			} else if (argv[a][1] == 'T') {
+				test = 1;
+				policy_self_test = 1;
 			} else if (argv[a][1] == 'd' && a + 1 < argc) {
 				a++;
 				debug_fd = comm_open_skip_stdfds(argv[a],
@@ -253,6 +304,9 @@ int main(int argc, char *argv[])
 
 	if (debug_fd >= 0)
 		tree_print_node(global_root, 0, debug_fd_write, debug_fd);
+
+	if (policy_self_test && run_policy_self_test() < 0)
+		return -1;
 
 	if (test)
 		return 0;

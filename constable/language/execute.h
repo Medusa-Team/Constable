@@ -58,6 +58,7 @@ typedef int(*buildin_t)(struct execute_s *e, struct register_s *ret, int(*getarg
 extern struct medusa_attribute_s execute_attr_int;
 extern struct medusa_attribute_s execute_attr_str;
 extern struct medusa_attribute_s execute_attr_pointer;
+extern struct event_handler_s *function_debug;
 
 struct object_s *r2o(const struct register_s *r, struct object_s *o);
 
