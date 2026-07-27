@@ -73,8 +73,7 @@ long atol(const char *nptr);
 double atof(const char *nptr);
 unsigned long strtoul(const char *nptr, char **endptr, int base);
 long strtol(const char *nptr, char **endptr, int base);
-int sprintf(char *str, const char *format, ...);
-/* This one has only 1024 char buffer - don't overflow it */
+/* Output is truncated safely to the internal 1024-byte buffer. */
 void fdprintf(int fd, const char *format, ...);
 #define printf(x...) fdprintf(1, x);
 

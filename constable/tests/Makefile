@@ -2,7 +2,7 @@ CC ?= cc
 CFLAGS ?= -Wall -Wextra -Wpedantic
 
 TESTS = decision_test dynamic_argv_test alu_mixed_compare_test string_utils_test \
-	mcp_validate_test object_string_test version_buffer_test
+	mcp_validate_test object_string_test version_buffer_test mlibc_format_test
 
 .PHONY: all clean
 
@@ -14,6 +14,7 @@ all: $(TESTS) ../constable
 	./mcp_validate_test
 	./object_string_test
 	./version_buffer_test
+	./mlibc_format_test
 	sh ./policy_compile_test.sh ../constable fixtures
 
 ../constable:
@@ -46,6 +47,11 @@ object_string_test: object_string_test.c ../object_endian.c ../object.h
 version_buffer_test: version_buffer_test.c ../../libmcompiler/libmcompiler.a
 	$(CC) $(CFLAGS) -std=c11 -I../../libmcompiler -o $@ \
 		version_buffer_test.c ../../libmcompiler/libmcompiler.a
+
+mlibc_format_test: mlibc_format_test.c ../Mlibc/mlibc_format.c \
+	../Mlibc/mlibc_format.h
+	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ \
+		mlibc_format_test.c ../Mlibc/mlibc_format.c
 
 clean:
 	rm -rf $(TESTS) $(addsuffix .dSYM,$(TESTS))

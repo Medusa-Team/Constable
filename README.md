@@ -66,6 +66,12 @@ independently under AddressSanitizer and UndefinedBehaviorSanitizer:
 ./ci/sanitize.sh undefined
 ```
 
+The optional Linux-2.x force-code add-on is not part of this supported build:
+its syscall layer depends on removed 32-bit kernel interfaces. The retained
+mini-libc formatter is bounded and unit-tested independently; the remaining
+add-on must be explicitly ported or retired rather than mistaken for working
+production functionality.
+
 Policy language
 ---------------
 

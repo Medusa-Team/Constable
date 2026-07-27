@@ -10,7 +10,7 @@ AS= as
 ASOPTS=
 
 F_OBJS = f_exit.mo f_getpeername.mo f_secure_unlink.mo f_showargs.mo f_test.mo f_test2.mo
-MLIBC_OBJS = mlibc.o
+MLIBC_OBJS = mlibc.o mlibc_format.o
 
 
 all:	$(F_OBJS)

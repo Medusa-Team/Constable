@@ -13,8 +13,8 @@ int string_copy(char *destination, size_t destination_size,
 		const char *source);
 
 /*
- * Copy a string received in a fixed-width field.  Unlike strncpy(), this
- * rejects a source field that contains no terminating NUL.
+ * Copy a string received in a fixed-width field. Reject a source field that
+ * contains no terminating NUL rather than silently truncating it.
  */
 int string_copy_field(char *destination, size_t destination_size,
 		      const char *source, size_t source_size);

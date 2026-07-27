@@ -19,9 +19,11 @@ Compilation:
 
 	make
 
-   to compile force code objects type:
-
-	make addon
+The historical force-code add-on is not part of the supported build. Its
+Linux-2.x mini-libc depends on removed syscall wrappers and 32-bit `vm86`
+headers, so `make addon` does not build on the supported modern 64-bit Linux
+toolchain. Its formatter is retained as bounded, independently tested
+reference code while Phase 4 decides whether to port or retire the add-on.
 
 Installation:
 
@@ -36,5 +38,4 @@ Documentation:
 	Now only in Slovak language. File Dokumentacia.
 
  ;-) Sorry. Some usefull documentation come soon.
-
 

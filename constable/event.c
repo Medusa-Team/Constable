@@ -523,30 +523,6 @@ static int do_event_list(struct comm_buffer_s *cb)
 		}
 	}
 
-	//#if 0
-	//if (function_debug != NULL) {
-	//	int result;
-
-	//	/* FIXME: uff */
-	//	strcpy(cb->context.operation.attr.name, "operation");
-	//	strcpy(cb->context.subject.attr.name, "subject");
-	//	strcpy(cb->context.object.attr.name, "object");
-
-	//	if (cb->do_phase == 0 || cb->do_phase == 4) {
-	//		result = cb->context.result;
-	//		i = h->handler(cb, function_debug, &(cb->context));
-	//		if (i == 0)
-	//			cb->context.result = evaluate_result(result, cb->context.result);
-	//		else
-	//			cb->context.result = result;
-	//	if (i > 0) {
-	//		cb->do_phase = 4;
-	//		return i;
-	//	}
-	//	}
-	//}
-	//#endif
-
 	cb->do_phase = 0;		/* len tak pre istotu */
 
 	/* If this is an event that doesn't have any registered handler (event
