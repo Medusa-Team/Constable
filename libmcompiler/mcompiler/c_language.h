@@ -115,7 +115,6 @@ enum {
 extern lextab_t clex_operators[];
 extern lextab_t clex_keywords[];
 extern lexstattab_t clex_states[];
-struct compiler_preprocessor_class *c_preprocessor_create( char *filename );
 
 
 #endif /* _C_LANGUAGE_H */

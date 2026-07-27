@@ -29,6 +29,7 @@ all: $(TESTS) ../constable
 	./tree_path_test
 	./rbac_roles_test
 	./rbac_rotate_test
+	sh ./retired_components_test.sh
 	sh ./policy_compile_test.sh ../constable fixtures
 
 ../constable:

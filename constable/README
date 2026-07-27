@@ -19,11 +19,11 @@ Compilation:
 
 	make
 
-The historical force-code add-on is not part of the supported build. Its
-Linux-2.x mini-libc depends on removed syscall wrappers and 32-bit `vm86`
-headers, so `make addon` does not build on the supported modern 64-bit Linux
-toolchain. Its formatter is retained as bounded, independently tested
-reference code while Phase 4 decides whether to port or retire the add-on.
+The historical force-code loader has been retired. Its Linux-2.x
+implementation depended on removed syscall wrappers and 32-bit interfaces and
+was already excluded from the supported build. The retained mini-libc
+formatter is bounded and independently tested, but is not a supported
+force-code execution path. See `../docs/retired-components.md`.
 
 Installation:
 
@@ -38,4 +38,3 @@ Documentation:
 	Now only in Slovak language. File Dokumentacia.
 
  ;-) Sorry. Some usefull documentation come soon.
-
