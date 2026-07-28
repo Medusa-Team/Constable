@@ -64,6 +64,7 @@ struct comm_buffer_s {
 	int			do_phase; /**< Saves state between asynchronous calls to
 					    * handlers.
 					    */
+	int			approval_done; /**< User approval was already requested. */
 	int			ehh_list;
 	struct event_hadler_hash_s *hh; /**< Stores pointer to the current handler
 					  * being processed in an asynchronous call.

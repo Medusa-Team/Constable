@@ -17,6 +17,7 @@
 #include "../constable.h"
 #include "../event.h"
 #include "../fallback_policy.h"
+#include "../approval.h"
 #include "../medusa_object.h"
 #include "../object.h"
 #include "../string_utils.h"
@@ -383,6 +384,28 @@ static bool v4_cancel_take(struct comm_s *comm, uint64_t request_id)
 	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
 	free(cancelled);
 	return cancelled != NULL;
+}
+
+bool mcp_authrequest_cancelled(struct comm_buffer_s *request)
+{
+	struct v4_cancelled_request *cancelled;
+	uint64_t request_id;
+	bool found = false;
+
+	if (!request || !request->comm ||
+	    request->len < (int)(2 * sizeof(MCPptr_t)))
+		return true;
+	request_id = ((MCPptr_t *)request->comm_buf)[1];
+	pthread_mutex_lock(&MCP_DATA(request->comm)->request_lock);
+	for (cancelled = MCP_DATA(request->comm)->cancelled;
+	     cancelled; cancelled = cancelled->next) {
+		if (cancelled->request_id == request_id) {
+			found = true;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&MCP_DATA(request->comm)->request_lock);
+	return found;
 }
 
 static void v4_cancel_clear(struct comm_s *comm)
@@ -784,6 +807,9 @@ static int mcp_receive_handshake(struct comm_s *comm)
 			    (enabled & MEDUSA_REQUIRED_FEATURES) !=
 				    MEDUSA_REQUIRED_FEATURES)
 				goto out;
+			if (approval_is_configured() &&
+			    !(enabled & MEDUSA_FEATURE_DECISION_PROGRESS))
+				goto out;
 			MCP_DATA(comm)->generation =
 				load_le64(&header->policy_generation);
 			MCP_DATA(comm)->enabled_features = enabled;
@@ -1056,6 +1082,16 @@ static int mcp_answer(struct comm_s *comm, struct comm_buffer_s *request)
 	uint64_t request_id;
 	int16_t answer;
 
+	request_id = ((MCPptr_t *)request->comm_buf)[1];
+	if (!request->approval_done && request->event &&
+	    (request->context.result == MED_ALLOW ||
+	     request->context.result == MED_DENY) &&
+	    approval_enabled_for(request->event->evname->name)) {
+		request->context.result = approval_decide(
+			request, request_id, request->event->evname->name,
+			request->context.result);
+		request->approval_done = 1;
+	}
 	if (request->context.result >= 0 && request->context.subject.class) {
 		int continuation = request->do_phase == 0 ?
 			0 : request->do_phase - 1000;
@@ -1067,7 +1103,6 @@ static int mcp_answer(struct comm_s *comm, struct comm_buffer_s *request)
 			return result;
 		}
 	}
-	request_id = ((MCPptr_t *)request->comm_buf)[1];
 	if (v4_cancel_take(comm, request_id))
 		return 0;
 	answer = request->context.result;

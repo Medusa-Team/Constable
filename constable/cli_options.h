@@ -23,6 +23,10 @@ struct constable_cli_options {
 	char *policy_historical_event_test_comm;
 	char *policy_inspection_file;
 	char *policy_validation_file;
+	char *approval_socket;
+	char *approval_events;
+	char *approval_uid;
+	char *approval_timeout;
 	char *fallback_policy_specs[CONSTABLE_MAX_FALLBACK_POLICIES];
 	unsigned int fallback_policy_count;
 	bool medusa_config_file_explicit;

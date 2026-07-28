@@ -142,6 +142,38 @@ constable_cli_parse(int argc, char *const argv[],
 			options->fallback_policy_count++;
 			continue;
 		}
+		if (option_is(argument, "--approval-socket")) {
+			result = option_argument(argc, argv, &index,
+						 &options->approval_socket,
+						 problem_argument);
+			if (result != CONSTABLE_CLI_OK)
+				return result;
+			continue;
+		}
+		if (option_is(argument, "--approval-events")) {
+			result = option_argument(argc, argv, &index,
+						 &options->approval_events,
+						 problem_argument);
+			if (result != CONSTABLE_CLI_OK)
+				return result;
+			continue;
+		}
+		if (option_is(argument, "--approval-uid")) {
+			result = option_argument(argc, argv, &index,
+						 &options->approval_uid,
+						 problem_argument);
+			if (result != CONSTABLE_CLI_OK)
+				return result;
+			continue;
+		}
+		if (option_is(argument, "--approval-timeout")) {
+			result = option_argument(argc, argv, &index,
+						 &options->approval_timeout,
+						 problem_argument);
+			if (result != CONSTABLE_CLI_OK)
+				return result;
+			continue;
+		}
 
 		*problem_argument = argument;
 		return CONSTABLE_CLI_UNKNOWN_OPTION;

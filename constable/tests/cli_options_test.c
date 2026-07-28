@@ -57,7 +57,11 @@ static void documented_options_are_parsed(void)
 		"-I", "policy.json", "-V", "/securityfs", "-d", "tree.log",
 		"-DD", "events.log", "-c", "medusa.conf",
 		"-F", "exec=baseline_deny",
-		"--fallback", "ptrace=online_required", "constable.conf",
+		"--fallback", "ptrace=online_required",
+		"--approval-socket", "/run/user/1000/medusa.sock",
+		"--approval-events", "exec,ptrace",
+		"--approval-uid", "1000", "--approval-timeout", "90",
+		"constable.conf",
 	};
 	struct constable_cli_options options;
 	const char *problem;
@@ -79,6 +83,10 @@ static void documented_options_are_parsed(void)
 	EXPECT_STRING("exec=baseline_deny", options.fallback_policy_specs[0]);
 	EXPECT_STRING("ptrace=online_required",
 		      options.fallback_policy_specs[1]);
+	EXPECT_STRING("/run/user/1000/medusa.sock", options.approval_socket);
+	EXPECT_STRING("exec,ptrace", options.approval_events);
+	EXPECT_STRING("1000", options.approval_uid);
+	EXPECT_STRING("90", options.approval_timeout);
 	EXPECT_STRING("constable.conf", options.config_file);
 	EXPECT_TRUE(problem == NULL);
 }

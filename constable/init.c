@@ -25,6 +25,7 @@
 #include "policy_validate.h"
 #include "cli_options.h"
 #include "fallback_policy.h"
+#include "approval.h"
 
 #ifndef MEDUSA_INITNAME
 #define MEDUSA_INITNAME "/sbin/init"
@@ -142,6 +143,10 @@ int usage(const char *me)
 		"    -h, --help prints this help without loading a policy\n"
 		"    -c <policy file> selects the Medusa policy source\n"
 		"    -F, --fallback <event=policy> stages an event fallback before READY\n"
+		"    --approval-socket <path> asks a user-session approval agent\n"
+		"    --approval-events <csv|*> selects events requiring approval\n"
+		"    --approval-uid <uid> authenticates the approval agent owner\n"
+		"    --approval-timeout <seconds> limits each prompt (default 60)\n"
 		"    -t and/or -d causes Constable to shut down before initiating communication\n"
 		"    -T executes function _debug offline and succeeds only on FORCE_ALLOW\n"
 		"    -E executes the controlled _debug_event policy self-test offline\n"
@@ -293,6 +298,13 @@ int main(int argc, char *argv[])
 				      options.fallback_policy_count) < 0) {
 		fprintf(stderr,
 			"Invalid fallback policy; expected event=baseline_allow, event=baseline_deny, or event=online_required without duplicate events\n");
+		return 2;
+	}
+	if (approval_configure(options.approval_socket, options.approval_events,
+			       options.approval_uid,
+			       options.approval_timeout) < 0) {
+		fprintf(stderr,
+			"Invalid approval configuration; socket, events, and uid are required together\n");
 		return 2;
 	}
 

@@ -11,6 +11,7 @@ TESTS += rbac_rotate_test
 TESTS += vs_test
 TESTS += cli_options_test
 TESTS += fallback_policy_test
+TESTS += approval_test
 
 .PHONY: all clean
 
@@ -35,6 +36,7 @@ all: $(TESTS) ../constable
 	./vs_test
 	./cli_options_test
 	./fallback_policy_test
+	./approval_test
 	sh ./cli_integration_test.sh ../constable
 	sh ./retired_components_test.sh
 	sh ./policy_compile_test.sh ../constable fixtures
@@ -127,6 +129,10 @@ fallback_policy_test: fallback_policy_test.c ../fallback_policy.c \
 		../fallback_policy.h
 	$(CC) $(CFLAGS) -std=c11 -I.. -I../../include -o $@ fallback_policy_test.c \
 		../fallback_policy.c
+
+approval_test: approval_test.c ../approval.c ../approval.h
+	$(CC) $(CFLAGS) -std=c11 -I.. -I../../include -o $@ approval_test.c \
+		../approval.c
 
 clean:
 	rm -rf $(TESTS) $(addsuffix .dSYM,$(TESTS))

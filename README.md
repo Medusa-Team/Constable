@@ -54,10 +54,32 @@ maximum decision duration. An asynchronous or interactive handler may call
 user input. The progress message extends only that request's lease; it does
 not send a verdict or change policy.
 
-This is currently an optional protocol-v3 extension. Callers must enable it
-only when paired with a kernel that supports
-`MEDUSA_COMM_AUTHREQUEST_PROGRESS`; automatic feature negotiation is planned
-for the next protocol revision.
+Protocol v4 negotiates this feature during HELLO.
+
+User approval
+-------------
+
+Selected events can be handed to an unprivileged desktop approval agent:
+
+```sh
+tools/medusa-approval-agent.py \
+  --socket "$XDG_RUNTIME_DIR/medusa-approval.sock" \
+  --state "$XDG_CONFIG_HOME/medusa/approvals.json"
+
+constable/constable \
+  --approval-socket /run/user/1000/medusa-approval.sock \
+  --approval-events socket_connect_access,socket_bind_access \
+  --approval-uid 1000
+```
+
+The popup offers Allow, Deny, and a “Remember for this event” checkbox.
+Remembered choices live in the user-owned JSON state file and can be removed
+with `medusa-approval-agent.py --socket PATH --state FILE --clear`. Constable
+authenticates both the socket file and peer UID, renews the kernel request
+lease while waiting, and denies if the agent is unavailable or its response is
+invalid. The Unix socket is the request/response transport; inotify is not
+used because watched files do not authenticate a responder and are prone to
+replacement and ordering races.
 
 Protocol-v3 input validation
 ----------------------------
