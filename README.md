@@ -171,3 +171,21 @@ Protocol v4 is expected to replace it with fixed-width framed messages. The
 reference implementation deliberately keeps transport, schema, policy, and
 decision layers visible so that migration can be checked against the preserved
 semantic corpus.
+
+## Adaptive generations
+
+The migrated server negotiates protocol-v4 atomic policy replacement and
+reply-bound cache updates. Sending `SIGUSR1` to a running Constable asks every
+connected Medusa endpoint to stage the complete currently configured fallback
+set as the next generation. The kernel keeps the parent active until commit,
+cancels parent-generation pending requests at publication, and invalidates
+monitored kernel contexts without disconnecting Constable.
+
+An allowed reply may identify the event's monitored subject or object for a
+simplified kernel-cache update. Denials never carry this optimization.
+Arbitrary context mutations continue through the validated object-update
+exchange.
+
+Mining, review, authenticated distribution, monotonic-emergency checks, and
+rollback prevention remain outside Constable's transport layer. They are
+implemented by the preserved policy-mining hub's Phase 7 userspace workflow.

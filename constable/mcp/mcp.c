@@ -32,6 +32,8 @@ struct mcp_comm_s {
 	uint64_t next_request_id;
 	pthread_mutex_t request_lock;
 	struct v4_cancelled_request *cancelled;
+	uint64_t replacement_generation;
+	bool replacement_pending;
 };
 
 struct v4_cancelled_request {
@@ -673,6 +675,7 @@ static int v4_configured_events_announced(struct comm_s *comm)
 
 struct v4_policy_context {
 	struct comm_s *comm;
+	uint64_t generation;
 	int error;
 };
 
@@ -692,7 +695,7 @@ static int v4_send_event_policy(const struct event_names_s *name,
 	policy = fallback_policy_for_event(name->name);
 	builder = v4_builder_new(
 		context->comm, MEDUSA_MSG_POLICY_EVENT, 0,
-		MCP_DATA(context->comm)->generation, 32);
+		context->generation, 32);
 	if (!builder.buffer ||
 	    v4_builder_add_u32(
 		    &builder, MEDUSA_TLV_EVENT_ID,
@@ -707,20 +710,30 @@ static int v4_send_event_policy(const struct event_names_s *name,
 	return context->error;
 }
 
-static int v4_install_policy(struct comm_s *comm)
+static int v4_install_policy_generation(struct comm_s *comm,
+					uint64_t generation)
 {
 	struct v4_policy_context context = {
 		.comm = comm,
+		.generation = generation,
 	};
 	struct v4_builder builder;
 
-	if (v4_configured_events_announced(comm))
-		return -1;
-	if (comm_conn_init(comm, true) < 0)
-		return -1;
+	/*
+	 * The initial generation binds compiled policy handlers to the announced
+	 * classes and events.  A live replacement reuses that immutable binding;
+	 * rebuilding it would allocate duplicate per-tree communication metadata
+	 * and could not be published atomically.
+	 */
+	if (generation == MCP_DATA(comm)->generation) {
+		if (v4_configured_events_announced(comm))
+			return -1;
+		if (comm_conn_init(comm, true) < 0)
+			return -1;
+	}
 	builder = v4_builder_new(
 		comm, MEDUSA_MSG_POLICY_BEGIN, 0,
-		MCP_DATA(comm)->generation, 0);
+		generation, 0);
 	if (v4_send_now(comm, &builder))
 		return -1;
 	if (event_names_visit(v4_send_event_policy, &context) ||
@@ -728,8 +741,14 @@ static int v4_install_policy(struct comm_s *comm)
 		return -1;
 	builder = v4_builder_new(
 		comm, MEDUSA_MSG_POLICY_COMMIT, 0,
-		MCP_DATA(comm)->generation, 0);
+		generation, 0);
 	return v4_send_now(comm, &builder);
+}
+
+static int v4_install_policy(struct comm_s *comm)
+{
+	return v4_install_policy_generation(
+		comm, MCP_DATA(comm)->generation);
 }
 
 static int v4_send_hello(struct comm_s *comm)
@@ -737,7 +756,9 @@ static int v4_send_hello(struct comm_s *comm)
 	struct v4_builder builder =
 		v4_builder_new(comm, MEDUSA_MSG_HELLO, 0, 0, 64);
 	uint64_t optional = MEDUSA_FEATURE_DECISION_PROGRESS |
-			    MEDUSA_FEATURE_OBJECT_FETCH_UPDATE;
+			    MEDUSA_FEATURE_OBJECT_FETCH_UPDATE |
+			    MEDUSA_FEATURE_ATOMIC_POLICY_REPLACE |
+			    MEDUSA_FEATURE_REPLY_CACHE_UPDATE;
 
 	if (!builder.buffer ||
 	    v4_builder_add_u16(
@@ -1015,6 +1036,24 @@ static int mcp_read_worker(struct comm_s *comm)
 				error = v4_cancel_add(comm, request_id);
 		} else if (type == MEDUSA_MSG_AUDIT)
 			error = 0;
+		else if (type == MEDUSA_MSG_POLICY_READY) {
+			uint64_t generation =
+				load_le64(&header->policy_generation);
+
+			pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+			if ((size_t)length != MEDUSA_FRAME_HEADER_SIZE ||
+			    load_le64(&header->request_id) ||
+			    !MCP_DATA(comm)->replacement_pending ||
+			    generation !=
+				    MCP_DATA(comm)->replacement_generation) {
+				error = -EPROTO;
+			} else {
+				MCP_DATA(comm)->generation = generation;
+				MCP_DATA(comm)->replacement_pending = false;
+				error = 0;
+			}
+			pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+		}
 		else
 			error = -EPROTO;
 		if (error) {
@@ -1081,6 +1120,7 @@ static int mcp_answer(struct comm_s *comm, struct comm_buffer_s *request)
 	struct v4_builder builder;
 	uint64_t request_id;
 	int16_t answer;
+	uint8_t cache_update = MEDUSA_CACHE_UPDATE_NONE;
 
 	request_id = ((MCPptr_t *)request->comm_buf)[1];
 	if (!request->approval_done && request->event &&
@@ -1108,12 +1148,24 @@ static int mcp_answer(struct comm_s *comm, struct comm_buffer_s *request)
 	answer = request->context.result;
 	if (answer != MED_ERR && answer != MED_DENY && answer != MED_ALLOW)
 		answer = MED_ERR;
+	if (answer == MED_ALLOW && request->event &&
+	    (MCP_DATA(comm)->enabled_features &
+	     MEDUSA_FEATURE_REPLY_CACHE_UPDATE)) {
+		if (request->event->monitored_operand == request->event->op[0])
+			cache_update = MEDUSA_CACHE_UPDATE_SUBJECT;
+		else if (request->event->monitored_operand ==
+			 request->event->op[1])
+			cache_update = MEDUSA_CACHE_UPDATE_OBJECT;
+	}
 	builder = v4_builder_new(
 		comm, MEDUSA_MSG_DECISION_REPLY, request_id,
-		MCP_DATA(comm)->generation, 16);
+		MCP_DATA(comm)->generation, 32);
 	if (!builder.buffer ||
 	    v4_builder_add_u16(
-		    &builder, MEDUSA_TLV_ANSWER, (uint16_t)answer)) {
+		    &builder, MEDUSA_TLV_ANSWER, (uint16_t)answer) ||
+	    (cache_update != MEDUSA_CACHE_UPDATE_NONE &&
+	     v4_builder_add_u8(
+		     &builder, MEDUSA_TLV_CACHE_UPDATE, cache_update))) {
 		if (builder.buffer)
 			builder.buffer->bfree(builder.buffer);
 		return -1;
@@ -1228,6 +1280,46 @@ int mcp_open(struct comm_s *comm, char *filename)
 int mcp_receive_greeting(struct comm_s *comm)
 {
 	return mcp_receive_handshake(comm);
+}
+
+int mcp_replace_policy(struct comm_s *comm)
+{
+	struct v4_builder abort;
+	uint64_t generation;
+	int error;
+
+	if (!comm || comm->fd < 0)
+		return -ENOTCONN;
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	if (!(MCP_DATA(comm)->enabled_features &
+	      MEDUSA_FEATURE_ATOMIC_POLICY_REPLACE)) {
+		error = -EOPNOTSUPP;
+		goto out;
+	}
+	if (MCP_DATA(comm)->replacement_pending) {
+		error = -EBUSY;
+		goto out;
+	}
+	if (MCP_DATA(comm)->generation == UINT64_MAX) {
+		error = -EOVERFLOW;
+		goto out;
+	}
+	generation = MCP_DATA(comm)->generation + 1;
+	MCP_DATA(comm)->replacement_generation = generation;
+	MCP_DATA(comm)->replacement_pending = true;
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+
+	error = v4_install_policy_generation(comm, generation);
+	if (!error)
+		return 0;
+	abort = v4_builder_new(
+		comm, MEDUSA_MSG_POLICY_ABORT, 0, generation, 0);
+	v4_send_now(comm, &abort);
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	MCP_DATA(comm)->replacement_pending = false;
+out:
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+	return error;
 }
 
 struct comm_s *mcp_listen(in_port_t port)

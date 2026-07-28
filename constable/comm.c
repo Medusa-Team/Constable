@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <stdint.h>
+#include <signal.h>
 
 #include "constable.h"
 #include "comm.h"
@@ -32,6 +33,25 @@ static struct comm_s *last_comm;
 static int comm_var_data_size; /**< TODO: is manipulation with this global variable
 				 * thread and/or per buffer safe?
 				 */
+
+static void *policy_reload_loop(void *argument)
+{
+	sigset_t *set = argument;
+	int signal_number;
+
+	for (;;) {
+		struct comm_s *comm;
+
+		if (sigwait(set, &signal_number))
+			continue;
+		for (comm = first_comm; comm; comm = comm->next)
+			if (comm->fd >= 0 && mcp_replace_policy(comm))
+				comm_error(
+					"comm %s: live policy generation replacement failed",
+					comm->name);
+	}
+	return NULL;
+}
 
 static void *read_loop(void *arg)
 {
@@ -152,6 +172,8 @@ int comm_do(void)
 	struct comm_s *c;
 	pthread_attr_t attr;
 	pthread_t worker;
+	pthread_t reload_thread;
+	sigset_t reload_set;
 	unsigned int i;
 
 	if (pthread_attr_init(&attr)) {
@@ -160,6 +182,15 @@ int comm_do(void)
 	}
 	if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)) {
 		puts("Cannot configure worker thread attribute");
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	sigemptyset(&reload_set);
+	sigaddset(&reload_set, SIGUSR1);
+	if (pthread_sigmask(SIG_BLOCK, &reload_set, NULL) ||
+	    pthread_create(
+		    &reload_thread, &attr, policy_reload_loop, &reload_set)) {
+		puts("Cannot create policy reload thread");
 		pthread_attr_destroy(&attr);
 		return -1;
 	}
