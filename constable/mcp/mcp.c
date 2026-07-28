@@ -30,6 +30,12 @@ struct mcp_comm_s {
 	uint64_t enabled_features;
 	uint64_t next_request_id;
 	pthread_mutex_t request_lock;
+	struct v4_cancelled_request *cancelled;
+};
+
+struct v4_cancelled_request {
+	struct v4_cancelled_request *next;
+	uint64_t request_id;
 };
 
 struct v4_tlv_view {
@@ -345,6 +351,54 @@ static uint64_t mcp_next_request_id(struct comm_s *comm)
 		id = ++MCP_DATA(comm)->next_request_id;
 	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
 	return id;
+}
+
+static int v4_cancel_add(struct comm_s *comm, uint64_t request_id)
+{
+	struct v4_cancelled_request *cancelled = malloc(sizeof(*cancelled));
+
+	if (!cancelled)
+		return -ENOMEM;
+	cancelled->request_id = request_id;
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	cancelled->next = MCP_DATA(comm)->cancelled;
+	MCP_DATA(comm)->cancelled = cancelled;
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+	return 0;
+}
+
+static bool v4_cancel_take(struct comm_s *comm, uint64_t request_id)
+{
+	struct v4_cancelled_request **link;
+	struct v4_cancelled_request *cancelled = NULL;
+
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	for (link = &MCP_DATA(comm)->cancelled; *link; link = &(*link)->next) {
+		if ((*link)->request_id != request_id)
+			continue;
+		cancelled = *link;
+		*link = cancelled->next;
+		break;
+	}
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+	free(cancelled);
+	return cancelled != NULL;
+}
+
+static void v4_cancel_clear(struct comm_s *comm)
+{
+	struct v4_cancelled_request *cancelled;
+
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	cancelled = MCP_DATA(comm)->cancelled;
+	MCP_DATA(comm)->cancelled = NULL;
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+	while (cancelled) {
+		struct v4_cancelled_request *next = cancelled->next;
+
+		free(cancelled);
+		cancelled = next;
+	}
 }
 
 static int get_event_context(struct comm_s *comm,
@@ -923,8 +977,17 @@ static int mcp_read_worker(struct comm_s *comm)
 			 type == MEDUSA_MSG_OBJECT_UPDATE_REPLY)
 			error = v4_handle_object_reply(
 				comm, frame, (size_t)length, type);
-		else if (type == MEDUSA_MSG_DECISION_CANCEL ||
-			 type == MEDUSA_MSG_AUDIT)
+		else if (type == MEDUSA_MSG_DECISION_CANCEL) {
+			uint64_t request_id = load_le64(&header->request_id);
+
+			if (!request_id ||
+			    load_le64(&header->policy_generation) !=
+				    MCP_DATA(comm)->generation ||
+			    (size_t)length != MEDUSA_FRAME_HEADER_SIZE)
+				error = -EPROTO;
+			else
+				error = v4_cancel_add(comm, request_id);
+		} else if (type == MEDUSA_MSG_AUDIT)
 			error = 0;
 		else
 			error = -EPROTO;
@@ -968,6 +1031,7 @@ static int mcp_close(struct comm_s *comm)
 		comm_buf_todo(buffer);
 	pthread_mutex_unlock(&comm->wait_for_answer.lock);
 	comm->open_counter--;
+	v4_cancel_clear(comm);
 	return 0;
 }
 
@@ -1004,6 +1068,8 @@ static int mcp_answer(struct comm_s *comm, struct comm_buffer_s *request)
 		}
 	}
 	request_id = ((MCPptr_t *)request->comm_buf)[1];
+	if (v4_cancel_take(comm, request_id))
+		return 0;
 	answer = request->context.result;
 	if (answer != MED_ERR && answer != MED_DENY && answer != MED_ALLOW)
 		answer = MED_ERR;
