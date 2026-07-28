@@ -153,7 +153,7 @@ static void test_protocol_corpus(void)
 	FILE *corpus;
 
 	if (!path)
-		path = "../../../protocol-v4/conformance.txt";
+		path = "fixtures/protocol-v4-conformance.txt";
 	corpus = fopen(path, "r");
 	if (!corpus) {
 		perror(path);

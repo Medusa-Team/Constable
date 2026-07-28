@@ -23,6 +23,8 @@ jobs:
           - clang
     steps:
       - uses: actions/checkout@v4
+      - name: Verify vendored protocol UAPI and corpus
+        run: sha256sum --check ci/protocol-v4.sha256
       - name: Install build tools
         run: |
           sudo apt-get update
