@@ -1,0 +1,2 @@
+class=process enforcement=active announced_events=8 enforced_events=8
+class=socket enforcement=active announced_events=7 enforced_events=7

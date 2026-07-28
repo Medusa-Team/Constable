@@ -27,9 +27,15 @@ struct inventory_class {
 	bool active;
 };
 
+struct referenced_class {
+	struct referenced_class *next;
+	char *name;
+};
+
 struct validation_context {
 	const struct inventory_event *inventory;
 	const struct inventory_class *classes;
+	struct referenced_class *referenced_classes;
 	FILE *diagnostics;
 	struct {
 		unsigned int referenced;
@@ -38,6 +44,18 @@ struct validation_context {
 		unsigned int missing;
 	} events, class_names;
 };
+
+static void referenced_classes_free(struct referenced_class *classes)
+{
+	struct referenced_class *class_name;
+
+	while (classes) {
+		class_name = classes;
+		classes = classes->next;
+		free(class_name->name);
+		free(class_name);
+	}
+}
 
 static void inventory_free(struct inventory_event *events)
 {
@@ -271,6 +289,9 @@ static int class_inventory_read(FILE *file, struct inventory_class **classes,
 	return 0;
 }
 
+static int validate_class_name(struct validation_context *context,
+			       const char *name);
+
 static int validate_event(const struct event_names_s *policy_event,
 			  void *argument)
 {
@@ -286,6 +307,9 @@ static int validate_event(const struct event_names_s *policy_event,
 			policy_event->name);
 		return 0;
 	}
+	if (validate_class_name(context, event->subject_class) ||
+	    validate_class_name(context, event->object_class))
+		return -1;
 	if (!event->active) {
 		context->events.announced++;
 		fprintf(context->diagnostics,
@@ -298,30 +322,54 @@ static int validate_event(const struct event_names_s *policy_event,
 	return 0;
 }
 
-static int validate_class(const struct class_names_s *policy_class,
-			  void *argument)
+static int validate_class_name(struct validation_context *context,
+			       const char *name)
 {
-	struct validation_context *context = argument;
 	const struct inventory_class *class_name;
+	struct referenced_class *reference;
+
+	for (reference = context->referenced_classes; reference;
+	     reference = reference->next)
+		if (!strcmp(reference->name, name))
+			return 0;
+
+	reference = calloc(1, sizeof(*reference));
+	if (!reference)
+		return -1;
+	reference->name = strdup(name);
+	if (!reference->name) {
+		free(reference);
+		return -1;
+	}
+	reference->next = context->referenced_classes;
+	context->referenced_classes = reference;
 
 	context->class_names.referenced++;
-	class_name = class_inventory_find(context->classes, policy_class->name);
+	class_name = class_inventory_find(context->classes, name);
 	if (!class_name) {
 		context->class_names.missing++;
 		fprintf(context->diagnostics,
 			"Policy validation: class '%s' is missing from the kernel inventory\n",
-			policy_class->name);
+			name);
 		return 0;
 	}
 	if (!class_name->active) {
 		context->class_names.announced++;
 		fprintf(context->diagnostics,
 			"Policy validation: class '%s' is announced but has no actively enforced event\n",
-			policy_class->name);
+			name);
 		return 0;
 	}
 	context->class_names.active++;
 	return 0;
+}
+
+static int validate_class(const struct class_names_s *policy_class,
+			  void *argument)
+{
+	struct validation_context *context = argument;
+
+	return validate_class_name(context, policy_class->name);
 }
 
 static char *inventory_path(const char *directory, const char *name)
@@ -412,5 +460,6 @@ out:
 	free(classes_path);
 	inventory_free(inventory);
 	class_inventory_free(classes);
+	referenced_classes_free(context.referenced_classes);
 	return result;
 }

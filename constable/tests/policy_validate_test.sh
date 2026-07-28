@@ -13,7 +13,8 @@ cleanup()
 	rm -f "$temporary.active" "$temporary.mixed" "$temporary.malformed" \
 		"$temporary.malformed-class" "$temporary.duplicate-event" \
 		"$temporary.duplicate-class" "$temporary.missing" \
-		"$temporary.missing-class" "$temporary.oversized-output"
+		"$temporary.missing-class" "$temporary.network" \
+		"$temporary.oversized-output"
 	rm -rf "$oversized_directory"
 }
 trap cleanup EXIT HUP INT TERM
@@ -37,6 +38,28 @@ grep -Fxq \
 	'Policy validation classes: referenced=2 active=2 announced=0 missing=0' \
 	"$temporary.active" || {
 	echo "policy validation: active class summary is missing" >&2
+	exit 1
+}
+
+if ! "$constable" -t -V "$fixtures/inventory-network" \
+	-c "$fixtures/policy-network.conf" "$fixtures/offline.conf" \
+	>"$temporary.network" 2>&1
+then
+	echo "policy validation: active network inventory was rejected" >&2
+	sed -n '1,120p' "$temporary.network" >&2
+	exit 1
+fi
+grep -Fxq \
+	'Policy validation events: referenced=7 active=7 announced=0 missing=0' \
+	"$temporary.network" || {
+	echo "policy validation: active network event summary is missing" >&2
+	sed -n '1,120p' "$temporary.network" >&2
+	exit 1
+}
+grep -Fxq \
+	'Policy validation classes: referenced=2 active=2 announced=0 missing=0' \
+	"$temporary.network" || {
+	echo "policy validation: active network class summary is missing" >&2
 	exit 1
 }
 
@@ -176,4 +199,4 @@ grep -Fq 'event inventory line 1 exceeds 65536 bytes' \
 	exit 1
 }
 
-echo "policy validation: active, announced, missing, malformed, duplicate, absent, and oversized inventories verified"
+echo "policy validation: active, network, announced, missing, malformed, duplicate, absent, and oversized inventories verified"

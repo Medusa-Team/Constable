@@ -25,3 +25,12 @@ class summaries.
 
 `-V` is compatible with normal operation and with offline `-t`, `-T`, and `-I`
 workflows. It does not modify policy or kernel state.
+
+The Phase 6 network fixture validates all supported socket operations:
+`socket_create`, `socket_bind_access`, `socket_connect_access`,
+`socket_listen_access`, `socket_accept_access`, `socket_sendmsg_access`, and
+`socket_recvmsg_access`. A successful validation reports seven active events
+and the two referenced active classes, `process` and `socket`. This makes the
+network enforcement status visible before Constable opens the decision
+channel; an announced-only or absent socket hook fails closed like any other
+policy surface.
