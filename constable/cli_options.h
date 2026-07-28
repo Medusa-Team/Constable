@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #define CONSTABLE_MAX_FALLBACK_POLICIES 64
+#define CONSTABLE_MAX_DOMAIN_RULES 256
 
 enum constable_cli_result {
 	CONSTABLE_CLI_OK = 0,
@@ -12,6 +13,7 @@ enum constable_cli_result {
 	CONSTABLE_CLI_UNKNOWN_OPTION,
 	CONSTABLE_CLI_MISSING_ARGUMENT,
 	CONSTABLE_CLI_TOO_MANY_FALLBACKS,
+	CONSTABLE_CLI_TOO_MANY_DOMAIN_RULES,
 	CONSTABLE_CLI_INVALID_WORKER_COUNT,
 };
 
@@ -31,6 +33,8 @@ struct constable_cli_options {
 	unsigned int worker_count;
 	char *fallback_policy_specs[CONSTABLE_MAX_FALLBACK_POLICIES];
 	unsigned int fallback_policy_count;
+	char *domain_rule_specs[CONSTABLE_MAX_DOMAIN_RULES];
+	unsigned int domain_rule_count;
 	bool medusa_config_file_explicit;
 	bool test_only;
 	bool policy_self_test;

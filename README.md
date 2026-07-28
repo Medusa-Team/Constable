@@ -51,6 +51,20 @@ startup if an event is unknown. A kernel without the optional protocol-v3
 fallback command rejects the write, so a configured policy cannot silently
 downgrade to the old behavior.
 
+Non-sleepable hooks can use generation-scoped domain rules:
+
+```sh
+constable/constable \
+  --domain-rule 'ptrace:7:9:*=deny' \
+  --domain-rule 'sendsig:*:*:15=allow'
+```
+
+The key is `event:subject-domain:object-domain:selector`; numeric values accept
+decimal or `0x` notation and `*` is a wildcard. Ptrace selectors encode
+`operation << 32 | mode`, while signal selectors are signal numbers. Constable
+requires protocol-v4 domain-cache negotiation whenever any such rule is
+configured, so rules cannot silently degrade to synchronous delegation.
+
 Long-running decisions
 ----------------------
 

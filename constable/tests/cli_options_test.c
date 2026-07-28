@@ -59,6 +59,8 @@ static void documented_options_are_parsed(void)
 		"-DD", "events.log", "-c", "medusa.conf",
 		"-F", "exec=baseline_deny",
 		"--fallback", "ptrace=online_required",
+		"-R", "ptrace:1:2:3=deny",
+		"--domain-rule", "ptrace:*:*:*=allow",
 		"--approval-socket", "/run/user/1000/medusa.sock",
 		"--approval-events", "exec,ptrace",
 		"--approval-uid", "1000", "--approval-timeout", "90",
@@ -85,6 +87,9 @@ static void documented_options_are_parsed(void)
 	EXPECT_STRING("exec=baseline_deny", options.fallback_policy_specs[0]);
 	EXPECT_STRING("ptrace=online_required",
 		      options.fallback_policy_specs[1]);
+	EXPECT_TRUE(options.domain_rule_count == 2);
+	EXPECT_STRING("ptrace:1:2:3=deny", options.domain_rule_specs[0]);
+	EXPECT_STRING("ptrace:*:*:*=allow", options.domain_rule_specs[1]);
 	EXPECT_STRING("/run/user/1000/medusa.sock", options.approval_socket);
 	EXPECT_STRING("exec,ptrace", options.approval_events);
 	EXPECT_STRING("1000", options.approval_uid);

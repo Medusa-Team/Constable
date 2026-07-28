@@ -27,7 +27,7 @@ static int v4_tlv_known(uint16_t type)
 	       (type >= MEDUSA_TLV_CLASS_ID &&
 		type <= MEDUSA_TLV_ENFORCEMENT) ||
 	       (type >= MEDUSA_TLV_FALLBACK_POLICY &&
-		type <= MEDUSA_TLV_STATUS) ||
+		type <= MEDUSA_TLV_DOMAIN_RULE) ||
 	       (type >= MEDUSA_TLV_ERROR_CODE &&
 		type <= MEDUSA_TLV_OFFENDING_TYPE);
 }

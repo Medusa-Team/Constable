@@ -25,6 +25,7 @@
 #include "policy_validate.h"
 #include "cli_options.h"
 #include "fallback_policy.h"
+#include "domain_rule.h"
 #include "approval.h"
 
 #ifndef MEDUSA_INITNAME
@@ -143,6 +144,7 @@ int usage(const char *me)
 		"    -h, --help prints this help without loading a policy\n"
 		"    -c <policy file> selects the Medusa policy source\n"
 		"    -F, --fallback <event=policy> stages an event fallback before READY\n"
+		"    -R, --domain-rule <event:subject:object:selector=allow|deny> installs a non-sleepable cached rule; use * as a wildcard\n"
 		"    --approval-socket <path> asks a user-session approval agent\n"
 		"    --approval-events <csv|*> selects events requiring approval\n"
 		"    --approval-uid <uid> authenticates the approval agent owner\n"
@@ -290,6 +292,9 @@ int main(int argc, char *argv[])
 		else if (parse_result == CONSTABLE_CLI_TOO_MANY_FALLBACKS)
 			fprintf(stderr, "Too many fallback policies (maximum %u)\n",
 				CONSTABLE_MAX_FALLBACK_POLICIES);
+		else if (parse_result == CONSTABLE_CLI_TOO_MANY_DOMAIN_RULES)
+			fprintf(stderr, "Too many domain rules (maximum %u)\n",
+				CONSTABLE_MAX_DOMAIN_RULES);
 		else if (parse_result == CONSTABLE_CLI_INVALID_WORKER_COUNT)
 			fprintf(stderr,
 				"Invalid worker count: %s (expected auto or 1-%u)\n",
@@ -303,6 +308,12 @@ int main(int argc, char *argv[])
 				      options.fallback_policy_count) < 0) {
 		fprintf(stderr,
 			"Invalid fallback policy; expected event=baseline_allow, event=baseline_deny, or event=online_required without duplicate events\n");
+		return 2;
+	}
+	if (domain_rule_configure(options.domain_rule_specs,
+				  options.domain_rule_count) < 0) {
+		fprintf(stderr,
+			"Invalid domain rule; expected event:subject:object:selector=allow|deny with numeric keys or * wildcards and no duplicate keys\n");
 		return 2;
 	}
 	if (approval_configure(options.approval_socket, options.approval_events,

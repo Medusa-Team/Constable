@@ -12,6 +12,7 @@ TESTS += vs_test
 TESTS += cli_options_test
 TESTS += worker_pool_test
 TESTS += fallback_policy_test
+TESTS += domain_rule_test
 TESTS += approval_test
 TESTS += config_approval_test
 
@@ -39,6 +40,7 @@ all: $(TESTS) ../constable
 	./cli_options_test
 	./worker_pool_test
 	./fallback_policy_test
+	./domain_rule_test
 	./approval_test
 	./config_approval_test fixtures/approval.conf
 	sh ./cli_integration_test.sh ../constable
@@ -137,6 +139,10 @@ fallback_policy_test: fallback_policy_test.c ../fallback_policy.c \
 		../fallback_policy.h
 	$(CC) $(CFLAGS) -std=c11 -I.. -I../../include -o $@ fallback_policy_test.c \
 		../fallback_policy.c
+
+domain_rule_test: domain_rule_test.c ../domain_rule.c ../domain_rule.h
+	$(CC) $(CFLAGS) -std=c11 -I.. -I../../include -o $@ \
+		domain_rule_test.c ../domain_rule.c
 
 approval_test: approval_test.c ../approval.c ../approval.h
 	$(CC) $(CFLAGS) -std=c11 -I.. -I../../include -o $@ approval_test.c \

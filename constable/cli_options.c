@@ -173,6 +173,23 @@ constable_cli_parse(int argc, char *const argv[],
 			options->fallback_policy_count++;
 			continue;
 		}
+		if (option_is(argument, "-R") ||
+		    option_is(argument, "--domain-rule")) {
+			if (options->domain_rule_count >=
+			    CONSTABLE_MAX_DOMAIN_RULES) {
+				*problem_argument = argument;
+				return CONSTABLE_CLI_TOO_MANY_DOMAIN_RULES;
+			}
+			result = option_argument(
+				argc, argv, &index,
+				&options->domain_rule_specs[
+					options->domain_rule_count],
+				problem_argument);
+			if (result != CONSTABLE_CLI_OK)
+				return result;
+			options->domain_rule_count++;
+			continue;
+		}
 		if (option_is(argument, "--approval-socket")) {
 			result = option_argument(argc, argv, &index,
 						 &options->approval_socket,

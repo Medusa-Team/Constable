@@ -17,6 +17,7 @@
 #include "../constable.h"
 #include "../event.h"
 #include "../fallback_policy.h"
+#include "../domain_rule.h"
 #include "../approval.h"
 #include "../medusa_object.h"
 #include "../object.h"
@@ -670,6 +671,24 @@ static int v4_configured_events_announced(struct comm_s *comm)
 			return -ENOENT;
 		}
 	}
+	for (index = 0; index < domain_rule_count(); index++) {
+		const struct domain_rule_config *rule = domain_rule_at(index);
+		struct event_names_s *name =
+			event_type_find_name((char *)rule->event, false);
+
+		if (!name || !name->events[comm->conn]) {
+			comm_error("comm %s: domain-rule event '%s' was not announced",
+				   comm->name, rule->event);
+			return -ENOENT;
+		}
+	}
+	if (domain_rule_count() &&
+	    !(MCP_DATA(comm)->enabled_features &
+	      MEDUSA_FEATURE_DOMAIN_DECISION_CACHE)) {
+		comm_error("comm %s: kernel lacks domain decision cache support",
+			   comm->name);
+		return -EOPNOTSUPP;
+	}
 	return 0;
 }
 
@@ -686,6 +705,8 @@ static int v4_send_event_policy(const struct event_names_s *name,
 	struct event_type_s *event;
 	struct v4_builder builder;
 	uint8_t policy;
+	unsigned int rule_count;
+	unsigned int index;
 
 	if (context->error)
 		return context->error;
@@ -693,19 +714,40 @@ static int v4_send_event_policy(const struct event_names_s *name,
 	if (!event)
 		return 0;
 	policy = fallback_policy_for_event(name->name);
+	rule_count = domain_rule_count_for_event(name->name);
 	builder = v4_builder_new(
 		context->comm, MEDUSA_MSG_POLICY_EVENT, 0,
-		context->generation, 32);
+		context->generation, 32 + rule_count * 40);
 	if (!builder.buffer ||
 	    v4_builder_add_u32(
 		    &builder, MEDUSA_TLV_EVENT_ID,
 		    (uint32_t)event->acctype.opid) ||
 	    v4_builder_add_u8(
-		    &builder, MEDUSA_TLV_FALLBACK_POLICY, policy) ||
-	    v4_send_now(context->comm, &builder)) {
+		    &builder, MEDUSA_TLV_FALLBACK_POLICY, policy)) {
+		context->error = -EIO;
+		goto out;
+	}
+	for (index = 0; index < domain_rule_count(); index++) {
+		const struct domain_rule_config *rule = domain_rule_at(index);
+		struct medusa_domain_rule wire = { 0 };
+
+		if (strcmp(rule->event, name->name))
+			continue;
+		store_le64(&wire.subject_domain, rule->subject_domain);
+		store_le64(&wire.object_domain, rule->object_domain);
+		store_le64(&wire.selector, rule->selector);
+		wire.answer = rule->answer;
+		if (v4_builder_add(&builder, MEDUSA_TLV_DOMAIN_RULE,
+				   MEDUSA_TLV_F_ARRAY, &wire, sizeof(wire))) {
+			context->error = -EIO;
+			goto out;
+		}
+	}
+	if (v4_send_now(context->comm, &builder)) {
+		context->error = -EIO;
+out:
 		if (builder.buffer)
 			builder.buffer->bfree(builder.buffer);
-		context->error = -EIO;
 	}
 	return context->error;
 }
@@ -758,7 +800,8 @@ static int v4_send_hello(struct comm_s *comm)
 	uint64_t optional = MEDUSA_FEATURE_DECISION_PROGRESS |
 			    MEDUSA_FEATURE_OBJECT_FETCH_UPDATE |
 			    MEDUSA_FEATURE_ATOMIC_POLICY_REPLACE |
-			    MEDUSA_FEATURE_REPLY_CACHE_UPDATE;
+			    MEDUSA_FEATURE_REPLY_CACHE_UPDATE |
+			    MEDUSA_FEATURE_DOMAIN_DECISION_CACHE;
 
 	if (!builder.buffer ||
 	    v4_builder_add_u16(
