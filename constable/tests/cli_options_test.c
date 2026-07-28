@@ -47,6 +47,7 @@ static void defaults_are_explicit(void)
 	EXPECT_TRUE(!options.test_only);
 	EXPECT_TRUE(!options.policy_self_test);
 	EXPECT_TRUE(!options.medusa_config_file_explicit);
+	EXPECT_TRUE(options.worker_count == 0);
 	EXPECT_TRUE(problem == NULL);
 }
 
@@ -61,6 +62,7 @@ static void documented_options_are_parsed(void)
 		"--approval-socket", "/run/user/1000/medusa.sock",
 		"--approval-events", "exec,ptrace",
 		"--approval-uid", "1000", "--approval-timeout", "90",
+		"--workers", "8",
 		"constable.conf",
 	};
 	struct constable_cli_options options;
@@ -87,6 +89,7 @@ static void documented_options_are_parsed(void)
 	EXPECT_STRING("exec,ptrace", options.approval_events);
 	EXPECT_STRING("1000", options.approval_uid);
 	EXPECT_STRING("90", options.approval_timeout);
+	EXPECT_TRUE(options.worker_count == 8);
 	EXPECT_STRING("constable.conf", options.config_file);
 	EXPECT_TRUE(problem == NULL);
 }
@@ -113,6 +116,34 @@ static void value_options_require_an_argument(void)
 	EXPECT_STRING("-V", problem);
 }
 
+static void worker_count_is_bounded(void)
+{
+	char *automatic[] = { "constable", "--workers", "auto" };
+	char *one[] = { "constable", "--workers", "1" };
+	char *maximum[] = { "constable", "--workers", "32" };
+	char *zero[] = { "constable", "--workers", "0" };
+	char *too_many[] = { "constable", "--workers", "33" };
+	char *invalid[] = { "constable", "--workers", "four" };
+	struct constable_cli_options options;
+	const char *problem;
+
+	EXPECT_TRUE(parse(3, automatic, &options, &problem) == CONSTABLE_CLI_OK);
+	EXPECT_TRUE(options.worker_count == 0);
+	EXPECT_TRUE(parse(3, one, &options, &problem) == CONSTABLE_CLI_OK);
+	EXPECT_TRUE(options.worker_count == 1);
+	EXPECT_TRUE(parse(3, maximum, &options, &problem) == CONSTABLE_CLI_OK);
+	EXPECT_TRUE(options.worker_count == 32);
+	EXPECT_TRUE(parse(3, zero, &options, &problem) ==
+		    CONSTABLE_CLI_INVALID_WORKER_COUNT);
+	EXPECT_STRING("0", problem);
+	EXPECT_TRUE(parse(3, too_many, &options, &problem) ==
+		    CONSTABLE_CLI_INVALID_WORKER_COUNT);
+	EXPECT_STRING("33", problem);
+	EXPECT_TRUE(parse(3, invalid, &options, &problem) ==
+		    CONSTABLE_CLI_INVALID_WORKER_COUNT);
+	EXPECT_STRING("four", problem);
+}
+
 static void help_and_positional_separator_are_supported(void)
 {
 	char *help[] = { "constable", "--help" };
@@ -131,6 +162,7 @@ int main(void)
 	documented_options_are_parsed();
 	options_require_exact_names();
 	value_options_require_an_argument();
+	worker_count_is_bounded();
 	help_and_positional_separator_are_supported();
 
 	if (failures) {

@@ -120,7 +120,7 @@ int init_all(char *filename)
 			return -1;
 	}
 
-	if (execute_init(2) < 0)
+	if (execute_init((int)worker_pool_count()) < 0)
 		return -1;
 	if (language_init(medusa_config_file) < 0)
 		return -1;
@@ -147,6 +147,7 @@ int usage(const char *me)
 		"    --approval-events <csv|*> selects events requiring approval\n"
 		"    --approval-uid <uid> authenticates the approval agent owner\n"
 		"    --approval-timeout <seconds> limits each prompt (default 60)\n"
+		"    --workers <auto|1-32> sizes the decision worker pool (default auto)\n"
 		"    -t and/or -d causes Constable to shut down before initiating communication\n"
 		"    -T executes function _debug offline and succeeds only on FORCE_ALLOW\n"
 		"    -E executes the controlled _debug_event policy self-test offline\n"
@@ -289,6 +290,10 @@ int main(int argc, char *argv[])
 		else if (parse_result == CONSTABLE_CLI_TOO_MANY_FALLBACKS)
 			fprintf(stderr, "Too many fallback policies (maximum %u)\n",
 				CONSTABLE_MAX_FALLBACK_POLICIES);
+		else if (parse_result == CONSTABLE_CLI_INVALID_WORKER_COUNT)
+			fprintf(stderr,
+				"Invalid worker count: %s (expected auto or 1-%u)\n",
+				problem_argument, CONSTABLE_MAX_WORKERS);
 		else
 			fprintf(stderr, "Unknown option: %s\n", problem_argument);
 		usage(argv[0]);
@@ -305,6 +310,10 @@ int main(int argc, char *argv[])
 			       options.approval_timeout) < 0) {
 		fprintf(stderr,
 			"Invalid approval configuration; socket, events, and uid are required together\n");
+		return 2;
+	}
+	if (worker_pool_configure(options.worker_count) < 0) {
+		fprintf(stderr, "Cannot configure worker pool\n");
 		return 2;
 	}
 

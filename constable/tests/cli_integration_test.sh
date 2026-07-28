@@ -8,7 +8,8 @@ temporary=${TMPDIR:-/tmp}/constable-cli.$$
 
 cleanup()
 {
-	rm -f "$temporary.help" "$temporary.unknown" "$temporary.missing"
+	rm -f "$temporary.help" "$temporary.unknown" "$temporary.missing" \
+		"$temporary.workers"
 }
 trap cleanup EXIT HUP INT TERM
 
@@ -18,6 +19,7 @@ grep -Fq -- '--help' "$temporary.help"
 grep -Fq -- '-c <policy file>' "$temporary.help"
 grep -Fq -- '--fallback <event=policy>' "$temporary.help"
 grep -Fq -- '--approval-socket <path>' "$temporary.help"
+grep -Fq -- '--workers <auto|1-32>' "$temporary.help"
 
 "$constable" -t -c fixtures/policy-valid.conf fixtures/approval.conf
 
@@ -41,5 +43,13 @@ then
 	exit 1
 fi
 grep -Fq 'Invalid fallback policy' "$temporary.missing"
+
+if "$constable" --workers 33 >"$temporary.workers" 2>&1
+then
+	echo "cli integration: invalid worker count was accepted" >&2
+	exit 1
+fi
+grep -Fxq 'Invalid worker count: 33 (expected auto or 1-32)' \
+	"$temporary.workers"
 
 echo "cli integration: all checks passed"

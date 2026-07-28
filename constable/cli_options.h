@@ -12,6 +12,7 @@ enum constable_cli_result {
 	CONSTABLE_CLI_UNKNOWN_OPTION,
 	CONSTABLE_CLI_MISSING_ARGUMENT,
 	CONSTABLE_CLI_TOO_MANY_FALLBACKS,
+	CONSTABLE_CLI_INVALID_WORKER_COUNT,
 };
 
 struct constable_cli_options {
@@ -27,6 +28,7 @@ struct constable_cli_options {
 	char *approval_events;
 	char *approval_uid;
 	char *approval_timeout;
+	unsigned int worker_count;
 	char *fallback_policy_specs[CONSTABLE_MAX_FALLBACK_POLICIES];
 	unsigned int fallback_policy_count;
 	bool medusa_config_file_explicit;

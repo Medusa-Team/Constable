@@ -10,7 +10,12 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define N_WORKER_THREADS 2
+#define CONSTABLE_WORKERS_AUTO 0U
+#define CONSTABLE_MIN_AUTO_WORKERS 2U
+#define CONSTABLE_MAX_WORKERS 32U
+
+int worker_pool_configure(unsigned int requested_workers);
+unsigned int worker_pool_count(void);
 
 static inline int tls_create(pthread_key_t *key)
 {

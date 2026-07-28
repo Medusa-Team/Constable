@@ -24,8 +24,6 @@
 #include "threading.h"
 #include "mcp/mcp.h"
 
-static pthread_t comm_workers[N_WORKER_THREADS];
-
 extern struct event_handler_s *function_init;
 int comm_nr_connections;
 static struct comm_s *first_comm;
@@ -153,12 +151,18 @@ int comm_do(void)
 {
 	struct comm_s *c;
 	pthread_attr_t attr;
+	pthread_t worker;
+	unsigned int i;
 
 	if (pthread_attr_init(&attr)) {
 		puts("Cannot initialize thread attribute");
 		return -1;
 	}
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)) {
+		puts("Cannot configure worker thread attribute");
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
 
 	// CREATE READ AND WRITE THREADS FOR EACH COMMUNICATION INTERFACE
 	for (c = first_comm; c; c = c->next) {
@@ -181,12 +185,14 @@ int comm_do(void)
 	}
 
 	// CREATE WORKER THREADS
-	for (int i = 0; i < N_WORKER_THREADS; i++) {
-		if (pthread_create(comm_workers + i, &attr, comm_worker, NULL)) {
+	for (i = 0; i < worker_pool_count(); i++) {
+		if (pthread_create(&worker, &attr, comm_worker, NULL)) {
 			puts("Cannot create worker thread");
+			pthread_attr_destroy(&attr);
 			return -1;
 		}
 	}
+	pthread_attr_destroy(&attr);
 
 	// CALL JOIN
 	for (c = first_comm; c; c = c->next) {

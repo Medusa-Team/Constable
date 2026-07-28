@@ -1,9 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
+#include <errno.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "cli_options.h"
+#include "threading.h"
 
 static bool option_is(const char *argument, const char *option)
 {
@@ -20,6 +23,34 @@ option_argument(int argc, char *const argv[], int *index, char **value,
 	}
 
 	*value = argv[++(*index)];
+	return CONSTABLE_CLI_OK;
+}
+
+static enum constable_cli_result
+worker_count_argument(int argc, char *const argv[], int *index,
+		      unsigned int *value, const char **problem_argument)
+{
+	char *argument;
+	char *end;
+	unsigned long parsed;
+	enum constable_cli_result result;
+
+	result = option_argument(argc, argv, index, &argument, problem_argument);
+	if (result != CONSTABLE_CLI_OK)
+		return result;
+	if (strcmp(argument, "auto") == 0) {
+		*value = CONSTABLE_WORKERS_AUTO;
+		return CONSTABLE_CLI_OK;
+	}
+
+	errno = 0;
+	parsed = strtoul(argument, &end, 10);
+	if (errno || end == argument || *end != '\0' || parsed == 0 ||
+	    parsed > CONSTABLE_MAX_WORKERS) {
+		*problem_argument = argument;
+		return CONSTABLE_CLI_INVALID_WORKER_COUNT;
+	}
+	*value = (unsigned int)parsed;
 	return CONSTABLE_CLI_OK;
 }
 
@@ -170,6 +201,14 @@ constable_cli_parse(int argc, char *const argv[],
 			result = option_argument(argc, argv, &index,
 						 &options->approval_timeout,
 						 problem_argument);
+			if (result != CONSTABLE_CLI_OK)
+				return result;
+			continue;
+		}
+		if (option_is(argument, "--workers")) {
+			result = worker_count_argument(argc, argv, &index,
+						       &options->worker_count,
+						       problem_argument);
 			if (result != CONSTABLE_CLI_OK)
 				return result;
 			continue;

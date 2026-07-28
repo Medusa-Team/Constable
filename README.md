@@ -31,6 +31,12 @@ Run `constable/constable --help` for all command-line modes. Production use
 requires a matching Medusa kernel and normally supplies both the Constable
 communication configuration and the Medusa policy configuration.
 
+Constable sizes its decision worker pool from the number of online CPUs,
+clamped to 2 through 32 workers. Use `--workers N` to select an explicit pool
+size from 1 through 32 for constrained deployments or benchmarking, or
+`--workers auto` to request the default explicitly. Suspended policy handlers
+leave their worker and resume through the shared work queue.
+
 Fallback policy installation is opt-in and repeatable:
 
 ```sh

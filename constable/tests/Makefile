@@ -10,6 +10,7 @@ TESTS += rbac_roles_test
 TESTS += rbac_rotate_test
 TESTS += vs_test
 TESTS += cli_options_test
+TESTS += worker_pool_test
 TESTS += fallback_policy_test
 TESTS += approval_test
 TESTS += config_approval_test
@@ -36,6 +37,7 @@ all: $(TESTS) ../constable
 	./rbac_rotate_test
 	./vs_test
 	./cli_options_test
+	./worker_pool_test
 	./fallback_policy_test
 	./approval_test
 	./config_approval_test fixtures/approval.conf
@@ -126,6 +128,10 @@ vs_test: vs_test.c ../vs.c ../vs.h
 cli_options_test: cli_options_test.c ../cli_options.c ../cli_options.h
 	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ cli_options_test.c \
 		../cli_options.c
+
+worker_pool_test: worker_pool_test.c ../threading.c ../threading.h
+	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ worker_pool_test.c \
+		../threading.c
 
 fallback_policy_test: fallback_policy_test.c ../fallback_policy.c \
 		../fallback_policy.h
