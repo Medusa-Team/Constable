@@ -17,6 +17,9 @@ grep -Fq 'Usage:' "$temporary.help"
 grep -Fq -- '--help' "$temporary.help"
 grep -Fq -- '-c <policy file>' "$temporary.help"
 grep -Fq -- '--fallback <event=policy>' "$temporary.help"
+grep -Fq -- '--approval-socket <path>' "$temporary.help"
+
+"$constable" -t -c fixtures/policy-valid.conf fixtures/approval.conf
 
 if "$constable" -trash >"$temporary.unknown" 2>&1
 then

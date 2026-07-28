@@ -9,9 +9,11 @@
 #include "../constable.h"
 #include "../comm.h"
 #include "../init.h"
+#include "../approval.h"
 #include "../string_utils.h"
 #include "mcp.h"
 #include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -33,6 +35,7 @@ enum {
 	S1n,
 	S1p,
 	SM,
+	SA,
 };
 
 enum {
@@ -46,6 +49,11 @@ enum {
 	Tchdir,		/* chdir */
 	Tconfig,	/* config */
 	Tsystem,	/* system */
+	Tapproval,	/* approval */
+	Tsocket,	/* socket */
+	Tuid,		/* uid */
+	Tevents,	/* events */
+	Ttimeout,	/* timeout */
 };
 
 enum {
@@ -64,6 +72,11 @@ enum {
 	Pmodule,
 	Pmodfile,
 	Psystem,
+	Papproval_socket,
+	Papproval_uid,
+	Papproval_events,
+	Papproval_timeout,
+	Papproval,
 };
 
 /*
@@ -73,6 +86,7 @@ enum {
  * "name" file "filename";
  * "name" tcp:<port> <ip>[/<mask>][:<port>];
  * module "name" [file "filename"];
+ * approval socket "path" uid 1000 events "event,event" timeout 60;
  */
 
 struct compile_tab_s mcp_conf_lang[] = {
@@ -83,6 +97,14 @@ struct compile_tab_s mcp_conf_lang[] = {
 	{SM, {Tfile, END}, {Tfile, T_str, Pmodfile, END}},
 	{SM, {END}, {END}},
 	{START, {Tconfig, END}, {Tconfig, T_str, Pconfig, T | ';', START, END}},
+	{START, {Tapproval, END},
+	 {Tapproval, Tsocket, T_str, Papproval_socket,
+	  Tuid, T_num, Papproval_uid,
+	  SA, END}},
+	{SA, {Tevents, END},
+	 {Tevents, T_str, Papproval_events,
+	  Ttimeout, T_num, Papproval_timeout,
+	  Papproval, T | ';', START, END}},
 	{START, {T_str, END}, {T_str, Pname, S1, T | ';', START, END}},
 	{START, {TEND, END}, {END}},
 	{S1, {Tfile, END}, {Tfile, T_str, Pcommfile, END}},
@@ -124,6 +146,11 @@ static lextab_t keywords[] = {
 	{"chdir", Tchdir, 0},
 	{"config", Tconfig, 0},
 	{"system", Tsystem, 0},
+	{"approval", Tapproval, 0},
+	{"socket", Tsocket, 0},
+	{"uid", Tuid, 0},
+	{"events", Tevents, 0},
+	{"timeout", Ttimeout, 0},
 	{NULL, END, 0},
 };
 
@@ -395,6 +422,11 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 	static in_addr_t mask;
 	static in_port_t port;
 	static struct module_s *module;
+	static char *approval_socket;
+	static char *approval_events;
+	static uid_t approval_uid;
+	static unsigned int approval_timeout;
+	static bool approval_numbers_valid;
 	struct comm_s *comm;
 	char *token = NULL;
 
@@ -461,6 +493,42 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 	case Psystem:
 		if (system((char *)c->l.data) < 0)
 			mcp_error("%s: %s", (char *)(c->l.data), strerror(errno));
+		break;
+	case Papproval_socket:
+		free(approval_socket);
+		approval_socket = strdup((char *)c->l.data);
+		if (!approval_socket)
+			mcp_error("Out of memory");
+		approval_numbers_valid = true;
+		break;
+	case Papproval_uid:
+		if (c->l.data > UINT_MAX)
+			approval_numbers_valid = false;
+		else
+			approval_uid = (uid_t)c->l.data;
+		break;
+	case Papproval_events:
+		free(approval_events);
+		approval_events = strdup((char *)c->l.data);
+		if (!approval_events)
+			mcp_error("Out of memory");
+		break;
+	case Papproval_timeout:
+		if (c->l.data > UINT_MAX)
+			approval_numbers_valid = false;
+		else
+			approval_timeout = (unsigned int)c->l.data;
+		break;
+	case Papproval:
+		if (!approval_socket || !approval_events ||
+		    !approval_numbers_valid ||
+		    approval_configure_file(approval_socket, approval_events,
+					    approval_uid, approval_timeout))
+			mcp_error("Invalid user approval configuration");
+		free(approval_socket);
+		free(approval_events);
+		approval_socket = NULL;
+		approval_events = NULL;
 		break;
 	case Pconfig:
 		if (!medusa_config_file_explicit)

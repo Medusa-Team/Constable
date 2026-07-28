@@ -12,6 +12,7 @@ TESTS += vs_test
 TESTS += cli_options_test
 TESTS += fallback_policy_test
 TESTS += approval_test
+TESTS += config_approval_test
 
 .PHONY: all clean
 
@@ -37,6 +38,7 @@ all: $(TESTS) ../constable
 	./cli_options_test
 	./fallback_policy_test
 	./approval_test
+	./config_approval_test fixtures/approval.conf
 	sh ./cli_integration_test.sh ../constable
 	sh ./retired_components_test.sh
 	sh ./policy_compile_test.sh ../constable fixtures
@@ -133,6 +135,12 @@ fallback_policy_test: fallback_policy_test.c ../fallback_policy.c \
 approval_test: approval_test.c ../approval.c ../approval.h
 	$(CC) $(CFLAGS) -std=c11 -I.. -I../../include -o $@ approval_test.c \
 		../approval.c
+
+config_approval_test: config_approval_test.c ../mcp/conf_lang.c \
+		../approval.c ../string_utils.c ../../libmcompiler/libmcompiler.a
+	$(CC) $(CFLAGS) -std=c11 -I.. -I../../libmcompiler -I../../include \
+		-o $@ config_approval_test.c ../mcp/conf_lang.c ../approval.c \
+		../string_utils.c ../../libmcompiler/libmcompiler.a -pthread
 
 clean:
 	rm -rf $(TESTS) $(addsuffix .dSYM,$(TESTS))

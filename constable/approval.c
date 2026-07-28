@@ -21,17 +21,19 @@
 
 #define APPROVAL_RENEW_MS 2000
 #define APPROVAL_LINE_MAX 512
+#define APPROVAL_EVENTS_MAX 1024
 
-static const char *approval_socket;
-static const char *approval_events;
+static char approval_socket[sizeof(((struct sockaddr_un *)0)->sun_path)];
+static char approval_events[APPROVAL_EVENTS_MAX];
 static uid_t approval_uid;
 static int approval_timeout = 60;
+static bool approval_cli_override;
 
 static bool event_selected(const char *name)
 {
 	const char *start;
 
-	if (!approval_events || !name)
+	if (!approval_events[0] || !name)
 		return false;
 	if (!strcmp(approval_events, "*"))
 		return true;
@@ -48,43 +50,67 @@ static bool event_selected(const char *name)
 	return false;
 }
 
+static int approval_store(const char *socket_path, const char *events,
+			  uid_t uid, unsigned int timeout)
+{
+	if (!socket_path || !events || !*socket_path || !*events ||
+	    strlen(socket_path) >= sizeof(approval_socket) ||
+	    strlen(events) >= sizeof(approval_events) ||
+	    timeout < 1 || timeout > 3600)
+		return -EINVAL;
+	strcpy(approval_socket, socket_path);
+	strcpy(approval_events, events);
+	approval_uid = uid;
+	approval_timeout = (int)timeout;
+	return 0;
+}
+
 int approval_configure(const char *socket_path, const char *events,
 		       const char *uid_text, const char *timeout_text)
 {
 	char *end;
+	unsigned int timeout = 60;
+	uid_t uid;
 	unsigned long value;
 
 	if (!socket_path && !events && !uid_text && !timeout_text)
 		return 0;
-	if (!socket_path || !events || !uid_text || !*socket_path || !*events)
+	if (!socket_path || !events || !uid_text)
 		return -EINVAL;
-	if (strlen(socket_path) >= sizeof(((struct sockaddr_un *)0)->sun_path))
-		return -ENAMETOOLONG;
 	errno = 0;
 	value = strtoul(uid_text, &end, 10);
 	if (errno || *end || value > UINT_MAX)
 		return -EINVAL;
-	approval_uid = (uid_t)value;
+	uid = (uid_t)value;
 	if (timeout_text) {
 		errno = 0;
 		value = strtoul(timeout_text, &end, 10);
 		if (errno || *end || value < 1 || value > 3600)
 			return -EINVAL;
-		approval_timeout = (int)value;
+		timeout = (unsigned int)value;
 	}
-	approval_socket = socket_path;
-	approval_events = events;
+	if (approval_store(socket_path, events, uid, timeout))
+		return -EINVAL;
+	approval_cli_override = true;
 	return 0;
+}
+
+int approval_configure_file(const char *socket_path, const char *events,
+			    uid_t uid, unsigned int timeout)
+{
+	if (approval_cli_override)
+		return 0;
+	return approval_store(socket_path, events, uid, timeout);
 }
 
 int approval_enabled_for(const char *event_name)
 {
-	return approval_socket && event_selected(event_name);
+	return approval_socket[0] && event_selected(event_name);
 }
 
 int approval_is_configured(void)
 {
-	return approval_socket != NULL;
+	return approval_socket[0] != '\0';
 }
 
 static int connect_agent(void)

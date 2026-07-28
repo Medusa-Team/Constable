@@ -72,6 +72,18 @@ constable/constable \
   --approval-uid 1000
 ```
 
+The same settings belong declaratively in the outer `constable.conf` (not in
+the Medusa policy handlers):
+
+```text
+approval socket "/run/user/1000/medusa-approval.sock"
+    uid 1000
+    events "socket_connect_access,socket_bind_access"
+    timeout 60;
+```
+
+Command-line approval options override this stanza.
+
 The popup offers Allow, Deny, and a “Remember for this event” checkbox.
 Remembered choices live in the user-owned JSON state file and can be removed
 with `medusa-approval-agent.py --socket PATH --state FILE --clear`. Constable
