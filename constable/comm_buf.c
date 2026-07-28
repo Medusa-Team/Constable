@@ -216,7 +216,8 @@ static void comm_buf_free(struct comm_buffer_s *b)
 	/* send READY cmd to the kernel after _init() finishes */
 	if (function_init && b->comm && b->comm->version > 2 && b->comm->init_buffer == b
 	    && mcp_ready_answer(b->comm) < 0)
-		fatal("%s: MEDUSA_COMM_READY_ANSWER not send to the kernel", __func__);
+		fatal("%s: protocol-v4 policy readiness was not completed",
+		      __func__);
 
 	//printf("comm_buf_free: free buffer %u\n", b->id);
 	if (b->_n >= 0) {

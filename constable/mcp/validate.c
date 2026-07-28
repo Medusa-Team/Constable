@@ -5,6 +5,82 @@
 #include <stdint.h>
 #include <string.h>
 
+static uint16_t load_le16(const void *source)
+{
+	const unsigned char *bytes = source;
+
+	return (uint16_t)bytes[0] | (uint16_t)bytes[1] << 8;
+}
+
+static uint32_t load_le32(const void *source)
+{
+	const unsigned char *bytes = source;
+
+	return (uint32_t)bytes[0] | (uint32_t)bytes[1] << 8 |
+	       (uint32_t)bytes[2] << 16 | (uint32_t)bytes[3] << 24;
+}
+
+static int v4_tlv_known(uint16_t type)
+{
+	return (type >= MEDUSA_TLV_MIN_VERSION &&
+		type <= MEDUSA_TLV_STATE) ||
+	       (type >= MEDUSA_TLV_CLASS_ID &&
+		type <= MEDUSA_TLV_ENFORCEMENT) ||
+	       (type >= MEDUSA_TLV_FALLBACK_POLICY &&
+		type <= MEDUSA_TLV_STATUS) ||
+	       (type >= MEDUSA_TLV_ERROR_CODE &&
+		type <= MEDUSA_TLV_OFFENDING_TYPE);
+}
+
+int mcp_validate_v4_frame(const void *wire, size_t length)
+{
+	const uint8_t *frame = wire;
+	const struct medusa_frame_header *header;
+	size_t payload_length;
+	size_t offset;
+
+	if (!frame || length < MEDUSA_FRAME_HEADER_SIZE)
+		return -1;
+	header = (const struct medusa_frame_header *)frame;
+	if (load_le16(&header->version) != MEDUSA_PROTOCOL_VERSION ||
+	    load_le32(&header->flags) != 0 ||
+	    load_le32(&header->reserved) != 0)
+		return -1;
+	payload_length = load_le32(&header->payload_length);
+	if (payload_length > MEDUSA_FRAME_MAX_PAYLOAD ||
+	    payload_length != length - MEDUSA_FRAME_HEADER_SIZE)
+		return -1;
+	offset = MEDUSA_FRAME_HEADER_SIZE;
+	while (offset < length) {
+		const struct medusa_tlv *tlv;
+		size_t tlv_length;
+		size_t aligned;
+		size_t index;
+		uint16_t flags;
+		uint16_t type;
+
+		if (length - offset < MEDUSA_TLV_HEADER_SIZE)
+			return -1;
+		tlv = (const struct medusa_tlv *)(frame + offset);
+		tlv_length = load_le32(&tlv->length);
+		flags = load_le16(&tlv->flags);
+		type = load_le16(&tlv->type);
+		if (flags & ~(MEDUSA_TLV_F_REQUIRED | MEDUSA_TLV_F_ARRAY) ||
+		    tlv_length < MEDUSA_TLV_HEADER_SIZE)
+			return -1;
+		aligned = MEDUSA_TLV_ALIGN_UP(tlv_length);
+		if (aligned < tlv_length || aligned > length - offset)
+			return -1;
+		if (!v4_tlv_known(type) && (flags & MEDUSA_TLV_F_REQUIRED))
+			return -1;
+		for (index = tlv_length; index < aligned; index++)
+			if (frame[offset + index] != 0)
+				return -1;
+		offset += aligned;
+	}
+	return offset == length ? 0 : -1;
+}
+
 static enum mcp_definition_validation
 validate_name(const char *name, size_t capacity, int allow_empty)
 {

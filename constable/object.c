@@ -218,7 +218,7 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 		out(arg, "=");
 
 		switch (a[i].type & 0x0f) {
-		case MED_COMM_TYPE_UNSIGNED:
+		case MED_TYPE_UNSIGNED:
 			if (a[i].length > sizeof(tmp)) {
 				object_get_val(o, a+i, &tmpl, sizeof(tmpl));
 				snprintf(buf, sizeof(buf), "0x%llx", tmpl);
@@ -228,7 +228,7 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 			}
 			out(arg, buf);
 			break;
-		case MED_COMM_TYPE_SIGNED:
+		case MED_TYPE_SIGNED:
 			if (a[i].length > sizeof(tmp)) {
 				object_get_val(o, a+i, &signed_tmpl,
 					       sizeof(signed_tmpl));
@@ -240,7 +240,7 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 			}
 			out(arg, buf);
 			break;
-		case MED_COMM_TYPE_STRING:
+		case MED_TYPE_STRING:
 			out(arg, "\"");
 			for (j = 0, bp = 0; j < a[i].length; j++) {
 				if ((size_t)bp >= sizeof(buf)-8) {
@@ -288,7 +288,7 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 				}
 			out(arg, "\"");
 			break;
-		case MED_COMM_TYPE_BITMAP:
+		case MED_TYPE_BITMAP:
 #ifdef BITMAP_DIPLAY_LEFT_RIGHT
 			for (j = 0; j < a[i].length; j++) {
 				if (j > 0 && (j&0x03) == 0)

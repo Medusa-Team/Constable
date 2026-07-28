@@ -13,11 +13,11 @@ static unsigned int configured_policy_count;
 static int parse_policy(const char *name, uint8_t *policy)
 {
 	if (!strcmp(name, "baseline_allow"))
-		*policy = MEDUSA_COMM_FALLBACK_BASELINE_ALLOW;
+		*policy = MEDUSA_FALLBACK_BASELINE_ALLOW;
 	else if (!strcmp(name, "baseline_deny"))
-		*policy = MEDUSA_COMM_FALLBACK_BASELINE_DENY;
+		*policy = MEDUSA_FALLBACK_BASELINE_DENY;
 	else if (!strcmp(name, "online_required"))
-		*policy = MEDUSA_COMM_FALLBACK_ONLINE_REQUIRED;
+		*policy = MEDUSA_FALLBACK_ONLINE_REQUIRED;
 	else
 		return -EINVAL;
 	return 0;
@@ -78,17 +78,12 @@ const struct fallback_policy_config *fallback_policy_at(unsigned int index)
 	return &configured_policies[index];
 }
 
-int fallback_policy_frame_encode(
-	MCPptr_t command_wire, MCPptr_t event_wire, uint8_t policy,
-	unsigned char *frame, size_t frame_size)
+uint8_t fallback_policy_for_event(const char *event)
 {
-	if (!frame ||
-	    frame_size != sizeof(MCPptr_t) +
-			  sizeof(struct medusa_comm_fallback_policy_s) ||
-	    policy > MEDUSA_COMM_FALLBACK_ONLINE_REQUIRED)
-		return -EINVAL;
-	memcpy(frame, &command_wire, sizeof(command_wire));
-	memcpy(frame + sizeof(command_wire), &event_wire, sizeof(event_wire));
-	frame[sizeof(command_wire) + sizeof(event_wire)] = policy;
-	return 0;
+	unsigned int index;
+
+	for (index = 0; index < configured_policy_count; index++)
+		if (!strcmp(configured_policies[index].event, event))
+			return configured_policies[index].policy;
+	return MEDUSA_FALLBACK_BASELINE_ALLOW;
 }

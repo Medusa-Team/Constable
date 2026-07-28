@@ -7,7 +7,6 @@
 #ifndef _EVENT_H
 #define _EVENT_H
 
-#include <asm/types.h>
 #include "types.h"
 #include "object.h"
 #include "medusa_object.h"

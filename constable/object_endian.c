@@ -5,10 +5,15 @@
  */
 
 #include "object.h"
-#include <endian.h>
 #include <stdint.h>
 #include <sys/param.h>
 #include <string.h>
+
+#ifndef __BYTE_ORDER
+#define __BYTE_ORDER __BYTE_ORDER__
+#define __LITTLE_ENDIAN __ORDER_LITTLE_ENDIAN__
+#define __BIG_ENDIAN __ORDER_BIG_ENDIAN__
+#endif
 
 void memrcpy(void *dest, const void *src, size_t n)
 {
@@ -273,7 +278,7 @@ int object_resize_data(void *buf, struct medusa_attribute_s *a, int newlen)
 void byte_reorder_attrs(int flags, struct medusa_attribute_s *a)
 {
 	if (flags & OBJECT_FLAG_CHENDIAN) {
-		while (a->type != MED_COMM_TYPE_END) {
+		while (a->type != MED_TYPE_END) {
 			a->offset = bswap_16(a->offset);
 			a->length = bswap_16(a->length);
 			a++;

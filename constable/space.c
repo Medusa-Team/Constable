@@ -9,6 +9,7 @@
 #include "comm.h"
 #include "space.h"
 #include "string_utils.h"
+#include "mcompiler/checked_math.h"
 
 #include <stdio.h>
 #include <pthread.h>
@@ -690,12 +691,18 @@ static void tree_add_vs_do(struct tree_s *p, struct tree_add_vs_do_s *arg)
 static void tree_get_visited_do(struct tree_s *p, struct members_s *arg)
 {
 	if (!p->visited) {
+		struct tree_s **resized;
+		size_t allocation;
+
 		p->visited = true;
 		arg->count++;
-		arg->array = reallocarray(arg->array, arg->count,
-				 sizeof(struct tree_s *));
-		if (!arg->array)
+		if (!checked_size_multiply(arg->count, sizeof(struct tree_s *),
+					   &allocation))
+			fatal("Error: Too many space members.");
+		resized = realloc(arg->array, allocation);
+		if (!resized)
 			fatal("Error: Can't alloc memory for space members.");
+		arg->array = resized;
 		arg->array[arg->count - 1] = p;
 	}
 }

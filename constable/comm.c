@@ -191,11 +191,9 @@ int comm_do(void)
 	// CALL JOIN
 	for (c = first_comm; c; c = c->next) {
 		if (c->fd >= 0) {
-			for (int i = 0; i < N_WORKER_THREADS; i++) {
-				if (pthread_join(c->read_thread, NULL)) {
-					puts("Error when joining read thread");
-					return -1;
-				}
+			if (pthread_join(c->read_thread, NULL)) {
+				puts("Error when joining read thread");
+				return -1;
 			}
 			if (pthread_join(c->write_thread, NULL)) {
 				puts("Error when joining write thread");

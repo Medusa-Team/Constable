@@ -64,7 +64,7 @@ string_utils_test: string_utils_test.c ../string_utils.c ../string_utils.h
 		string_utils_test.c ../string_utils.c
 
 mcp_validate_test: mcp_validate_test.c ../mcp/validate.c ../mcp/validate.h
-	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ \
+	$(CC) $(CFLAGS) -std=c11 -I.. -I../../include -o $@ \
 		mcp_validate_test.c ../mcp/validate.c
 
 object_string_test: object_string_test.c ../object_endian.c ../object.h
@@ -125,7 +125,7 @@ cli_options_test: cli_options_test.c ../cli_options.c ../cli_options.h
 
 fallback_policy_test: fallback_policy_test.c ../fallback_policy.c \
 		../fallback_policy.h
-	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ fallback_policy_test.c \
+	$(CC) $(CFLAGS) -std=c11 -I.. -I../../include -o $@ fallback_policy_test.c \
 		../fallback_policy.c
 
 clean:

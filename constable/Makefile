@@ -8,7 +8,7 @@ BINDIR = $(DESTDIR)/bin
 CC = gcc
 #CC = clang
 CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -g -DRBAC \
-	-I$(CURDIR)/../libmcompiler -D_GNU_SOURCE
+	-I$(CURDIR)/../libmcompiler -I$(CURDIR)/../include -D_GNU_SOURCE
 LD = ld
 #LDFLAGS = ../libmcompiler/libmcompiler.a -lefence
 LDFLAGS = ../libmcompiler/libmcompiler.a -pthread

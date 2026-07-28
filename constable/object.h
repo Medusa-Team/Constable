@@ -12,7 +12,11 @@
 #include "vs.h"
 #include "hash.h"
 #include "access_types.h"
-#include <byteswap.h>
+#ifndef bswap_16
+#define bswap_16(value) __builtin_bswap16(value)
+#define bswap_32(value) __builtin_bswap32(value)
+#define bswap_64(value) __builtin_bswap64(value)
+#endif
 
 struct event_mask_s;
 

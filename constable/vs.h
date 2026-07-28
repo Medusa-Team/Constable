@@ -7,9 +7,9 @@
 #ifndef _VS_H
 #define _VS_H
 
-#include <asm/types.h>
+#include <stdint.h>
 
-typedef __u32	vs_t;
+typedef uint32_t vs_t;
 
 #define MAX_NUM_OF_VS 64
 #define BITS_PER_VS_WORD	(sizeof(vs_t) << 3)
