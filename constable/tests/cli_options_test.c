@@ -105,6 +105,10 @@ static void options_require_exact_names(void)
 	struct constable_cli_options options;
 	const char *problem;
 
+	EXPECT_TRUE(parse(2, argv, NULL, &problem) ==
+		    CONSTABLE_CLI_UNKNOWN_OPTION);
+	EXPECT_TRUE(parse(2, argv, &options, NULL) ==
+		    CONSTABLE_CLI_UNKNOWN_OPTION);
 	EXPECT_TRUE(parse(2, argv, &options, &problem) ==
 		    CONSTABLE_CLI_UNKNOWN_OPTION);
 	EXPECT_STRING("-trash", problem);
@@ -112,13 +116,27 @@ static void options_require_exact_names(void)
 
 static void value_options_require_an_argument(void)
 {
-	char *argv[] = { "constable", "-V" };
+	const char *options_requiring_values[] = {
+		"-E", "-H", "-I", "-V", "-d", "-D", "-DD", "-c",
+		"-F", "--fallback", "-R", "--domain-rule",
+		"--approval-socket", "--approval-events", "--approval-uid",
+		"--approval-timeout", "--workers",
+	};
 	struct constable_cli_options options;
 	const char *problem;
+	size_t index;
 
-	EXPECT_TRUE(parse(2, argv, &options, &problem) ==
-		    CONSTABLE_CLI_MISSING_ARGUMENT);
-	EXPECT_STRING("-V", problem);
+	for (index = 0;
+	     index < sizeof(options_requiring_values) /
+			     sizeof(options_requiring_values[0]);
+	     index++) {
+		char *argv[] = { "constable",
+				 (char *)options_requiring_values[index] };
+
+		EXPECT_TRUE(parse(2, argv, &options, &problem) ==
+			    CONSTABLE_CLI_MISSING_ARGUMENT);
+		EXPECT_STRING(options_requiring_values[index], problem);
+	}
 }
 
 static void worker_count_is_bounded(void)
@@ -151,14 +169,59 @@ static void worker_count_is_bounded(void)
 
 static void help_and_positional_separator_are_supported(void)
 {
-	char *help[] = { "constable", "--help" };
-	char *positional[] = { "constable", "--", "-policy.conf" };
+	char *short_help[] = { "constable", "-h" };
+	char *long_help[] = { "constable", "--help" };
+	char *positional[] = {
+		"constable", "first.conf", "--", "-policy.conf", "last.conf",
+	};
+	char *debug[] = { "constable", "-D", "events.log" };
 	struct constable_cli_options options;
 	const char *problem;
 
-	EXPECT_TRUE(parse(2, help, &options, &problem) == CONSTABLE_CLI_HELP);
-	EXPECT_TRUE(parse(3, positional, &options, &problem) == CONSTABLE_CLI_OK);
-	EXPECT_STRING("-policy.conf", options.config_file);
+	EXPECT_TRUE(parse(2, short_help, &options, &problem) ==
+		    CONSTABLE_CLI_HELP);
+	EXPECT_TRUE(parse(2, long_help, &options, &problem) ==
+		    CONSTABLE_CLI_HELP);
+	EXPECT_TRUE(parse(5, positional, &options, &problem) ==
+		    CONSTABLE_CLI_OK);
+	EXPECT_STRING("last.conf", options.config_file);
+	EXPECT_TRUE(parse(3, debug, &options, &problem) == CONSTABLE_CLI_OK);
+	EXPECT_STRING("events.log", options.definition_debug_file);
+	EXPECT_TRUE(!options.debug_events);
+}
+
+static void repeated_policy_options_are_bounded(void)
+{
+	char *fallback_argv[2 * CONSTABLE_MAX_FALLBACK_POLICIES + 2];
+	char *domain_argv[2 * CONSTABLE_MAX_DOMAIN_RULES + 2];
+	struct constable_cli_options options;
+	const char *problem;
+	unsigned int index;
+
+	fallback_argv[0] = "constable";
+	for (index = 0; index < CONSTABLE_MAX_FALLBACK_POLICIES; index++) {
+		fallback_argv[1 + 2 * index] = "-F";
+		fallback_argv[2 + 2 * index] = "exec=baseline_allow";
+	}
+	fallback_argv[1 + 2 * CONSTABLE_MAX_FALLBACK_POLICIES] = "-F";
+	EXPECT_TRUE(parse(2 * CONSTABLE_MAX_FALLBACK_POLICIES + 2,
+			  fallback_argv, &options, &problem) ==
+		    CONSTABLE_CLI_TOO_MANY_FALLBACKS);
+	EXPECT_STRING("-F", problem);
+	EXPECT_TRUE(options.fallback_policy_count ==
+		    CONSTABLE_MAX_FALLBACK_POLICIES);
+
+	domain_argv[0] = "constable";
+	for (index = 0; index < CONSTABLE_MAX_DOMAIN_RULES; index++) {
+		domain_argv[1 + 2 * index] = "-R";
+		domain_argv[2 + 2 * index] = "exec:*:*:*=allow";
+	}
+	domain_argv[1 + 2 * CONSTABLE_MAX_DOMAIN_RULES] = "-R";
+	EXPECT_TRUE(parse(2 * CONSTABLE_MAX_DOMAIN_RULES + 2, domain_argv,
+			  &options, &problem) ==
+		    CONSTABLE_CLI_TOO_MANY_DOMAIN_RULES);
+	EXPECT_STRING("-R", problem);
+	EXPECT_TRUE(options.domain_rule_count == CONSTABLE_MAX_DOMAIN_RULES);
 }
 
 int main(void)
@@ -169,6 +232,7 @@ int main(void)
 	value_options_require_an_argument();
 	worker_count_is_bounded();
 	help_and_positional_separator_are_supported();
+	repeated_policy_options_are_bounded();
 
 	if (failures) {
 		fprintf(stderr, "cli options: %d failure(s)\n", failures);

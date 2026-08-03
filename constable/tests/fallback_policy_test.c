@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
 #include <errno.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "../cli_options.h"
 #include "../fallback_policy.h"
 
 static int failures;
@@ -40,6 +42,9 @@ static void parser_rejects_ambiguous_input(void)
 	overlong[sizeof(overlong) - 2] = 'x';
 	overlong[sizeof(overlong) - 1] = '\0';
 	EXPECT_TRUE(fallback_policy_parse(NULL, &config) == -EINVAL);
+	EXPECT_TRUE(fallback_policy_parse("exec=baseline_deny", NULL) ==
+		    -EINVAL);
+	EXPECT_TRUE(fallback_policy_parse("", &config) == -EINVAL);
 	EXPECT_TRUE(fallback_policy_parse("=baseline_deny", &config) == -EINVAL);
 	EXPECT_TRUE(fallback_policy_parse("exec=", &config) == -EINVAL);
 	EXPECT_TRUE(fallback_policy_parse("exec=baseline_deny=x", &config) ==
@@ -48,15 +53,46 @@ static void parser_rejects_ambiguous_input(void)
 	EXPECT_TRUE(fallback_policy_parse(overlong, &config) == -ENAMETOOLONG);
 }
 
-static void configuration_rejects_duplicate_events(void)
+static void configuration_is_atomic_and_indexed(void)
 {
 	char *specs[] = {
 		"exec=baseline_allow",
 		"exec=online_required",
 	};
+	char *valid[] = {
+		"exec=baseline_deny",
+		"ptrace=online_required",
+	};
+	char *invalid[] = {
+		"exec=baseline_allow",
+		"broken",
+	};
+	const struct fallback_policy_config *config;
 
+	EXPECT_TRUE(fallback_policy_configure(
+			    NULL, CONSTABLE_MAX_FALLBACK_POLICIES + 1) ==
+		    -E2BIG);
 	EXPECT_TRUE(fallback_policy_configure(specs, 2) == -EEXIST);
 	EXPECT_TRUE(fallback_policy_count() == 0);
+	EXPECT_TRUE(fallback_policy_configure(valid, 2) == 0);
+	EXPECT_TRUE(fallback_policy_count() == 2);
+	config = fallback_policy_at(1);
+	EXPECT_TRUE(config != NULL);
+	EXPECT_TRUE(config && !strcmp(config->event, "ptrace"));
+	EXPECT_TRUE(config &&
+		    config->policy == MEDUSA_FALLBACK_ONLINE_REQUIRED);
+	EXPECT_TRUE(fallback_policy_at(2) == NULL);
+	EXPECT_TRUE(fallback_policy_at(UINT_MAX) == NULL);
+
+	EXPECT_TRUE(fallback_policy_configure(invalid, 2) == -EINVAL);
+	EXPECT_TRUE(fallback_policy_count() == 2);
+	EXPECT_TRUE(fallback_policy_at(1) &&
+		    fallback_policy_at(1)->policy ==
+			    MEDUSA_FALLBACK_ONLINE_REQUIRED);
+
+	EXPECT_TRUE(fallback_policy_configure(NULL, 0) == 0);
+	EXPECT_TRUE(fallback_policy_count() == 0);
+	EXPECT_TRUE(fallback_policy_at(0) == NULL);
 }
 
 static void event_lookup_has_explicit_default(void)
@@ -76,7 +112,7 @@ int main(void)
 {
 	parser_accepts_documented_policies();
 	parser_rejects_ambiguous_input();
-	configuration_rejects_duplicate_events();
+	configuration_is_atomic_and_indexed();
 	event_lookup_has_explicit_default();
 
 	if (failures) {
