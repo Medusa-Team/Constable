@@ -9,6 +9,7 @@
 #include "tree.h"
 #include "comm.h"
 #include "string_utils.h"
+#include <mcompiler/checked_math.h>
 #include <sys/param.h>
 
 #include <stdio.h>
@@ -135,18 +136,26 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 {
 	struct event_type_s *e;
 	struct event_names_s *evname;
-	int l;
+	size_t attribute_count;
+	size_t attributes_size;
+	size_t operation_class_size;
 
 	//printf("ZZZ event_from_medusa:\n");
-	for (l = 0; a[l].type != MED_TYPE_END; l++)
+	for (attribute_count = 0;
+	     a[attribute_count].type != MED_TYPE_END;
+	     attribute_count++)
 		;
-	l++;
-
-	l *= sizeof(struct medusa_attribute_s);
+	attribute_count++;
+	if (!checked_size_multiply(attribute_count, sizeof(*a),
+				   &attributes_size) ||
+	    !checked_size_add(sizeof(*e->operation_class), attributes_size,
+			      &operation_class_size))
+		return NULL;
 	e = calloc(1, sizeof(*e));
 	if (e == NULL)
 		return NULL;
-	e->operation_class = calloc(1, sizeof(*e->operation_class) + l);
+	/* Kept separate because event teardown and class ownership are distinct. */
+	e->operation_class = calloc(1, operation_class_size);
 	if (e->operation_class == NULL) {
 		free(e);
 		return NULL;
@@ -161,7 +170,7 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 		free(e);
 		return NULL;
 	}
-	memcpy(e->operation_class->attr, a, l);
+	memcpy(e->operation_class->attr, a, attributes_size);
 	e->operation_class->comm = comm;
 
 	e->op[0] = (struct class_s *)hash_find(&(comm->classes), e->acctype.op_class[0]);

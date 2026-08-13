@@ -128,6 +128,9 @@ static int test_char( char c, char *test )
     } while(0)
 
 
+#define LEX_BUFFER_GROWTH 16
+#define LEX_BUFFER_TERMINATOR 1
+
 static void lex_lex( struct lexstruct_s *l, struct lex_s *out , sym_t in )
 { lexstattab_t *s,*c;
     int oper;
@@ -162,11 +165,11 @@ Recursive:
         if( l->buf_len+1>=l->buf_size )
         {	char *replacement;
             int new_size;
-            if( l->buf_len > INT_MAX-17 )
+            if( l->buf_len > INT_MAX-LEX_BUFFER_GROWTH-LEX_BUFFER_TERMINATOR )
             {	out->sym=eNOMEM;
                 return;
             }
-            new_size=l->buf_len+17;
+            new_size=l->buf_len+LEX_BUFFER_GROWTH+LEX_BUFFER_TERMINATOR;
             replacement=realloc(l->buf,(size_t)new_size);
             if( replacement==NULL )
             {	out->sym=eNOMEM;

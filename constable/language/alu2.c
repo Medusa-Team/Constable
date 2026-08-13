@@ -49,6 +49,11 @@ void r_imm(struct register_s *r)
 		return;
 	n = LEN_ALIGN(r->attr->length);
 	if (n > MAX_REG_SIZE) {
+		/*
+		 * Registers have fixed inline storage. Preserve the historical
+		 * truncation semantics, but expose the effective length so later
+		 * operations cannot read beyond the materialized value.
+		 */
 		runtime("Variable too long");
 		n = LEN_MAX;
 		r->tmp_attr = *r->attr;

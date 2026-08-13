@@ -7,19 +7,13 @@
 
 static inline int checked_size_add(size_t left, size_t right, size_t *result)
 {
-	if (!result || left > SIZE_MAX - right)
-		return 0;
-	*result = left + right;
-	return 1;
+	return result != NULL && !__builtin_add_overflow(left, right, result);
 }
 
 static inline int checked_size_multiply(size_t left, size_t right,
 					size_t *result)
 {
-	if (!result || (right && left > SIZE_MAX / right))
-		return 0;
-	*result = left * right;
-	return 1;
+	return result != NULL && !__builtin_mul_overflow(left, right, result);
 }
 
 #endif /* MCOMPILER_CHECKED_MATH_H */

@@ -327,7 +327,7 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 			error(Out_of_memory);
 			break;
 		}
-		handler->data = malloc(handler_size * sizeof(*handler->data));
+		handler->data = calloc(handler_size, sizeof(*handler->data));
 		if (handler->data == NULL) {
 			free(handler);
 			handler = NULL;
@@ -364,7 +364,7 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 		else {
 			x = lex_getkeyword(op_name, Tcallfunc);
 			if (x == 0) {
-				x = (uintptr_t)malloc(sizeof(uintptr_t));
+				x = (uintptr_t)calloc(1, sizeof(uintptr_t));
 				if (x == 0) {
 					error(Out_of_memory);
 					free(handler->data);
@@ -372,7 +372,6 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 					handler = NULL;
 					break;
 				}
-				*((uintptr_t *)x) = 0;
 				if (lex_addkeyword(op_name, Tcallfunc, x) < 0) {
 					error("Duplicate definition of function %s", op_name);
 					free((void *)x);
@@ -399,12 +398,11 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 			error("NULL function name");
 			break;
 		}
-		x = (uintptr_t)malloc(sizeof(uintptr_t));
+		x = (uintptr_t)calloc(1, sizeof(uintptr_t));
 		if (x == 0) {
 			error(Out_of_memory);
 			break;
 		}
-		*((uintptr_t *)x) = 0;
 		if (lex_addkeyword(op_name, Tcallfunc, x) < 0)
 			free((void *)x);
 		break;

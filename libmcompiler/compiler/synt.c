@@ -10,6 +10,8 @@
 
 #include <mcompiler/checked_math.h>
 
+#define COMPILER_STACK_GROWTH 100
+
 static int patri_term( struct compile_tab_s *tab, sym_t term )
 { int i;
     if( tab->terminal[0]==END )	return(1);	/* vsetky */
@@ -93,7 +95,7 @@ sym_t compiler_compile( compiler_class_t *compiler, sym_t start )
     compiler->exit=0;
     stack=NULL;
     stacklen=0;
-    stacksize=100;
+    stacksize=COMPILER_STACK_GROWTH;
     RESIZE_STACK;
     stack[stacklen++]=start;
     GET_LEX(END);
@@ -118,9 +120,9 @@ sym_t compiler_compile( compiler_class_t *compiler, sym_t start )
             for(i--;i>=0;)
             {	stack[stacklen++]=t[j].stack[i--];
                 if( stacklen>=stacksize )
-                {	if( stacksize>INT_MAX-100 )
+                {	if( stacksize>INT_MAX-COMPILER_STACK_GROWTH )
                     {	free(stack); return(eNOMEM); }
-                    stacksize+=100;
+                    stacksize+=COMPILER_STACK_GROWTH;
                     RESIZE_STACK;
                 }
             }

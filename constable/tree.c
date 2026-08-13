@@ -17,6 +17,8 @@
 
 /* The root's (of the Unified Name Space Tree) name. */
 #define GLOBAL_ROOT_NAME "/"
+#define REGEX_ANCHOR_BYTES 2
+#define STRING_TERMINATOR_BYTES 1
 
 /*
  * Set in medusa config file(s) by primary tree definition:
@@ -184,8 +186,10 @@ static void *regcompile(char *reg)
 		return (void *)1;
 
 	l = strlen(reg);
-	if (!checked_size_add(l, 3, &allocation))
+	if (!checked_size_add(l, REGEX_ANCHOR_BYTES + STRING_TERMINATOR_BYTES,
+			      &allocation))
 		return NULL;
+	/* Policy expressions are input-sized, so keep this temporary off stack. */
 	tmp = malloc(allocation);
 	if (tmp == NULL)
 		return NULL;
