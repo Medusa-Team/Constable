@@ -60,6 +60,7 @@ int rbac_rotate_files(const char *filename, unsigned int generations)
 		errno = EOVERFLOW;
 		return -1;
 	}
+	/* Filenames are caller-sized; heap storage avoids input-driven stack use. */
 	source = malloc(path_size);
 	destination = malloc(path_size);
 	if (!source || !destination) {

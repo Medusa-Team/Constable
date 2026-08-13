@@ -41,7 +41,7 @@ static int open_file( pre_t *p, char *filename )
     if( !checked_size_add(sizeof(struct pre_file_s),filename_length,
                           &allocation) ||
         !checked_size_add(allocation,1,&allocation) ||
-        (f=malloc(allocation))==NULL )
+        (f=calloc(1,allocation))==NULL )
         return(-1);
     f->filename=(char*)(f+1);
     memcpy(f->filename,filename,filename_length+1);
@@ -58,8 +58,6 @@ static int open_file( pre_t *p, char *filename )
     }
     p->meta.col=0; p->meta.row=0;
     f->last_char='\n';
-    f->buf_len=0;
-    f->buf_pos=0;
     f->prev=p->file;
     p->file=f;
     p->meta.filename=p->file->filename;
@@ -84,6 +82,7 @@ static int open_file_relative( pre_t *p, char *filename )
     if( !checked_size_add(prefix_length,filename_length,&allocation) ||
         !checked_size_add(allocation,1,&allocation) )
         return(-1);
+    /* Include paths are input-sized, so keep this temporary off stack. */
     buf=malloc(allocation);
     if( buf==NULL )
         return(-1);
@@ -197,18 +196,16 @@ Retry:
 
 struct compiler_preprocessor_class *f_preprocessor_create( char *filename )
 { pre_t *p;
-    if( (p=malloc(sizeof(pre_t)))==NULL )
+    if( (p=calloc(1,sizeof(pre_t)))==NULL )
         return(NULL);
     p->meta.destroy=(void(*)(struct compiler_preprocessor_class*))
             pre_destroy;
-    p->meta.usecount=0;
     p->meta.get_char=(int(*)(struct compiler_preprocessor_class*,char*))
             pre_get_char;
     if( (p->fifo=dfifo_create(1,64))==NULL )
     {	free(p);
         return(NULL);
     }
-    p->file=NULL;
     if( filename==NULL )
         filename="-";
     if( open_file(p,filename)<0 )

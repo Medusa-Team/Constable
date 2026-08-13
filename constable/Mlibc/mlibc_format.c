@@ -5,13 +5,13 @@
 #include <limits.h>
 #include <stdint.h>
 
-#define ZEROPAD	1
-#define SIGN	2
-#define PLUS	4
-#define SPACE	8
-#define LEFT	16
-#define SPECIAL	32
-#define LARGE	64
+#define ZEROPAD	1	/* pad with zero */
+#define SIGN	2	/* unsigned/signed long */
+#define PLUS	4	/* show plus */
+#define SPACE	8	/* space if plus */
+#define LEFT	16	/* left justified */
+#define SPECIAL	32	/* prefix non-decimal values */
+#define LARGE	64	/* use uppercase digits */
 
 struct format_output {
 	char *buffer;

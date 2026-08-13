@@ -20,9 +20,8 @@ void memrcpy(void *dest, const void *src, size_t n)
 	char *destination = dest;
 	const char *source = src;
 
-	while (n > 0) {
+	while (n > 0)
 		*destination++ = source[--n];
-	}
 }
 
 int object_get_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, int maxlen)

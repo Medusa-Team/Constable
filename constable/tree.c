@@ -193,7 +193,7 @@ static void *regcompile(char *reg)
 	tmp = malloc(allocation);
 	if (tmp == NULL)
 		return NULL;
-	r = malloc(sizeof(regex_t));
+	r = calloc(1, sizeof(*r));
 	if (r == NULL) {
 		free(tmp);
 		return NULL;
@@ -277,11 +277,10 @@ static struct tree_s *create_one_i(struct tree_s *base, char *name, int regexp)
 	    !checked_size_add((size_t)type->size, l, &allocation) ||
 	    !checked_size_add(allocation, 1, &allocation))
 		return NULL;
-	p = malloc(allocation);
+	p = calloc(1, allocation);
 	if (p == NULL)
 		return NULL;
 
-	memset(p, 0, allocation);
 	p->type = type;
 	memcpy(p->name, name, l);
 	p->name[l] = 0;
@@ -345,6 +344,7 @@ static struct tree_s *create_one(struct tree_s *base, char **name)
 	l = (size_t)(n - *name);
 	if (!checked_size_add(l, 1, &allocation))
 		return NULL;
+	/* Path components are input-sized, so keep this temporary off stack. */
 	tmp = malloc(allocation);
 	if (tmp == NULL)
 		return NULL;
@@ -446,6 +446,7 @@ static struct tree_s *find_one2(struct tree_s *base, char **name)
 	length = (size_t)(b - *name);
 	if (!checked_size_add(length, 1, &allocation))
 		return NULL;
+	/* Path components are input-sized, so keep this temporary off stack. */
 	component = malloc(allocation);
 	if (component == NULL)
 		return NULL;

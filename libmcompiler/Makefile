@@ -8,8 +8,12 @@ VERSION = 1.0
 ROOT = 
 DESTDIR = $(ROOT)/usr/local
 CC = gcc
-CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -g -fPIC \
+CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -fPIC \
 	-D_GNU_SOURCE
+DEBUG ?= 0
+ifeq ($(DEBUG),1)
+override CFLAGS += -g
+endif
 LD = ld
 LDFLAGS =
 AR = ar

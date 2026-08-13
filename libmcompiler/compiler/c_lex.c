@@ -160,7 +160,7 @@ void clex_gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t 
     if( len<0 ||
         !checked_size_add(sizeof(val_t),(size_t)len,&allocation) ||
         !checked_size_add(allocation,1,&allocation) ||
-        (v=malloc(allocation))==NULL )
+        (v=calloc(1,allocation))==NULL )
     {	*sym=eNOMEM;
         return;
     }
@@ -278,7 +278,7 @@ void clex_gen_lex_numb( char *buf, int blen, sym_t *sym, uintptr_t *data, sym_t 
         else goto Err;
     }
     if( *buf!=0 )	goto Err;
-    if( (v=malloc(sizeof(val_t)+len))==NULL )
+    if( (v=calloc(1,sizeof(val_t)+len))==NULL )
     {	*sym=eNOMEM;
         return;
     }
@@ -306,7 +306,7 @@ void clex_gen_lex_string( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t
     if( len<0 ||
         !checked_size_add(sizeof(val_t),(size_t)len,&allocation) ||
         !checked_size_add(allocation,1,&allocation) ||
-        (v=malloc(allocation))==NULL )
+        (v=calloc(1,allocation))==NULL )
     {	*sym=eNOMEM;
         return;
     }
@@ -333,7 +333,7 @@ void clex_gen_lex_apos( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t w
     if( len<0 ||
         !checked_size_add(sizeof(val_t),(size_t)len,&allocation) ||
         !checked_size_add(allocation,1,&allocation) ||
-        (v=malloc(allocation))==NULL )
+        (v=calloc(1,allocation))==NULL )
     {	*sym=eNOMEM;
         return;
     }

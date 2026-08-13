@@ -3,8 +3,11 @@
 # Legacy optional addon; it is not part of the default Constable build.
 
 CC= gcc
-#CCOPTS= -Wall -O2
-CCOPTS= -Wall -ggdb
+CCOPTS= -Wall
+DEBUG ?= 0
+ifeq ($(DEBUG),1)
+CCOPTS += -ggdb
+endif
 LDOPTS=
 AS= as
 ASOPTS=

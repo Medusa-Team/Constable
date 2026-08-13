@@ -39,7 +39,10 @@ struct event_mask_s {
 	char bitmap[8];
 };
 
-/* Allocated by event_type_add(). */
+/*
+ * Allocated by event_type_add(). The operation class is a separate,
+ * variable-length allocation because its attribute layout arrives at runtime.
+ */
 struct event_type_s {
 	struct hash_ent_s	hashent;
 	struct event_names_s	*evname;
@@ -93,6 +96,7 @@ struct event_handler_s {
 	 */
 	int (*handler)(struct comm_buffer_s *, struct event_handler_s *, struct event_context_s *);
 	struct object_s	*local_vars;
+	/* Heap-backed bytecode owned by the handler registration. */
 	uintptr_t	*data;
 };
 

@@ -195,6 +195,7 @@ int object_add_vs(struct object_s *o, int n, vs_t *vs)
 #include <stdio.h>
 void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 {
+	unsigned char byte;
 	int i, j, bp;
 	struct medusa_attribute_s *a;
 	char buf[1024];
@@ -268,16 +269,11 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 						buf[bp] = 'a';
 						break;
 					default:
-						{
-							unsigned char byte =
-								(unsigned char)buf[bp];
-
-							buf[bp++] = '\\';
-							buf[bp++] = 'x';
-							string_hex_byte(buf + bp,
-									byte);
-							bp++;
-						}
+						byte = (unsigned char)buf[bp];
+						buf[bp++] = '\\';
+						buf[bp++] = 'x';
+						string_hex_byte(buf + bp, byte);
+						bp++;
 					}
 				}
 				bp++;

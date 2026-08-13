@@ -283,11 +283,7 @@ static struct comm_buffer_s *malloc_buf(int size)
 		free(b);
 		return NULL;
 	}
-	b->len = 0;
-	b->want = 0;
 	b->p_comm_buf = b->comm_buf;
-	b->completed = NULL;
-	b->to_wake.first = b->to_wake.last = NULL;
 
 	return b;
 }

@@ -7,9 +7,13 @@ DESTDIR = $(PREFIX)
 BINDIR = $(DESTDIR)/bin
 CC = gcc
 #CC = clang
-CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -g -DRBAC \
+CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -DRBAC \
 	-I$(CURDIR)/../libmcompiler -D_GNU_SOURCE
 override CFLAGS += -I$(CURDIR)/../include
+DEBUG ?= 0
+ifeq ($(DEBUG),1)
+override CFLAGS += -g
+endif
 LD = ld
 #LDFLAGS = ../libmcompiler/libmcompiler.a -lefence
 LDFLAGS = ../libmcompiler/libmcompiler.a -pthread

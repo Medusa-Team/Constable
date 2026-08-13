@@ -151,6 +151,8 @@ struct space_s *space_create(char *name, bool primary)
 	char **errstr;
 	struct space_s *t;
 	int a;
+	size_t allocation;
+	size_t name_length;
 
 	if (name != NULL) {
 		if (space_find(name) != NULL) {
@@ -161,14 +163,21 @@ struct space_s *space_create(char *name, bool primary)
 	} else
 		name = ANON_SPACE_NAME;
 
-	t = malloc(sizeof(struct space_s)+strlen(name)+1);
+	name_length = strlen(name);
+	if (!checked_size_add(sizeof(*t), name_length, &allocation) ||
+	    !checked_size_add(allocation, 1, &allocation)) {
+		errstr = (char **)pthread_getspecific(errstr_key);
+		*errstr = Out_of_memory;
+		return NULL;
+	}
+	t = malloc(allocation);
 	if (t == NULL) {
 		errstr = (char **) pthread_getspecific(errstr_key);
 		*errstr = Out_of_memory;
 		return NULL;
 	}
 
-	memcpy(t->name, name, strlen(name) + 1);	/* declared space */
+	memcpy(t->name, name, name_length + 1);	/* declared space */
 	for (a = 0; a < NR_ACCESS_TYPES; a++)
 		vs_clear(t->vs[a]);
 	vs_clear(t->vs_id);	/* the space is not defined yet */

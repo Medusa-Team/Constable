@@ -270,9 +270,8 @@ struct compiler_lex_class *lex_create( lexstattab_t *stattab, struct compiler_pr
 { struct lexstruct_s *l;
     if( stattab==NULL || pre==NULL || pre->filename==NULL )
         return(NULL);
-    if( (l=malloc(sizeof(struct lexstruct_s)))==NULL )
+    if( (l=calloc(1,sizeof(struct lexstruct_s)))==NULL )
         return(NULL);
-    l->meta.usecount=0;
     l->meta.destroy=(void(*)(struct compiler_lex_class*))lex_destroy;
     l->meta.lex=(void(*)(struct compiler_lex_class*,struct lex_s*,sym_t))
             lex_lex;

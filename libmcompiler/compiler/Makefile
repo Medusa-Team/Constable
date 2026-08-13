@@ -3,8 +3,12 @@
 
 THIS = objects.a
 INCDIR = ..
-CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -g -fPIC \
+CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -fPIC \
 	-D_GNU_SOURCE
+DEBUG ?= 0
+ifeq ($(DEBUG),1)
+override CFLAGS += -g
+endif
 
 OBJECTS = compiler.o synt.o special_out.o lex.o \
 	  nul_preprocesor.o gcc_preprocesor.o \

@@ -34,14 +34,13 @@ struct role_s * rbac_role_add( char *name )
         *errstr=Out_of_memory;
         return(NULL);
     }
-    if( (n=malloc(sizeof(struct role_s)))==NULL )
+    if( (n=calloc(1,sizeof(struct role_s)))==NULL )
     {
         pthread_rwlock_unlock(&rbac_roles_lock);
         char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
         return(NULL);
     }
-    memset(n,0,sizeof(struct role_s));
     //	for(x=0;i<NR_ACCESS_TYPES;x++)
     //		vs_clear(n->vs[x]);
     if (string_copy(n->name, sizeof(n->name), name)) {
@@ -139,7 +138,7 @@ int rbac_add_ua( struct user_s *user, struct role_s *role )
             return(-1);
         }
     }
-    if( (n=malloc(sizeof(struct user_assignment_s)))==NULL )
+    if( (n=calloc(1,sizeof(struct user_assignment_s)))==NULL )
     {	char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
         return(-1);
@@ -261,6 +260,7 @@ int rbac_set_hierarchy( struct role_s *sup_role, struct role_s *sub_role )
 { struct hierarchy_s *n,*h;
     if( sup_role==NULL || sub_role==NULL )
         return(-1);
+    /* Reject duplicate edges and cycles before mutating either role list. */
     for(h=sup_role->sub;h!=NULL;h=h->next_sub)
         if( h->sub_role==sub_role )
             return(-1);
@@ -269,7 +269,7 @@ int rbac_set_hierarchy( struct role_s *sup_role, struct role_s *sub_role )
         *errstr=Out_of_memory;
         return(-1);
     }
-    if( (n=malloc(sizeof(struct hierarchy_s)))==NULL )
+    if( (n=calloc(1,sizeof(struct hierarchy_s)))==NULL )
     {	char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
         return(-1);
@@ -319,13 +319,11 @@ int rbac_role_add_perm( struct role_s *role, int which, struct space_s *t )
         if( (*p)->n < 8 )
             break;
     if( *p==NULL )
-    {	if( (*p=malloc(sizeof(struct permission_assignment_s)))==NULL )
+    {	if( (*p=calloc(1,sizeof(struct permission_assignment_s)))==NULL )
         {	char **errstr = (char**) pthread_getspecific(errstr_key);
             *errstr=Out_of_memory;
             return(-1);
         }
-        (*p)->next=NULL;
-        (*p)->n=0;
     }
     (*p)->access[(*p)->n]=which;
     (*p)->space[(*p)->n]=t;
