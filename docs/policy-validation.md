@@ -23,6 +23,27 @@ ignored so a kernel can extend the inventory without breaking older
 validators. Constable prints individual diagnostics followed by event and
 class summaries.
 
+The event inventory fields have the following meanings:
+
+- `event` is the stable symbolic policy name; `subject_class` and
+  `object_class` name its two operands.
+- `event_bit` is the index used by Medusa's trigger bitmap. The reserved
+  not-triggered value represents an event that is always evaluated.
+- `enforcement` is `active` when a live hook can enforce the event and
+  `announced` when only its protocol schema is present.
+- `trigger` identifies the operand whose state change invokes the event, or
+  `always`; `trigger_bitmap` identifies the operand whose bitmap contains the
+  enable bit, or `none` for an always-triggered event.
+- `delegation` states whether the hook may sleep while consulting userspace.
+- `fallback` is the currently installed degraded-decision policy. The remaining
+  counters report evaluation, cache, delegation, verdict-source, timeout, and
+  invalid-reply outcomes for operational diagnosis.
+
+For each class, `announced_events` counts registered event schemas that refer to
+the class, while `enforced_events` counts the subset backed by active hooks.
+These counters explain why a class may be protocol-visible but still report
+`enforcement=announced`.
+
 `-V` is compatible with normal operation and with offline `-t`, `-T`, and `-I`
 workflows. It does not modify policy or kernel state.
 

@@ -97,6 +97,7 @@ static void documented_options_are_parsed(void)
 	EXPECT_TRUE(options.worker_count == 8);
 	EXPECT_STRING("constable.conf", options.config_file);
 	EXPECT_TRUE(problem == NULL);
+	constable_cli_options_destroy(&options);
 }
 
 static void options_require_exact_names(void)
@@ -190,26 +191,26 @@ static void help_and_positional_separator_are_supported(void)
 	EXPECT_TRUE(!options.debug_events);
 }
 
-static void repeated_policy_options_are_bounded(void)
+static void fallback_options_grow_with_the_configuration(void)
 {
-	char *fallback_argv[2 * CONSTABLE_MAX_FALLBACK_POLICIES + 2];
+	enum { FALLBACK_COUNT = 96 };
+	char *fallback_argv[2 * FALLBACK_COUNT + 1];
 	char *domain_argv[2 * CONSTABLE_MAX_DOMAIN_RULES + 2];
-	struct constable_cli_options options;
+	struct constable_cli_options options = { 0 };
 	const char *problem;
 	unsigned int index;
 
 	fallback_argv[0] = "constable";
-	for (index = 0; index < CONSTABLE_MAX_FALLBACK_POLICIES; index++) {
+	for (index = 0; index < FALLBACK_COUNT; index++) {
 		fallback_argv[1 + 2 * index] = "-F";
 		fallback_argv[2 + 2 * index] = "exec=baseline_allow";
 	}
-	fallback_argv[1 + 2 * CONSTABLE_MAX_FALLBACK_POLICIES] = "-F";
-	EXPECT_TRUE(parse(2 * CONSTABLE_MAX_FALLBACK_POLICIES + 2,
-			  fallback_argv, &options, &problem) ==
-		    CONSTABLE_CLI_TOO_MANY_FALLBACKS);
-	EXPECT_STRING("-F", problem);
-	EXPECT_TRUE(options.fallback_policy_count ==
-		    CONSTABLE_MAX_FALLBACK_POLICIES);
+	EXPECT_TRUE(parse(2 * FALLBACK_COUNT + 1, fallback_argv, &options,
+			  &problem) == CONSTABLE_CLI_OK);
+	EXPECT_TRUE(options.fallback_policy_count == FALLBACK_COUNT);
+	EXPECT_STRING("exec=baseline_allow",
+		      options.fallback_policy_specs[FALLBACK_COUNT - 1]);
+	constable_cli_options_destroy(&options);
 
 	domain_argv[0] = "constable";
 	for (index = 0; index < CONSTABLE_MAX_DOMAIN_RULES; index++) {
@@ -222,6 +223,7 @@ static void repeated_policy_options_are_bounded(void)
 		    CONSTABLE_CLI_TOO_MANY_DOMAIN_RULES);
 	EXPECT_STRING("-R", problem);
 	EXPECT_TRUE(options.domain_rule_count == CONSTABLE_MAX_DOMAIN_RULES);
+	constable_cli_options_destroy(&options);
 }
 
 int main(void)
@@ -232,7 +234,7 @@ int main(void)
 	value_options_require_an_argument();
 	worker_count_is_bounded();
 	help_and_positional_separator_are_supported();
-	repeated_policy_options_are_bounded();
+	fallback_options_grow_with_the_configuration();
 
 	if (failures) {
 		fprintf(stderr, "cli options: %d failure(s)\n", failures);

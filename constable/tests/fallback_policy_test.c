@@ -69,9 +69,7 @@ static void configuration_is_atomic_and_indexed(void)
 	};
 	const struct fallback_policy_config *config;
 
-	EXPECT_TRUE(fallback_policy_configure(
-			    NULL, CONSTABLE_MAX_FALLBACK_POLICIES + 1) ==
-		    -E2BIG);
+	EXPECT_TRUE(fallback_policy_configure(NULL, 1) == -EINVAL);
 	EXPECT_TRUE(fallback_policy_configure(specs, 2) == -EEXIST);
 	EXPECT_TRUE(fallback_policy_count() == 0);
 	EXPECT_TRUE(fallback_policy_configure(valid, 2) == 0);

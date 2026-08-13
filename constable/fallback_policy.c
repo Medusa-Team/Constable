@@ -1,13 +1,12 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "cli_options.h"
 #include "fallback_policy.h"
 
-static struct fallback_policy_config
-	configured_policies[CONSTABLE_MAX_FALLBACK_POLICIES];
+static struct fallback_policy_config *configured_policies;
 static unsigned int configured_policy_count;
 
 static int parse_policy(const char *name, uint8_t *policy)
@@ -44,26 +43,36 @@ int fallback_policy_parse(const char *spec, struct fallback_policy_config *out)
 
 int fallback_policy_configure(char *const specs[], unsigned int count)
 {
-	struct fallback_policy_config
-		next[CONSTABLE_MAX_FALLBACK_POLICIES];
+	struct fallback_policy_config *next = NULL;
 	unsigned int index;
 	unsigned int previous;
 	int error;
 
-	if (count > CONSTABLE_MAX_FALLBACK_POLICIES)
-		return -E2BIG;
+	if (count && !specs)
+		return -EINVAL;
+	if (count) {
+		next = calloc(count, sizeof(*next));
+		if (!next)
+			return -ENOMEM;
+	}
 	for (index = 0; index < count; index++) {
 		error = fallback_policy_parse(specs[index], &next[index]);
 		if (error)
-			return error;
+			goto free_next;
 		for (previous = 0; previous < index; previous++)
-			if (!strcmp(next[previous].event, next[index].event))
-				return -EEXIST;
+			if (!strcmp(next[previous].event, next[index].event)) {
+				error = -EEXIST;
+				goto free_next;
+			}
 	}
-	memcpy(configured_policies, next,
-	       count * sizeof(configured_policies[0]));
+	free(configured_policies);
+	configured_policies = next;
 	configured_policy_count = count;
 	return 0;
+
+free_next:
+	free(next);
+	return error;
 }
 
 unsigned int fallback_policy_count(void)

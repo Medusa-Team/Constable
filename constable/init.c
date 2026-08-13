@@ -284,15 +284,16 @@ int main(int argc, char *argv[])
 
 	parse_result = constable_cli_parse(argc, argv, &options,
 					   &problem_argument);
-	if (parse_result == CONSTABLE_CLI_HELP)
+	if (parse_result == CONSTABLE_CLI_HELP) {
+		constable_cli_options_destroy(&options);
 		return usage(argv[0]);
+	}
 	if (parse_result != CONSTABLE_CLI_OK) {
 		if (parse_result == CONSTABLE_CLI_MISSING_ARGUMENT)
 			fprintf(stderr, "Option %s requires an argument\n",
 				problem_argument);
-		else if (parse_result == CONSTABLE_CLI_TOO_MANY_FALLBACKS)
-			fprintf(stderr, "Too many fallback policies (maximum %u)\n",
-				CONSTABLE_MAX_FALLBACK_POLICIES);
+		else if (parse_result == CONSTABLE_CLI_OUT_OF_MEMORY)
+			fprintf(stderr, "Cannot allocate command-line policy options\n");
 		else if (parse_result == CONSTABLE_CLI_TOO_MANY_DOMAIN_RULES)
 			fprintf(stderr, "Too many domain rules (maximum %u)\n",
 				CONSTABLE_MAX_DOMAIN_RULES);
@@ -303,18 +304,21 @@ int main(int argc, char *argv[])
 		else
 			fprintf(stderr, "Unknown option: %s\n", problem_argument);
 		usage(argv[0]);
+		constable_cli_options_destroy(&options);
 		return 2;
 	}
 	if (fallback_policy_configure(options.fallback_policy_specs,
 				      options.fallback_policy_count) < 0) {
 		fprintf(stderr,
 			"Invalid fallback policy; expected event=baseline_allow, event=baseline_deny, or event=online_required without duplicate events\n");
+		constable_cli_options_destroy(&options);
 		return 2;
 	}
 	if (domain_rule_configure(options.domain_rule_specs,
 				  options.domain_rule_count) < 0) {
 		fprintf(stderr,
 			"Invalid domain rule; expected event:subject:object:selector=allow|deny with numeric keys or * wildcards and no duplicate keys\n");
+		constable_cli_options_destroy(&options);
 		return 2;
 	}
 	if (approval_configure(options.approval_socket, options.approval_events,
@@ -322,10 +326,12 @@ int main(int argc, char *argv[])
 			       options.approval_timeout) < 0) {
 		fprintf(stderr,
 			"Invalid approval configuration; socket, events, and uid are required together\n");
+		constable_cli_options_destroy(&options);
 		return 2;
 	}
 	if (worker_pool_configure(options.worker_count) < 0) {
 		fprintf(stderr, "Cannot configure worker pool\n");
+		constable_cli_options_destroy(&options);
 		return 2;
 	}
 
@@ -339,6 +345,7 @@ int main(int argc, char *argv[])
 		options.policy_historical_event_test_comm;
 	policy_inspection_file = options.policy_inspection_file;
 	policy_validation_file = options.policy_validation_file;
+	constable_cli_options_destroy(&options);
 
 	if (options.tree_debug_file)
 		debug_fd = comm_open_skip_stdfds(options.tree_debug_file,

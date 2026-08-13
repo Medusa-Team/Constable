@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
 #include <errno.h>
+#include <limits.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,6 +54,49 @@ worker_count_argument(int argc, char *const argv[], int *index,
 	}
 	*value = (unsigned int)parsed;
 	return CONSTABLE_CLI_OK;
+}
+
+static enum constable_cli_result
+fallback_argument(int argc, char *const argv[], int *index,
+		  struct constable_cli_options *options,
+		  const char **problem_argument)
+{
+	char **resized;
+	char *value;
+	size_t allocation;
+	unsigned int capacity;
+	enum constable_cli_result result;
+
+	result = option_argument(argc, argv, index, &value, problem_argument);
+	if (result != CONSTABLE_CLI_OK)
+		return result;
+	if (options->fallback_policy_count ==
+	    options->fallback_policy_capacity) {
+		if (options->fallback_policy_capacity > UINT_MAX / 2U)
+			return CONSTABLE_CLI_OUT_OF_MEMORY;
+		capacity = options->fallback_policy_capacity ?
+			options->fallback_policy_capacity * 2U : 8U;
+		if (__builtin_mul_overflow((size_t)capacity, sizeof(*resized),
+				   &allocation))
+			return CONSTABLE_CLI_OUT_OF_MEMORY;
+		resized = realloc(options->fallback_policy_specs, allocation);
+		if (!resized)
+			return CONSTABLE_CLI_OUT_OF_MEMORY;
+		options->fallback_policy_specs = resized;
+		options->fallback_policy_capacity = capacity;
+	}
+	options->fallback_policy_specs[options->fallback_policy_count++] = value;
+	return CONSTABLE_CLI_OK;
+}
+
+void constable_cli_options_destroy(struct constable_cli_options *options)
+{
+	if (!options)
+		return;
+	free(options->fallback_policy_specs);
+	options->fallback_policy_specs = NULL;
+	options->fallback_policy_count = 0;
+	options->fallback_policy_capacity = 0;
 }
 
 enum constable_cli_result
@@ -158,19 +203,10 @@ constable_cli_parse(int argc, char *const argv[],
 		}
 		if (option_is(argument, "-F") ||
 		    option_is(argument, "--fallback")) {
-			if (options->fallback_policy_count >=
-			    CONSTABLE_MAX_FALLBACK_POLICIES) {
-				*problem_argument = argument;
-				return CONSTABLE_CLI_TOO_MANY_FALLBACKS;
-			}
-			result = option_argument(
-				argc, argv, &index,
-				&options->fallback_policy_specs[
-					options->fallback_policy_count],
-				problem_argument);
+			result = fallback_argument(argc, argv, &index, options,
+					   problem_argument);
 			if (result != CONSTABLE_CLI_OK)
 				return result;
-			options->fallback_policy_count++;
 			continue;
 		}
 		if (option_is(argument, "-R") ||

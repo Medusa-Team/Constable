@@ -1,9 +1,9 @@
 # Constable architecture
 
-Constable is the protocol-v3 reference authorization server for Medusa. This
+Constable is the protocol-v4 reference authorization server for Medusa. This
 document maps the implementation boundaries that must remain visible while the
-kernel and protocol evolve. It describes the current code, not an aspirational
-protocol-v4 design.
+kernel and protocol evolve. The historical protocol-v3 boundary remains
+documented separately for compatibility work.
 
 ## Startup and configuration
 
@@ -30,7 +30,7 @@ the authorization server enforces.
 | Layer | Primary files | Responsibility |
 |---|---|---|
 | Process setup | `init.c`, `cli_options.c` | Parse startup state, initialize modules, select offline or live operation |
-| Transport and protocol | `mcp/mcp.c`, `mcp/validate.c` | Read and write protocol-v3 messages, validate dynamic definitions, correlate fetch/update traffic |
+| Transport and protocol | `mcp/mcp.c`, `mcp/validate.c` | Read and write framed protocol-v4 messages, validate dynamic definitions, correlate request traffic, and install policy generations |
 | Connection scheduling | `comm.c`, `comm_buf.c` | Own worker queues, buffers, read/write threads, and resumable execution state |
 | Dynamic schema | `class.c`, `object.c`, `event.c` | Represent kernel-announced classes, attributes, events, and decision contexts |
 | Policy model | `tree.c`, `space.c`, `vs.c` | Build the unified namespace tree, resolve virtual-space membership, and calculate access masks |
@@ -45,16 +45,27 @@ frames.
 
 ## Connection and decision lifecycle
 
-Protocol v3 starts with a greeting, then dynamically announces classes,
-attributes, and events. Definitions are connection-local because their byte
-layout and byte order come from that connection. After the schema is complete,
-Constable resolves monitoring masks and executes the optional policy `_init`
-handler. Only then does it send READY.
+Protocol v4 starts with feature negotiation, then the kernel dynamically
+announces classes, attributes, and events using fixed-width little-endian
+frames. Definitions remain connection-local because object layouts are supplied
+by that connection. Constable stages a complete policy generation after the
+schema is complete, resolves monitoring masks, and executes the optional policy
+`_init` handler. Only then does it send READY.
+
+Wire identifiers are grouped by lifecycle so packet traces remain legible and
+each family has room to grow. Message values `1`–`15` are negotiation,
+`16`–`31` schema inventory, `32`–`47` policy installation, and `48` onward
+runtime traffic; `255` is the generic error. TLV identifiers use the same broad
+families: negotiation starts at `1`, schema at `16`, policy and decision values
+at `32`, and structured error details at `48`. Gaps are reserved rather than
+implicitly reusable. Feature values are independent bit flags because peers
+negotiate an arbitrary supported subset.
 
 Configured fallback policies live in `fallback_policy.c`. MCP resolves their
 symbolic event names only after the kernel has announced its connection-local
-schema. It queues exact, fixed-size policy frames before READY; policy
-compilation and normal decision evaluation do not own this handshake state.
+schema. It queues bounded policy frames before READY; policy compilation and
+normal decision evaluation do not own this handshake state. The configured set
+is allocated atomically and may cover the entire announced event inventory.
 
 For a decision:
 
@@ -115,6 +126,6 @@ pending request is alive.
 5. For protocol or policy-semantic changes, also run the matching Linux/QEMU
    scenario and update the protocol or policy documentation.
 
-Protocol-v4 work should introduce a new framed transport behind the existing
-connection/decision boundary. It must not silently reinterpret protocol-v3
+Protocol-v4 frames remain behind the existing connection/decision boundary.
+Compatibility changes must not silently reinterpret historical protocol-v3
 native structures.

@@ -4,7 +4,6 @@
 
 #include <stdbool.h>
 
-#define CONSTABLE_MAX_FALLBACK_POLICIES 64
 #define CONSTABLE_MAX_DOMAIN_RULES 256
 
 enum constable_cli_result {
@@ -12,7 +11,7 @@ enum constable_cli_result {
 	CONSTABLE_CLI_HELP,
 	CONSTABLE_CLI_UNKNOWN_OPTION,
 	CONSTABLE_CLI_MISSING_ARGUMENT,
-	CONSTABLE_CLI_TOO_MANY_FALLBACKS,
+	CONSTABLE_CLI_OUT_OF_MEMORY,
 	CONSTABLE_CLI_TOO_MANY_DOMAIN_RULES,
 	CONSTABLE_CLI_INVALID_WORKER_COUNT,
 };
@@ -31,8 +30,9 @@ struct constable_cli_options {
 	char *approval_uid;
 	char *approval_timeout;
 	unsigned int worker_count;
-	char *fallback_policy_specs[CONSTABLE_MAX_FALLBACK_POLICIES];
+	char **fallback_policy_specs;
 	unsigned int fallback_policy_count;
+	unsigned int fallback_policy_capacity;
 	char *domain_rule_specs[CONSTABLE_MAX_DOMAIN_RULES];
 	unsigned int domain_rule_count;
 	bool medusa_config_file_explicit;
@@ -45,5 +45,6 @@ enum constable_cli_result
 constable_cli_parse(int argc, char *const argv[],
 		    struct constable_cli_options *options,
 		    const char **problem_argument);
+void constable_cli_options_destroy(struct constable_cli_options *options);
 
 #endif /* CONSTABLE_CLI_OPTIONS_H */

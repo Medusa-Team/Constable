@@ -130,6 +130,10 @@ enum medusa_feature {
 #define MEDUSA_POLICY_DOMAIN_ANY		(~0ULL)
 #define MEDUSA_POLICY_SELECTOR_ANY		(~0ULL)
 
+/*
+ * A POLICY_EVENT may carry an array of these rules.  Reserved bytes must be
+ * zero.  Exact keys take precedence over wildcard keys.
+ */
 struct medusa_domain_rule {
 	__le64 subject_domain;
 	__le64 object_domain;

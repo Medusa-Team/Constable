@@ -45,11 +45,31 @@ constable/constable -F exec=baseline_deny \
 ```
 
 Accepted policies are `baseline_allow`, `baseline_deny`, and
-`online_required`. Constable resolves each event against the schema announced
-by that kernel connection, queues every policy before READY, and refuses
-startup if an event is unknown. A kernel without the optional protocol-v3
-fallback command rejects the write, so a configured policy cannot silently
-downgrade to the old behavior.
+`online_required`:
+
+- `baseline_allow` preserves normal bitmap monitoring. An unmonitored operation
+  is allowed from the installed baseline; a monitored operation is delegated
+  while the authorization server is healthy and falls back to allow when it is
+  unavailable.
+- `baseline_deny` installs an authoritative denial. It forces the event into
+  the decision path and denies it without weakening that denial based on server
+  availability or a userspace answer.
+- `online_required` forces the event into the decision path and requires a
+  valid answer from a healthy authorization server. Missing, unhealthy,
+  timed-out, or invalid communication fails closed.
+
+Constable resolves each configured event against the schema announced by that
+kernel connection, queues the complete policy before READY, and refuses startup
+if an event is unknown. Policy storage grows with the announced configuration;
+there is no lower userspace-only event-count ceiling.
+
+Fallback policy applies to every Medusa event type, including state-creating
+`get*` events such as `getfile` and `getprocess`. Those events establish the
+security context used by later access checks, so excluding them would silently
+restore allow/inheritance behavior precisely when the authorization server is
+unavailable. Configure them deliberately: `baseline_deny` can prevent an object
+or process from acquiring a usable Medusa context, while `online_required`
+makes that initialization depend on a live server.
 
 Non-sleepable hooks can use generation-scoped domain rules:
 
