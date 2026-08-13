@@ -133,6 +133,7 @@ int init_all(char *filename)
 		if (m->init_rules && m->init_rules(m) < 0)
 			return -1;
 	}
+	comm_seal_buf_var_data();
 
 	return 0;
 }

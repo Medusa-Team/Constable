@@ -154,6 +154,7 @@ struct comm_buffer_s *comm_buf_alloc_var_data(struct comm_buffer_s *buffer);
 
 void *comm_new_array(int size);
 int comm_alloc_buf_var_data(int size);
+void comm_seal_buf_var_data(void);
 
 struct comm_s *comm_new(char *name, int user_size);
 struct comm_s *comm_find(char *name);

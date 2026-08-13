@@ -30,9 +30,13 @@ int comm_nr_connections;
 static struct comm_s *first_comm;
 static struct comm_s *last_comm;
 
-static int comm_var_data_size; /**< TODO: is manipulation with this global variable
-				 * thread and/or per buffer safe?
-				 */
+/*
+ * Policy compilation assigns offsets while Constable is still single-threaded.
+ * init_all() seals the layout before comm_do() starts readers and workers; from
+ * that point every thread only reads the immutable size.
+ */
+static int comm_var_data_size;
+static bool comm_var_data_sealed;
 
 static void *policy_reload_loop(void *argument)
 {
@@ -77,12 +81,18 @@ int comm_alloc_buf_var_data(int size)
 {
 	int r;
 
-	if (size < 0 || comm_var_data_size > INT_MAX - size)
+	if (comm_var_data_sealed || size < 0 ||
+	    comm_var_data_size > INT_MAX - size)
 		return -1;
 	r = comm_var_data_size;
 	comm_var_data_size += size;
 
 	return r;
+}
+
+void comm_seal_buf_var_data(void)
+{
+	comm_var_data_sealed = true;
 }
 
 struct comm_buffer_s *comm_buf_alloc_var_data(struct comm_buffer_s *b)

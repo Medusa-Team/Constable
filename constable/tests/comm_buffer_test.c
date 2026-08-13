@@ -14,6 +14,7 @@ char *Out_of_memory = "Out of memory";
 
 static int failures;
 static int checks;
+static int ready_answers;
 static struct event_handler_s init_handler;
 
 #define EXPECT_TRUE(condition, description)					\
@@ -40,6 +41,7 @@ int runtime(const char *format, ...)
 int mcp_ready_answer(struct comm_s *comm)
 {
 	(void)comm;
+	ready_answers++;
 	return 0;
 }
 
@@ -68,8 +70,16 @@ static void test_resize_state_transfer(void)
 	struct comm_buffer_s *buffer;
 	struct comm_buffer_s *resized;
 	struct comm_buffer_s *another;
+	struct comm_buffer_s *waiting;
 	struct stack_s *original_stack;
 	int lock_result;
+	int mutex_result;
+
+	mutex_result = pthread_mutex_init(&comm.state_lock, NULL);
+	EXPECT_TRUE(mutex_result == 0,
+		    "the connection state mutex is initialized");
+	if (mutex_result)
+		return;
 
 	buffer = comm_buf_get(16, &comm);
 	EXPECT_TRUE(buffer != NULL, "a communication buffer is allocated");
@@ -88,7 +98,19 @@ static void test_resize_state_transfer(void)
 	buffer->execute.my_comm_buff = buffer;
 	original_stack = buffer->execute.stack;
 	function_init = &init_handler;
+	buffer->init_handler = function_init;
+	comm.version = 4;
 	comm.init_buffer = buffer;
+	waiting = comm_buf_get(8, &comm);
+	EXPECT_TRUE(waiting != NULL, "a waiting request buffer is allocated");
+	if (!waiting) {
+		buffer->bfree(buffer);
+		pthread_mutex_destroy(&comm.state_lock);
+		function_init = NULL;
+		return;
+	}
+	EXPECT_TRUE(comm_buf_to_queue(&buffer->to_wake, waiting) == 0,
+		    "a request can wait for initialization");
 
 	resized = comm_buf_resize(buffer, 64);
 	EXPECT_TRUE(resized != NULL && resized->size >= 64,
@@ -117,6 +139,11 @@ static void test_resize_state_transfer(void)
 		    "resize transfers the in-progress execution stack");
 	EXPECT_TRUE(comm.init_buffer == resized,
 		    "resize updates the connection's initialization owner");
+	EXPECT_TRUE(comm_buf_peek_first(&resized->to_wake) == waiting &&
+		    comm_buf_peek_last(&resized->to_wake) == waiting,
+		    "resize transfers each initialization waiter exactly once");
+	EXPECT_TRUE(ready_answers == 0,
+		    "releasing the replaced allocation does not complete initialization");
 	lock_result = pthread_mutex_trylock(&resized->lock);
 	EXPECT_TRUE(lock_result == 0,
 		    "the resized buffer owns a valid unlocked mutex");
@@ -131,7 +158,15 @@ static void test_resize_state_transfer(void)
 		another->bfree(another);
 	}
 	resized->bfree(resized);
+	EXPECT_TRUE(ready_answers == 1,
+		    "releasing the final initialization owner sends READY once");
+	EXPECT_TRUE(comm_buf_from_queue_locked(&comm_todo) == waiting &&
+		    comm_buf_from_queue_locked(&comm_todo) == NULL,
+		    "the transferred waiter is scheduled exactly once");
+	waiting->bfree(waiting);
+	comm.init_buffer = NULL;
 	function_init = NULL;
+	pthread_mutex_destroy(&comm.state_lock);
 }
 
 static void test_resize_validation(void)
@@ -139,7 +174,11 @@ static void test_resize_validation(void)
 	struct comm_s comm = {
 		.open_counter = 9,
 	};
-	struct comm_buffer_s *buffer = comm_buf_get(16, &comm);
+	struct comm_buffer_s *buffer;
+
+	EXPECT_TRUE(pthread_mutex_init(&comm.state_lock, NULL) == 0,
+		    "the validation connection mutex is initialized");
+	buffer = comm_buf_get(16, &comm);
 
 	EXPECT_TRUE(buffer != NULL, "validation buffer is allocated");
 	if (!buffer)
@@ -154,6 +193,7 @@ static void test_resize_validation(void)
 		    "resize rejects a corrupt length/capacity invariant");
 	buffer->len = 8;
 	buffer->bfree(buffer);
+	pthread_mutex_destroy(&comm.state_lock);
 }
 
 int main(void)

@@ -93,7 +93,7 @@ dynamic_buffer_test: dynamic_buffer_test.c ../../libmcompiler/libmcompiler.a
 		dynamic_buffer_test.c ../../libmcompiler/libmcompiler.a
 
 comm_buffer_test: comm_buffer_test.c ../comm_buf.c ../language/execute_stack.c
-	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ comm_buffer_test.c \
+	$(CC) $(CFLAGS) -std=c11 -I.. -I../../include -o $@ comm_buffer_test.c \
 		../comm_buf.c ../language/execute_stack.c -pthread
 
 register_bounds_test: register_bounds_test.c ../language/alu2.c \

@@ -120,8 +120,8 @@ static void transfer_buffer_state(struct comm_buffer_s *destination,
 
 	destination->comm = source->comm;
 	destination->open_counter = source->open_counter;
-	if (source->comm && source->comm->init_buffer == source)
-		source->comm->init_buffer = destination;
+	if (destination->comm->init_buffer == source)
+		destination->comm->init_buffer = destination;
 	destination->user1 = source->user1 == source ?
 			     destination :
 			     rebase_buffer_pointer(source, destination,
@@ -132,6 +132,11 @@ static void transfer_buffer_state(struct comm_buffer_s *destination,
 						   source->user2);
 	destination->user_data = source->user_data;
 
+	/*
+	 * The destination was allocated with an unused execution stack. Move the
+	 * live execution state to it, then leave that unused stack on the source so
+	 * comm_buf_free() returns exactly one stack for each buffer allocation.
+	 */
 	destination->execute = source->execute;
 	source->execute.stack = replacement_stack;
 	if (destination->execute.my_comm_buff == source)
@@ -162,10 +167,14 @@ static void transfer_buffer_state(struct comm_buffer_s *destination,
 
 	destination->event = source->event;
 	destination->init_handler = source->init_handler;
+	/*
+	 * The destination assumes responsibility for every request waiting for the
+	 * source. Emptying the source queue prevents comm_buf_free() from scheduling
+	 * those requests a second time while it releases the old allocation.
+	 */
 	destination->to_wake.first = source->to_wake.first;
 	destination->to_wake.last = source->to_wake.last;
 	source->to_wake.first = NULL;
-	source->to_wake.last = NULL;
 	destination->waiting = source->waiting;
 	destination->len = source->len;
 	destination->want = source->want;
@@ -192,10 +201,18 @@ struct comm_buffer_s *comm_buf_resize(struct comm_buffer_s *b, int size)
 		if (!n)
 			return NULL;
 
+		/*
+		 * Readers use state_lock while following comm->init_buffer and adding
+		 * requests to its to_wake queue. Hold the same lock across the owner
+		 * replacement, queue transfer, and release of the old allocation so a
+		 * reader can never enqueue through a stale buffer pointer.
+		 */
+		pthread_mutex_lock(&b->comm->state_lock);
 		transfer_buffer_state(n, b);
 		if (n->len)
 			memcpy(n->comm_buf, b->comm_buf, (size_t)n->len);
 		b->bfree(b);
+		pthread_mutex_unlock(&n->comm->state_lock);
 		return n;
 	}
 
