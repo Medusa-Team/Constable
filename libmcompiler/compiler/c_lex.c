@@ -150,7 +150,7 @@ lexstattab_t clex_states[]={
     {LSC_aposbs,NULL,clex_rules_aposbs,NULL,clex_gen_lex_apos},
     {LSC_comment,clex_comment_op,clex_rules_comm,NULL,NULL},
     {LSC_comment_line,NULL,clex_rules_comml,NULL,NULL},
-    {END,NULL,NULL,NULL,NULL}
+    LEX_STATE_TABLE_END
 };
 
 void clex_gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )

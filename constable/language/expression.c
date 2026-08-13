@@ -178,5 +178,5 @@ struct compile_tab_s expression[] = {
 	{S_exp2, {END}, {SV15, S_exp2d, END}},
 	{S_exp2d, {T|',', END}, {T|',', oDEL, SV15, S_exp2d, END}},
 	{S_exp2d, {END}, {END}},
-	{END, {END}, {END}}
+	COMPILE_TABLE_END
 };

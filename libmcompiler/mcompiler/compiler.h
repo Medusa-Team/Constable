@@ -51,6 +51,9 @@ struct compile_tab_s	{
 #define	NEXTLINE 0xfffe	/* Pokracovanie pravidla z predchadzajuceho riadku */
 #define	END	0xffff	/* Koniec */
 
+/* Fully initialize grammar sentinels under -Wmissing-field-initializers. */
+#define COMPILE_TABLE_END { END, { END }, { END } }
+
 /* niektore chyby, ktore generuje compiler */
 #define	eNOMEM	(E|0x0fff)	/* fatalna chyba - nedostatok pamati */
 #define	eLEXERR	(E|0x0ffe)	/* fatalna chyba lexikalneho analyzatora */

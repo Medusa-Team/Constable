@@ -74,5 +74,5 @@ struct compile_tab_s value[] = {
 	{SV7, {END}, {S_exp, oS2C, oNEW, T_id, OUT_VAL, END}},
 	{SV8, {T_id, END}, {T_id, oLDI, OUT_VAL, oLTS, oALI, T_id, OUT_VAL, END}},
 	{SV8, {END}, {S_exp, oALI, T_id, OUT_VAL, END}},
-	{END, {END}, {END}}
+	COMPILE_TABLE_END
 };

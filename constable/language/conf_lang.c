@@ -114,7 +114,7 @@ struct compile_tab_s conf_lang[] = {
 	{S6, {Tby, END}, {Tby, T_id, Pprogstart, S_exp, oRET, Ptreereg, T|';', START, END}},
 	{S6, {END}, {Ptreereg, T|';', START, END}},
 
-	{END, {END}, {END}}
+	COMPILE_TABLE_END
 };
 
 static struct event_handler_s *handler;
@@ -327,6 +327,7 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 			error(Out_of_memory);
 			break;
 		}
+		/* Bytecode grows with realloc(), so it cannot share handler storage. */
 		handler->data = calloc(handler_size, sizeof(*handler->data));
 		if (handler->data == NULL) {
 			free(handler);

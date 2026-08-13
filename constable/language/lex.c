@@ -215,7 +215,7 @@ lexstattab_t lex_tab[] = {
 	{LS_comment, NULL, rules_comment, NULL, NULL},
 	{LS_comment2, NULL, rules_comment2, NULL, NULL},
 	{LS_comment_line, NULL, rules_comment_line, NULL, NULL},
-	{END, NULL, NULL, NULL, NULL}
+	LEX_STATE_TABLE_END
 };
 
 struct str_archive_s {

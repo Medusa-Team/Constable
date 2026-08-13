@@ -18,6 +18,11 @@
 /* !!!!!!!!!!!!!!!!!!!!!! */
 typedef	int32_t	s_int32_t;
 typedef	int64_t	s_int64_t;
+/*
+ * Mixed signed/unsigned operations historically use the C usual arithmetic
+ * conversions. Giving both macro operands that resulting type makes the
+ * conversion explicit and keeps -Wsign-compare useful elsewhere.
+ */
 typedef u_int32_t uu_int32_t;
 typedef u_int32_t us_int32_t;
 typedef u_int32_t su_int32_t;

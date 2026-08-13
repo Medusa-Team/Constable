@@ -137,7 +137,7 @@ struct compile_tab_s rbac_tab[]={
 {R2,{T_id,END},{T_id,oADDSUBROLE,R23,T|';',R2,END}},
 {R23,{T|',',END},{T|',',T_id,oADDSUBROLE,R23,END}},
 {R23,{T|';',END},{END}},
-{END,{END},{END}}
+COMPILE_TABLE_END
 };
 
 
