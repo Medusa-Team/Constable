@@ -80,7 +80,12 @@ EOF
 		echo "policy runtime: invalid arithmetic unexpectedly allowed: $expression" >&2
 		exit 1
 	fi
-	grep -Fq 'Runtime error : Invalid integer operation' "$temporary.arithmetic"
-	grep -Fq 'Policy self-test did not return FORCE_ALLOW' "$temporary.arithmetic"
+	if ! grep -Fq 'Runtime error : Invalid integer operation' "$temporary.arithmetic" ||
+	   ! grep -Fq 'Policy self-test did not return FORCE_ALLOW' "$temporary.arithmetic"
+	then
+		echo "policy runtime: unexpected failure for $expression" >&2
+		cat "$temporary.arithmetic" >&2
+		exit 1
+	fi
 done
 echo "policy runtime: arithmetic errors in nested calls deny and stop execution"
