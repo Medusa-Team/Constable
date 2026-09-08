@@ -13,17 +13,20 @@
 #include "../space.h"
 #include "../generic.h"
 #include "../comm.h"
+#include "../string_utils.h"
 #include <unistd.h>
 
 static BUILDIN_FUNC(cmd_constable_pid)
 {
+	(void)e;
+	(void)getarg;
 	*((uintptr_t *)(ret->data)) = (uintptr_t)getpid();
 	return 0;
 }
 
 static BUILDIN_FUNC(cmd_hex)
 {
-	long long d;
+	unsigned long long d;
 	struct register_s r;
 	struct object_s o;
 
@@ -34,7 +37,7 @@ static BUILDIN_FUNC(cmd_hex)
 		return -1;
 	}
 	object_get_val(r2o(&r, &o), r.attr, &d, sizeof(d));
-	sprintf(ret->data, "%llx", d);
+	snprintf(ret->data, MAX_REG_SIZE, "%llx", d);
 	if (getarg(e, &r)) {
 		runtime("hex(): too many arguments");
 		return -1;
@@ -44,25 +47,33 @@ static BUILDIN_FUNC(cmd_hex)
 
 static BUILDIN_FUNC(cmd_comm)
 {
+	(void)getarg;
 	ret->attr = &(execute_attr_str);
-	strncpy(ret->data, e->my_comm_buff->comm->name, MAX_REG_SIZE);
+	if (string_copy(ret->data, MAX_REG_SIZE,
+			e->my_comm_buff->comm->name)) {
+		runtime("comm(): connection name is too long");
+		return -1;
+	}
 	return 0;
 }
 
 static BUILDIN_FUNC(cmd_operation)
 {
+	(void)getarg;
 	obj_to_reg(ret, &(e->c->operation), NULL);
 	return 0;
 }
 
 static BUILDIN_FUNC(cmd_subject)
 {
+	(void)getarg;
 	obj_to_reg(ret, &(e->c->subject), NULL);
 	return 0;
 }
 
 static BUILDIN_FUNC(cmd_object)
 {
+	(void)getarg;
 	obj_to_reg(ret, &(e->c->object), NULL);
 	return 0;
 }
@@ -82,7 +93,10 @@ static BUILDIN_FUNC(cmd_nameof)
 		runtime("nameof: argument must be kobject");
 		return -1;
 	}
-	strncpy(ret->data, o->attr.name, MAX_REG_SIZE);
+	if (string_copy(ret->data, MAX_REG_SIZE, o->attr.name)) {
+		runtime("nameof(): object name is too long");
+		return -1;
+	}
 	return 0;
 }
 
@@ -267,7 +281,10 @@ static BUILDIN_FUNC(cmd_primaryspace)
 		runtime("primaryspace: %s", *errstr);
 		return -1;
 	}
-	strncpy(ret->data, space->name, MAX_REG_SIZE);
+	if (string_copy(ret->data, MAX_REG_SIZE, space->name)) {
+		runtime("primaryspace(): space name is too long");
+		return -1;
+	}
 	return 0;
 }
 
@@ -328,5 +345,3 @@ int cmds_init(void)
 	lex_addkeyword("sizeof", Tbuildin, (uintptr_t)cmd_sizeof);
 	return 0;
 }
-
-

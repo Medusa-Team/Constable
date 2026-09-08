@@ -8,6 +8,8 @@
 #include "event.h"
 #include "tree.h"
 #include "comm.h"
+#include "string_utils.h"
+#include <mcompiler/checked_math.h>
 #include <sys/param.h>
 
 #include <stdio.h>
@@ -27,7 +29,7 @@ int event_mask_clear2(struct event_mask_s *e)
 
 int event_mask_setbit(struct event_mask_s *e, int b)
 {
-	if (b < 0 || b >= sizeof(e->bitmap)*8)
+	if (b < 0 || (size_t)b >= sizeof(e->bitmap)*8)
 		return -1;
 	setbit(e->bitmap, b);
 	return 0;
@@ -35,7 +37,7 @@ int event_mask_setbit(struct event_mask_s *e, int b)
 
 int event_mask_clrbit(struct event_mask_s *e, int b)
 {
-	if (b < 0 || b >= sizeof(e->bitmap)*8)
+	if (b < 0 || (size_t)b >= sizeof(e->bitmap)*8)
 		return -1;
 	clrbit(e->bitmap, b);
 	return 0;
@@ -92,6 +94,23 @@ int event_mask_sub(struct event_mask_s *e, struct event_mask_s *f)
 static pthread_mutex_t events_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct event_names_s *events;
 
+int event_names_visit(event_name_visitor_t visitor, void *argument)
+{
+	struct event_names_s *event;
+	int result = 0;
+
+	if (!visitor)
+		return -1;
+	pthread_mutex_lock(&events_lock);
+	for (event = events; event; event = event->next) {
+		result = visitor(event, argument);
+		if (result)
+			break;
+	}
+	pthread_mutex_unlock(&events_lock);
+	return result;
+}
+
 int event_free_all_events(struct comm_s *comm)
 {
 	struct event_names_s *e;
@@ -99,6 +118,7 @@ int event_free_all_events(struct comm_s *comm)
 	pthread_mutex_lock(&events_lock);
 	for (e = events; e != NULL; e = e->next) {
 		if (e->events[comm->conn] != NULL) {
+			free(e->events[comm->conn]->operation_class);
 			free(e->events[comm->conn]);
 			e->events[comm->conn] = NULL;
 		}
@@ -116,30 +136,42 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 {
 	struct event_type_s *e;
 	struct event_names_s *evname;
-	int l;
+	size_t attribute_count;
+	size_t attributes_size;
+	size_t operation_class_size;
 
 	//printf("ZZZ event_from_medusa:\n");
-	for (l = 0; a[l].type != MED_TYPE_END; l++)
+	for (attribute_count = 0;
+	     a[attribute_count].type != MED_TYPE_END;
+	     attribute_count++)
 		;
-	l++;
-
-	l *= sizeof(struct medusa_attribute_s);
-	e = malloc(sizeof(struct event_type_s) + l);
+	attribute_count++;
+	if (!checked_size_multiply(attribute_count, sizeof(*a),
+				   &attributes_size) ||
+	    !checked_size_add(sizeof(*e->operation_class), attributes_size,
+			      &operation_class_size))
+		return NULL;
+	e = calloc(1, sizeof(*e));
 	if (e == NULL)
 		return NULL;
+	/* Kept separate because event teardown and class ownership are distinct. */
+	e->operation_class = calloc(1, operation_class_size);
+	if (e->operation_class == NULL) {
+		free(e);
+		return NULL;
+	}
 	memcpy(&(e->acctype), m, sizeof(struct medusa_acctype_s));
-	memset(&(e->operation_class), 0, sizeof(e->operation_class));
-	//	e->operation_class.next=NULL;
-	//	e->operation_class.cinfo_offset=e->operation_class.cinfo_size=0;
-	//	e->operation_class.cinfo_mask=0;
-	//	e->operation_class.set=NULL;
-	//	e->operation_class.event_offset=e->operation_class.event_size=0;
-	//	e->operation_class.m.classid=0;
-	e->operation_class.m.size = e->acctype.size;
-	e->operation_class.m.name[0] = 0;
-	strncpy(e->operation_class.m.name, e->acctype.name, MIN(MEDUSA_CLASSNAME_MAX, MEDUSA_OPNAME_MAX));
-	memcpy(e->operation_class.attr, a, l);
-	e->operation_class.comm = comm;
+	e->operation_class->m.size = e->acctype.size;
+	e->operation_class->m.name[0] = 0;
+	if (string_copy_field(e->operation_class->m.name,
+			      sizeof(e->operation_class->m.name),
+			      e->acctype.name, sizeof(e->acctype.name))) {
+		free(e->operation_class);
+		free(e);
+		return NULL;
+	}
+	memcpy(e->operation_class->attr, a, attributes_size);
+	e->operation_class->comm = comm;
 
 	e->op[0] = (struct class_s *)hash_find(&(comm->classes), e->acctype.op_class[0]);
 	if (e->op[0] == NULL)
@@ -193,7 +225,8 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 			debug_def_out(debug_def_arg, "-");
 
 		debug_def_out(debug_def_arg, " (");
-		sprintf(buf, "%d", (e->acctype.actbit)&0x00ff);
+		snprintf(buf, sizeof(buf), "%d",
+			 (e->acctype.actbit) & 0x00ff);
 		debug_def_out(debug_def_arg, buf);
 		debug_def_out(debug_def_arg, ")");
 
@@ -207,7 +240,8 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 			debug_def_out(debug_def_arg, " subject's event");
 
 		debug_def_out(debug_def_arg, " {\n");
-		attr_print(&(e->operation_class.attr[0]), debug_def_out, debug_def_arg);
+		attr_print(&(e->operation_class->attr[0]), debug_def_out,
+			   debug_def_arg);
 		debug_def_out(debug_def_arg, "}\n");
 
 		pthread_mutex_unlock(&debug_def_lock);
@@ -216,6 +250,7 @@ struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s
 	/* allocate a new event descriptor, if it doesn't exist yet */
 	evname = event_type_find_name(e->acctype.name, true);
 	if (evname == NULL) {
+		free(e->operation_class);
 		free(e);
 		return NULL;
 	}
@@ -263,7 +298,11 @@ struct event_names_s *event_type_find_name(char *name, bool alloc_new)
 	for (i = 0; i < EHH_LISTS; i++)
 		e->handlers_hash[i] = NULL;
 	e->name = (char *)(e + 1);
-	strcpy(e->name, name);
+	if (string_copy(e->name, strlen(name) + 1, name)) {
+		free(e->events);
+		free(e);
+		return NULL;
+	}
 
 	pthread_mutex_lock(&events_lock);
 	e->next = events;
@@ -323,37 +362,9 @@ int register_event_handler(struct event_handler_s *h, struct event_names_s *evna
 		vs_add(object_vs, l->object_vs);
 	// else	vs_clear(l->object_vs);
 
-	printf("Zaregistrovane %p [%s]\n", l, l->evname->name);
 	return 0;
 }
 
-
-int evaluate_result(int old, int new)
-{
-	/*
-	 * if( new==RESULT_FORCE_ALLOW && (old==RESULT_ERR || old==RESULT_ALLOW) )
-	 *	return new;
-	 * else if( new==RESULT_DENY )
-	 *	return new;
-	 * else if( new==RESULT_FAKE_ALLOW && old!=RESULT_DENY )
-	 *	return new;
-	 * else if( new==RESULT_ALLOW && old==RESULT_ERR )
-	 *	return new;
-	 */
-
-	if (new != RESULT_ALLOW && new != RESULT_DENY
-		&& new != RESULT_FAKE_ALLOW && new != RESULT_FORCE_ALLOW)
-		new = RESULT_DENY;
-
-	if (old == RESULT_DENY || new == RESULT_DENY)
-		return RESULT_DENY;
-	if (old == RESULT_ERR || new == RESULT_FAKE_ALLOW)
-		return new;
-	if (old == RESULT_ALLOW && new == RESULT_FORCE_ALLOW)
-		return new;
-
-	return old;
-}
 
 static int do_event_handler(struct comm_buffer_s *cb)
 {
@@ -537,30 +548,6 @@ static int do_event_list(struct comm_buffer_s *cb)
 			cb->do_phase = 0;
 		}
 	}
-
-	//#if 0
-	//if (function_debug != NULL) {
-	//	int result;
-
-	//	/* FIXME: uff */
-	//	strcpy(cb->context.operation.attr.name, "operation");
-	//	strcpy(cb->context.subject.attr.name, "subject");
-	//	strcpy(cb->context.object.attr.name, "object");
-
-	//	if (cb->do_phase == 0 || cb->do_phase == 4) {
-	//		result = cb->context.result;
-	//		i = h->handler(cb, function_debug, &(cb->context));
-	//		if (i == 0)
-	//			cb->context.result = evaluate_result(result, cb->context.result);
-	//		else
-	//			cb->context.result = result;
-	//	if (i > 0) {
-	//		cb->do_phase = 4;
-	//		return i;
-	//	}
-	//	}
-	//}
-	//#endif
 
 	cb->do_phase = 0;		/* len tak pre istotu */
 

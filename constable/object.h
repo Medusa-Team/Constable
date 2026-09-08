@@ -12,7 +12,11 @@
 #include "vs.h"
 #include "hash.h"
 #include "access_types.h"
-#include <byteswap.h>
+#ifndef bswap_16
+#define bswap_16(value) __builtin_bswap16(value)
+#define bswap_32(value) __builtin_bswap32(value)
+#define bswap_64(value) __builtin_bswap64(value)
+#endif
 
 struct event_mask_s;
 
@@ -65,7 +69,7 @@ struct class_s {
 					  */
 	} subject;
 	struct medusa_class_s m;
-	struct medusa_attribute_s attr[0];
+	struct medusa_attribute_s attr[];
 };
 
 /*
@@ -107,6 +111,9 @@ struct object_s {
 #define OBJECT_FLAG_CHENDIAN	0x10	/* big<->little */
 
 struct class_names_s *get_class_by_name(char *name);
+typedef int (*class_name_visitor_t)(const struct class_names_s *class_name,
+				    void *argument);
+int class_names_visit(class_name_visitor_t visitor, void *argument);
 struct medusa_attribute_s *get_attribute(struct class_s *c, char *name);
 int class_free_all_clases(struct comm_s *comm);
 struct class_s *add_class(struct comm_s *comm, struct medusa_class_s *mc, struct medusa_attribute_s *a);
@@ -158,4 +165,3 @@ void class_print(struct class_s *c, void(*out)(int arg, char *), int arg);
 void object_print(struct object_s *o, void(*out)(int arg, char *), int arg);
 
 #endif /* _OBJECT_H */
-

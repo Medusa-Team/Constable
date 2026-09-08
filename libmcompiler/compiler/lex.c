@@ -6,7 +6,7 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdlib.h>
+#include <limits.h>
 #include <mcompiler/lex.h>
 
 static lexstattab_t *find_end_of_tab( lexstattab_t *t )
@@ -117,7 +117,7 @@ static int test_char( char c, char *test )
     switch( l->c )				\
 {	case 'a':     l->c='\a'; break;	\
     case 'b':     l->c='\b'; break;	\
-    case 'e':     l->c='\e'; break; \
+    case 'e':     l->c='\033'; break; \
     case 'f':     l->c='\f'; break;	\
     case 'n':     l->c='\n'; break;	\
     case 'r':     l->c='\r'; break;	\
@@ -127,6 +127,9 @@ static int test_char( char c, char *test )
     }					\
     } while(0)
 
+
+#define LEX_BUFFER_GROWTH 16
+#define LEX_BUFFER_TERMINATOR 1
 
 static void lex_lex( struct lexstruct_s *l, struct lex_s *out , sym_t in )
 { lexstattab_t *s,*c;
@@ -160,12 +163,20 @@ Recursive:
             l->meta.col=l->pre->col; l->meta.row=l->pre->row;
         }
         if( l->buf_len+1>=l->buf_size )
-        {	l->buf_size=l->buf_len+1+16;
-            l->buf=realloc(l->buf,l->buf_size);
-            if( l->buf==NULL )
+        {	char *replacement;
+            int new_size;
+            if( l->buf_len > INT_MAX-LEX_BUFFER_GROWTH-LEX_BUFFER_TERMINATOR )
             {	out->sym=eNOMEM;
                 return;
             }
+            new_size=l->buf_len+LEX_BUFFER_GROWTH+LEX_BUFFER_TERMINATOR;
+            replacement=realloc(l->buf,(size_t)new_size);
+            if( replacement==NULL )
+            {	out->sym=eNOMEM;
+                return;
+            }
+            l->buf=replacement;
+            l->buf_size=new_size;
         }
         if( oper )
         {	l->buf[l->buf_len]=l->c;
@@ -257,13 +268,18 @@ Err:	out->sym=eLEXERR;
 
 struct compiler_lex_class *lex_create( lexstattab_t *stattab, struct compiler_preprocessor_class *pre )
 { struct lexstruct_s *l;
-    if( (l=malloc(sizeof(struct lexstruct_s)))==NULL )
+    if( stattab==NULL || pre==NULL || pre->filename==NULL )
         return(NULL);
-    l->meta.usecount=0;
+    if( (l=calloc(1,sizeof(struct lexstruct_s)))==NULL )
+        return(NULL);
     l->meta.destroy=(void(*)(struct compiler_lex_class*))lex_destroy;
     l->meta.lex=(void(*)(struct compiler_lex_class*,struct lex_s*,sym_t))
             lex_lex;
     l->meta.filename=strdup(pre->filename);
+    if( l->meta.filename==NULL )
+    {	free(l);
+        return(NULL);
+    }
     l->meta.col=pre->col;
     l->meta.row=pre->row;
     l->add_tab=lex_add_tab;
@@ -277,4 +293,3 @@ struct compiler_lex_class *lex_create( lexstattab_t *stattab, struct compiler_pr
     {	dec_use(l->pre);	l->pre=NULL;	}
     return((struct compiler_lex_class*)l);
 }
-

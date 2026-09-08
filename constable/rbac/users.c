@@ -8,6 +8,7 @@
 
 #include "rbac.h"
 #include "../language/error.h"
+#include "../string_utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
@@ -32,7 +33,13 @@ struct user_s * rbac_user_add( char *name, uid_t uid )
     }
     memset(n,0,sizeof(struct user_s));
     //	vs_clear(n->vs);
-    strncpy(n->name,name,sizeof(n->name));
+    if (string_copy(n->name, sizeof(n->name), name)) {
+        char **errstr = (char **)pthread_getspecific(errstr_key);
+
+        *errstr = Name_too_long;
+        free(n);
+        return NULL;
+    }
     n->uid=uid;
     n->ua=NULL;
     n->nr_roles=0;
@@ -64,4 +71,3 @@ struct user_s * rbac_user_find_by_uid( uid_t uid )
             return(p);
     return(NULL);
 }
-

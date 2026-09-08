@@ -9,6 +9,7 @@
 #include <sys/types.h>
 #include "../constable.h"
 #include "../medusa_object.h"
+#include "../string_utils.h"
 #include "execute.h"
 #include "language.h"
 #include <sys/param.h>
@@ -17,13 +18,26 @@
 /* !!!!!!!!!!!!!!!!!!!!!! */
 typedef	int32_t	s_int32_t;
 typedef	int64_t	s_int64_t;
+/*
+ * Mixed signed/unsigned operations historically use the C usual arithmetic
+ * conversions. Giving both macro operands that resulting type makes the
+ * conversion explicit and keeps -Wsign-compare useful elsewhere.
+ */
+typedef u_int32_t uu_int32_t;
+typedef u_int32_t us_int32_t;
+typedef u_int32_t su_int32_t;
+typedef s_int32_t ss_int32_t;
+typedef u_int64_t uu_int64_t;
+typedef u_int64_t us_int64_t;
+typedef u_int64_t su_int64_t;
+typedef s_int64_t ss_int64_t;
 
 #define TYPE_u	MED_TYPE_UNSIGNED
 #define TYPE_s	MED_TYPE_SIGNED
 #define TYPE_b	MED_TYPE_BITMAP
 
 #define OPbb(name, op) \
-static void r_##name##_bb(struct register_s *v, struct register_s *d) \
+static int r_##name##_bb(struct register_s *v, struct register_s *d) \
 {							\
 	int i, n, nv, nd;				\
 							\
@@ -38,6 +52,7 @@ static void r_##name##_bb(struct register_s *v, struct register_s *d) \
 							\
 	for (i = 0; i < n; i++)				\
 		((unsigned char *)(v->data))[i] op(((unsigned char *)(d->data))[i]); \
+	return 0; \
 }
 
 OPbb(add, |=)
@@ -47,7 +62,7 @@ OPbb(or, |=)
 OPbb(xor, ^=)
 
 #define OPbx(name, t2, op) \
-static void r_##name##_b##t2(struct register_s *v, struct register_s *d) \
+static int r_##name##_b##t2(struct register_s *v, struct register_s *d) \
 {							\
 	t2##_int32_t i, nv;				\
 							\
@@ -55,10 +70,11 @@ static void r_##name##_b##t2(struct register_s *v, struct register_s *d) \
 	nv = 8 * v->attr->length;			\
 	if (i > nv) {					\
 		runtime("Cannot set bit %d of %d-bit long bitfield", i, nv); \
-		return;					\
+		return -1;					\
 	}						\
 							\
 	op((char *)(v->data), i);			\
+	return 0; \
 }
 
 OPbx(add, s, setbit)
@@ -66,8 +82,51 @@ OPbx(add, u, setbit)
 OPbx(sub, s, clrbit)
 OPbx(sub, u, clrbit)
 
-#define OPi(name, t1, t2, t3, op) \
-static void r_##name##_##t1##t2(struct register_s *v, struct register_s *d) \
+/* Reject invalid arithmetic before evaluating a C expression. The overflow
+ * builtins check the mathematical result against the declared result type,
+ * including mixed signed/unsigned inputs and the signed result of subtraction.
+ */
+#define NEGATIVE_u(value) 0
+#define NEGATIVE_s(value) ((value) < 0)
+#define INTEGER_MAX_u32 UINT32_MAX
+#define INTEGER_MAX_s32 INT32_MAX
+#define INTEGER_MAX_u64 UINT64_MAX
+#define INTEGER_MAX_s64 INT64_MAX
+#define CHECK_add(t1, t2, t3, bits) \
+	__builtin_add_overflow(x, y, &checked_result)
+#define CHECK_sub(t1, t2, t3, bits) \
+	__builtin_sub_overflow(x, y, &checked_result)
+#define CHECK_mul(t1, t2, t3, bits) \
+	__builtin_mul_overflow(x, y, &checked_result)
+#define BAD_DIVISOR(t1, t2, bits) \
+	(y == 0 || (TYPE_##t1 == MED_TYPE_SIGNED && \
+	 TYPE_##t2 == MED_TYPE_SIGNED && \
+	 x == (t1##_int##bits##_t)INT##bits##_MIN && \
+	 y == (t2##_int##bits##_t)-1))
+#define CHECK_div(t1, t2, t3, bits) \
+	(BAD_DIVISOR(t1, t2, bits) || \
+	 __builtin_add_overflow(x / y, 0, &checked_result))
+#define CHECK_mod(t1, t2, t3, bits) \
+	(BAD_DIVISOR(t1, t2, bits) || \
+	 __builtin_add_overflow(x % y, 0, &checked_result))
+#define BAD_SHIFT(t2, bits) \
+	(NEGATIVE_##t2(y) || (uint64_t)y >= bits)
+#define CHECK_shl(t1, t2, t3, bits) \
+	(BAD_SHIFT(t2, bits) || NEGATIVE_##t1(x) || \
+	 (uint64_t)x > ((uint64_t)INTEGER_MAX_##t3##bits >> y) || \
+	 (checked_result = (t3##_int##bits##_t)(x << y), 0))
+#define CHECK_shr(t1, t2, t3, bits) \
+	(BAD_SHIFT(t2, bits) || \
+	 (checked_result = (t3##_int##bits##_t)(x >> y), 0))
+#define CHECK_and(t1, t2, t3, bits) \
+	(checked_result = (t3##_int##bits##_t)(x & y), 0)
+#define CHECK_or(t1, t2, t3, bits) \
+	(checked_result = (t3##_int##bits##_t)(x | y), 0)
+#define CHECK_xor(t1, t2, t3, bits) \
+	(checked_result = (t3##_int##bits##_t)(x ^ y), 0)
+
+#define OPi(name, t1, t2, t3) \
+static int r_##name##_##t1##t2(struct register_s *v, struct register_s *d) \
 {							\
 	int nv, nd, n;					\
 							\
@@ -82,22 +141,37 @@ static void r_##name##_##t1##t2(struct register_s *v, struct register_s *d) \
 	if (n == 1) {					\
 		t1##_int32_t x;				\
 		t2##_int32_t y;				\
+		t3##_int32_t checked_result; \
 							\
 		x = ((t1##_int32_t *)(v->data))[0];	\
 		y = ((t2##_int32_t *)(d->data))[0];	\
-		((t3##_int32_t *)(v->data))[0] = (t3##_int32_t)(op); \
+		if (CHECK_##name(t1, t2, t3, 32)) { \
+			runtime("Invalid integer operation " #name); \
+			return -1; \
+		} \
+		((t3##_int32_t *)(v->data))[0] = checked_result; \
 	} else {					\
 		t1##_int64_t x;				\
 		t2##_int64_t y;				\
+		t3##_int64_t checked_result; \
 							\
 		x = ((t1##_int64_t *)(v->data))[0];	\
 		y = ((t2##_int64_t *)(d->data))[0];	\
-		((t3##_int64_t *)(v->data))[0] = (t3##_int64_t)(op); \
+		if (CHECK_##name(t1, t2, t3, 64)) { \
+			runtime("Invalid integer operation " #name); \
+			return -1; \
+		} \
+		((t3##_int64_t *)(v->data))[0] = checked_result; \
 	}						\
+	return 0; \
 }
 
+/* Relational operators always produce a 32-bit unsigned Boolean (0 or 1).
+ * Operand width selects the comparison width, not the result width. R_push()
+ * serializes only tmp_attr.length bytes; later arithmetic extends that Boolean.
+ */
 #define ROPi(name, t1, t2, op)				\
-static void r_##name##_##t1##t2(struct register_s *v, struct register_s *d) \
+static int r_##name##_##t1##t2(struct register_s *v, struct register_s *d) \
 {							\
 	int nv, nd, n;					\
 							\
@@ -110,24 +184,25 @@ static void r_##name##_##t1##t2(struct register_s *v, struct register_s *d) \
 	v->tmp_attr.type = MED_TYPE_UNSIGNED;		\
 	v->attr = &(v->tmp_attr);			\
 	if (n == 1) {					\
-		t1##_int32_t x;				\
-		t2##_int32_t y;				\
+		t1##t2##_int32_t x;			\
+		t1##t2##_int32_t y;			\
 							\
 		x = ((t1##_int32_t *)(v->data))[0];	\
 		y = ((t2##_int32_t *)(d->data))[0];	\
 		((u_int32_t *)(v->data))[0] = (u_int32_t)(op); \
 	} else {					\
-		t1##_int64_t x;				\
-		t2##_int64_t y;				\
+		t1##t2##_int64_t x;			\
+		t1##t2##_int64_t y;			\
 							\
 		x = ((t1##_int64_t *)(v->data))[0];	\
 		y = ((t2##_int64_t *)(d->data))[0];	\
 		((u_int32_t *)(v->data))[0] = (u_int32_t)(op); \
 	}						\
+	return 0; \
 }
 
 #define ROPb(name, op) \
-static void r_##name##_bb(struct register_s *v, struct register_s *d) \
+static int r_##name##_bb(struct register_s *v, struct register_s *d) \
 {							\
 	int nv, nd, n, i;				\
 							\
@@ -142,14 +217,15 @@ static void r_##name##_bb(struct register_s *v, struct register_s *d) \
 	for (i = 0; i < n; i++) {			\
 		if (!((((unsigned char *)(v->data))[i]) op(((unsigned char *)(d->data))[i]))) { \
 			((u_int32_t *)(v->data))[0] = 0; \
-			return;				\
+			return 0;				\
 		}					\
 	}						\
 	((u_int32_t *)(v->data))[0] = 1;		\
+	return 0; \
 }
 
 #define ROPc(name, op) \
-static void r_##name##_cc(struct register_s *v, struct register_s *d) \
+static int r_##name##_cc(struct register_s *v, struct register_s *d) \
 {							\
 	int nv, nd, i;					\
 	char a, b;					\
@@ -170,57 +246,58 @@ static void r_##name##_cc(struct register_s *v, struct register_s *d) \
 	if (i >= nd)					\
 		b = 0;					\
 	((u_int32_t *)(v->data))[0] = (u_int32_t)(a op b); \
+	return 0; \
 }
 
-OPi(add, u, u, u, x + y)
-OPi(add, u, s, s, x + y)
-OPi(add, s, u, s, x + y)
-OPi(add, s, s, s, x + y)
+OPi(add, u, u, u)
+OPi(add, u, s, s)
+OPi(add, s, u, s)
+OPi(add, s, s, s)
 
-OPi(sub, u, u, s, x - y)
-OPi(sub, u, s, s, x - y)
-OPi(sub, s, u, s, x - y)
-OPi(sub, s, s, s, x - y)
+OPi(sub, u, u, s)
+OPi(sub, u, s, s)
+OPi(sub, s, u, s)
+OPi(sub, s, s, s)
 
-OPi(mul, u, u, u, x * y)
-OPi(mul, u, s, s, x * y)
-OPi(mul, s, u, s, x * y)
-OPi(mul, s, s, s, x * y)
+OPi(mul, u, u, u)
+OPi(mul, u, s, s)
+OPi(mul, s, u, s)
+OPi(mul, s, s, s)
 
-OPi(div, u, u, u, x / y)
-OPi(div, u, s, s, x / y)
-OPi(div, s, u, s, x / y)
-OPi(div, s, s, s, x / y)
+OPi(div, u, u, u)
+OPi(div, u, s, s)
+OPi(div, s, u, s)
+OPi(div, s, s, s)
 
-OPi(mod, u, u, u, x % y)
-OPi(mod, u, s, s, x % y)
-OPi(mod, s, u, s, x % y)
-OPi(mod, s, s, s, x % y)
+OPi(mod, u, u, u)
+OPi(mod, u, s, s)
+OPi(mod, s, u, s)
+OPi(mod, s, s, s)
 
-OPi(shl, u, u, u, x << y)
-OPi(shl, u, s, u, x << y)
-OPi(shl, s, u, s, x << y)
-OPi(shl, s, s, s, x << y)
+OPi(shl, u, u, u)
+OPi(shl, u, s, u)
+OPi(shl, s, u, s)
+OPi(shl, s, s, s)
 
-OPi(shr, u, u, u, x >> y)
-OPi(shr, u, s, u, x >> y)
-OPi(shr, s, u, s, x >> y)
-OPi(shr, s, s, s, x >> y)
+OPi(shr, u, u, u)
+OPi(shr, u, s, u)
+OPi(shr, s, u, s)
+OPi(shr, s, s, s)
 
-OPi(and, u, u, u, x & y)
-OPi(and, u, s, s, x & y)
-OPi(and, s, u, s, x & y)
-OPi(and, s, s, s, x & y)
+OPi(and, u, u, u)
+OPi(and, u, s, s)
+OPi(and, s, u, s)
+OPi(and, s, s, s)
 
-OPi(or, u, u, u, x | y)
-OPi(or, u, s, s, x | y)
-OPi(or, s, u, s, x | y)
-OPi(or, s, s, s, x | y)
+OPi(or, u, u, u)
+OPi(or, u, s, s)
+OPi(or, s, u, s)
+OPi(or, s, s, s)
 
-OPi(xor, u, u, u, x ^ y)
-OPi(xor, u, s, s, x ^ y)
-OPi(xor, s, u, s, x ^ y)
-OPi(xor, s, s, s, x ^ y)
+OPi(xor, u, u, u)
+OPi(xor, u, s, s)
+OPi(xor, s, u, s)
+OPi(xor, s, s, s)
 
 ROPi(lt, u, u, x < y)
 ROPi(lt, u, s, x < y)
@@ -300,7 +377,7 @@ int r_nz(struct register_s *v)
 
 /* ----------- strings ----------- */
 
-static void r_add_cc(struct register_s *v, struct register_s *d)
+static int r_add_cc(struct register_s *v, struct register_s *d)
 {
 	int l, x;
 
@@ -319,12 +396,13 @@ static void r_add_cc(struct register_s *v, struct register_s *d)
 		memcpy(v->data + l, d->data, MAX_REG_SIZE - l);
 		v->attr->length = MAX_REG_SIZE;
 	}
+	return 0;
 }
 
 #define OPci(t2, f) \
-static void r_add_c##t2(struct register_s *v, struct register_s *d) \
+static int r_add_c##t2(struct register_s *v, struct register_s *d) \
 {							\
-	int l, nd;					\
+	int l, nd, written;				\
 	t2##_int64_t y;					\
 							\
 	l = v->attr->length;				\
@@ -338,17 +416,22 @@ static void r_add_c##t2(struct register_s *v, struct register_s *d) \
 		y = ((t2##_int32_t *)(d->data))[0];	\
 	else						\
 		y = ((t2##_int64_t *)(d->data))[0];	\
-	v->attr->length = l + nd*10 + 1;		\
-	if (v->attr->length < MAX_REG_SIZE)		\
-		sprintf(v->data + l, f, y);		\
-	else						\
+	written = snprintf(v->data + l, MAX_REG_SIZE - l, f, y);	\
+	if (written < 0) {				\
+		v->data[l] = '\0';			\
+		v->attr->length = l + 1;			\
+	} else if (written >= MAX_REG_SIZE - l) {	\
 		v->attr->length = MAX_REG_SIZE;		\
+	} else {					\
+		v->attr->length = l + written + 1;	\
+	}						\
+	return 0; \
 }
 
 OPci(u, "%" PRIu64)
 OPci(s, "%" PRId64)
 
-static void r_add_cb(struct register_s *v, struct register_s *d)
+static int r_add_cb(struct register_s *v, struct register_s *d)
 {
 	int l, n, j;
 
@@ -360,17 +443,17 @@ static void r_add_cb(struct register_s *v, struct register_s *d)
 	}
 	n = (d->attr->length);
 	if ((l + n + n + (n >> 2) + 1) >= MAX_REG_SIZE)
-		return;
+		return 0;
 #ifdef BITMAP_DIPLAY_LEFT_RIGHT
 	for (j = 0; j < n; j++) {
 		if (j > 0 && (j & 0x03) == 0)
 			v->data[l++] = ':';
-		sprintf(v->data + l, "%02x", d->data[j]);
+		string_hex_byte(v->data + l, (unsigned char)d->data[j]);
 		l += 2;
 	}
 #else
 	for (j = n - 1; j >= 0; j--) {
-		sprintf(v->data + l, "%02x", d->data[j]);
+		string_hex_byte(v->data + l, (unsigned char)d->data[j]);
 		l += 2;
 		if (j > 0 && (j & 0x03) == 0)
 			v->data[l++] = ':';
@@ -378,6 +461,7 @@ static void r_add_cb(struct register_s *v, struct register_s *d)
 #endif
 	v->data[l++] = 0;
 	v->attr->length = l;
+	return 0;
 }
 
 
@@ -385,7 +469,7 @@ static void r_add_cb(struct register_s *v, struct register_s *d)
 
 /* op, [uscb] , [uscb] */
 
-static void(*op_func[16][4][4])(struct register_s *v, struct register_s *d) = {
+static int(*op_func[16][4][4])(struct register_s *v, struct register_s *d) = {
 	{
 		{r_add_uu, r_add_us, NULL, NULL},
 		{r_add_su, r_add_ss, NULL, NULL},
@@ -469,7 +553,7 @@ static void(*op_func[16][4][4])(struct register_s *v, struct register_s *d) = {
 	},
 };
 
-void do_bin_op(int op, struct register_s *v, struct register_s *d)
+int do_bin_op(int op, struct register_s *v, struct register_s *d)
 {
 	int t1, t2;
 	static const char * const opname[] = {
@@ -488,13 +572,12 @@ void do_bin_op(int op, struct register_s *v, struct register_s *d)
 	t2 = (d->attr->type & 0x0f) - MED_TYPE_UNSIGNED;
 	if (t1 < 0 || t1 > 3 || t2 < 0 || t2 > 3) {
 		runtime("Illegal operand type");
-		return;
+		return -1;
 	}
 	if (op_func[op - oADD][t1][t2] == NULL) {
 		runtime("Illegal operation %s between %s and %s",
 			opname[op-oADD], typename[t1], typename[t2]);
-		return;
+		return -1;
 	}
-	op_func[op - oADD][t1][t2](v, d);
+	return op_func[op - oADD][t1][t2](v, d);
 }
-

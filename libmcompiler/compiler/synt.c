@@ -5,7 +5,12 @@
  */
 
 #include <stdlib.h>
+#include <limits.h>
 #include <mcompiler/compiler.h>
+
+#include <mcompiler/checked_math.h>
+
+#define COMPILER_STACK_GROWTH 128
 
 static int patri_term( struct compile_tab_s *tab, sym_t term )
 { int i;
@@ -50,9 +55,17 @@ static sym_t get_want(sym_t *stack, int stacklen)
     return(END);
 }
 
-#define RESIZE_STACK	\
-    if( (stack=realloc(stack,sizeof(sym_t)*stacksize))==NULL )\
-    return(eNOMEM)
+#define RESIZE_STACK	do {						\
+    sym_t *replacement;							\
+    size_t bytes;							\
+    if( stacksize<=0 ||						\
+        !checked_size_multiply((size_t)stacksize,sizeof(*stack),&bytes) )\
+    {	free(stack); return(eNOMEM); }					\
+    replacement=realloc(stack,bytes);					\
+    if( replacement==NULL )						\
+    {	free(stack); return(eNOMEM); }					\
+    stack=replacement;							\
+    } while(0)
 #define	GET_LEX(chcem)		{\
     compiler->l=l;					\
     if( compiler->l_rel!=NULL )			\
@@ -72,7 +85,7 @@ static sym_t get_want(sym_t *stack, int stacklen)
     }
 
 sym_t compiler_compile( compiler_class_t *compiler, sym_t start )
-{ struct lex_s l;
+{ struct lex_s l = {0};
     int i,j;
     struct compile_tab_s *t;
     sym_t *stack,want,r,sym;
@@ -82,7 +95,7 @@ sym_t compiler_compile( compiler_class_t *compiler, sym_t start )
     compiler->exit=0;
     stack=NULL;
     stacklen=0;
-    stacksize=100;
+    stacksize=COMPILER_STACK_GROWTH;
     RESIZE_STACK;
     stack[stacklen++]=start;
     GET_LEX(END);
@@ -107,7 +120,9 @@ sym_t compiler_compile( compiler_class_t *compiler, sym_t start )
             for(i--;i>=0;)
             {	stack[stacklen++]=t[j].stack[i--];
                 if( stacklen>=stacksize )
-                {	stacksize+=100;
+                {	if( stacksize>INT_MAX-COMPILER_STACK_GROWTH )
+                    {	free(stack); return(eNOMEM); }
+                    stacksize+=COMPILER_STACK_GROWTH;
                     RESIZE_STACK;
                 }
             }
@@ -165,4 +180,3 @@ sym_t compiler_compile( compiler_class_t *compiler, sym_t start )
     free(stack);
     return(T);
 }
-

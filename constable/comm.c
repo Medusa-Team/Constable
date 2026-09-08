@@ -13,33 +13,65 @@
 #include <semaphore.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <stdint.h>
+#include <signal.h>
 
 #include "constable.h"
 #include "comm.h"
 #include "language/execute.h"
 #include "space.h"
+#include "string_utils.h"
 #include "threading.h"
 #include "mcp/mcp.h"
-
-int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q,
-			     struct comm_buffer_s *b);
-struct comm_buffer_s *comm_buf_from_queue_locked(struct comm_buffer_queue_s *q);
-static pthread_t comm_workers[N_WORKER_THREADS];
 
 extern struct event_handler_s *function_init;
 int comm_nr_connections;
 static struct comm_s *first_comm;
 static struct comm_s *last_comm;
 
-static int comm_var_data_size; /**< TODO: is manipulation with this global variable
-				 * thread and/or per buffer safe?
-				 */
+/*
+ * Policy compilation assigns offsets while Constable is still single-threaded.
+ * init_all() seals the layout before comm_do() starts readers and workers; from
+ * that point every thread only reads the immutable size.
+ */
+static int comm_var_data_size;
+static bool comm_var_data_sealed;
+
+static void *policy_reload_loop(void *argument)
+{
+	sigset_t *set = argument;
+	int signal_number;
+
+	for (;;) {
+		struct comm_s *comm;
+
+		if (sigwait(set, &signal_number))
+			continue;
+		for (comm = first_comm; comm; comm = comm->next)
+			if (comm->fd >= 0 && mcp_replace_policy(comm))
+				comm_error(
+					"comm %s: live policy generation replacement failed",
+					comm->name);
+	}
+	return NULL;
+}
+
+static void *read_loop(void *arg)
+{
+	struct comm_s *comm = arg;
+
+	return (void *)(intptr_t)comm->read(comm);
+}
 
 void *comm_new_array(int size)
 {
 	void *v;
 
-	v = calloc(comm_nr_connections, size);
+	if (comm_nr_connections < 0 || size <= 0 ||
+	    (size_t)comm_nr_connections > SIZE_MAX / (size_t)size)
+		return NULL;
+	v = calloc((size_t)comm_nr_connections, (size_t)size);
 	if (!v)
 		return NULL;
 	return v;
@@ -49,43 +81,69 @@ int comm_alloc_buf_var_data(int size)
 {
 	int r;
 
+	if (comm_var_data_sealed || size < 0 ||
+	    comm_var_data_size > INT_MAX - size)
+		return -1;
 	r = comm_var_data_size;
 	comm_var_data_size += size;
 
 	return r;
 }
 
-static struct comm_buffer_s *comm_alloc_var_data(struct comm_buffer_s *b)
+void comm_seal_buf_var_data(void)
+{
+	comm_var_data_sealed = true;
+}
+
+struct comm_buffer_s *comm_buf_alloc_var_data(struct comm_buffer_s *b)
 {
 	int len = 0;
+	struct comm_buffer_s *resized;
 
 	if (b->p_comm_buf == b->comm_buf)
 		len = b->len;
-	b = comm_buf_resize(b, len + comm_var_data_size);
-	if (!b)
+	if (len < 0 || comm_var_data_size < 0 ||
+	    len > INT_MAX - comm_var_data_size)
 		return NULL;
-	b->var_data = b->comm_buf + len;
+	resized = comm_buf_resize(b, len + comm_var_data_size);
+	if (!resized)
+		return NULL;
+	resized->var_data = resized->comm_buf + len;
 
-	return b;
+	return resized;
 }
 
 struct comm_s *comm_new(char *name, int user_size)
 {
 	struct comm_s *c;
+	size_t allocation;
 
-	c = calloc(1, sizeof(struct comm_s) + user_size);
+	if (!name || user_size < 0 ||
+	    (size_t)user_size > SIZE_MAX - sizeof(struct comm_s) ||
+	    comm_nr_connections == INT_MAX)
+		return NULL;
+	allocation = sizeof(struct comm_s) + (size_t)user_size;
+	c = calloc(1, allocation);
 	if (!c)
 		return NULL;
 
-	strncpy(c->name, name, sizeof(c->name) - 1);
+	if (string_copy(c->name, sizeof(c->name), name)) {
+		free(c);
+		return NULL;
+	}
 	c->fd = -1;
-	c->conn = comm_nr_connections++;
-	c->state_lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 	c->init_buffer = NULL;
-	sem_init(&c->output_sem, 0, 0);
-	c->wait_for_answer.lock =
-		(pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-	c->output.lock = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+	if (pthread_mutex_init(&c->state_lock, NULL))
+		goto free_comm;
+	if (pthread_mutex_init(&c->read_lock, NULL))
+		goto destroy_state_lock;
+	if (pthread_mutex_init(&c->wait_for_answer.lock, NULL))
+		goto destroy_read_lock;
+	if (pthread_mutex_init(&c->output.lock, NULL))
+		goto destroy_wait_lock;
+	if (sem_init(&c->output_sem, 0, 0))
+		goto destroy_output_lock;
+	c->conn = comm_nr_connections++;
 
 	if (!last_comm)
 		first_comm = c;
@@ -94,6 +152,18 @@ struct comm_s *comm_new(char *name, int user_size)
 	last_comm = c;
 
 	return c;
+
+destroy_output_lock:
+	pthread_mutex_destroy(&c->output.lock);
+destroy_wait_lock:
+	pthread_mutex_destroy(&c->wait_for_answer.lock);
+destroy_read_lock:
+	pthread_mutex_destroy(&c->read_lock);
+destroy_state_lock:
+	pthread_mutex_destroy(&c->state_lock);
+free_comm:
+	free(c);
+	return NULL;
 }
 
 struct comm_s *comm_find(char *name)
@@ -111,12 +181,29 @@ int comm_do(void)
 {
 	struct comm_s *c;
 	pthread_attr_t attr;
+	pthread_t worker;
+	pthread_t reload_thread;
+	sigset_t reload_set;
+	unsigned int i;
 
 	if (pthread_attr_init(&attr)) {
 		puts("Cannot initialize thread attribute");
 		return -1;
 	}
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+	if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED)) {
+		puts("Cannot configure worker thread attribute");
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	sigemptyset(&reload_set);
+	sigaddset(&reload_set, SIGUSR1);
+	if (pthread_sigmask(SIG_BLOCK, &reload_set, NULL) ||
+	    pthread_create(
+		    &reload_thread, &attr, policy_reload_loop, &reload_set)) {
+		puts("Cannot create policy reload thread");
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
 
 	// CREATE READ AND WRITE THREADS FOR EACH COMMUNICATION INTERFACE
 	for (c = first_comm; c; c = c->next) {
@@ -128,8 +215,7 @@ int comm_do(void)
 			c->close(c);
 			continue;
 		}
-		if (pthread_create(&c->read_thread, NULL,
-				   (void *(*)(void *)) c->read, c)) {
+		if (pthread_create(&c->read_thread, NULL, read_loop, c)) {
 			puts("Cannot create read thread");
 			return -1;
 		}
@@ -140,21 +226,21 @@ int comm_do(void)
 	}
 
 	// CREATE WORKER THREADS
-	for (int i = 0; i < N_WORKER_THREADS; i++) {
-		if (pthread_create(comm_workers + i, &attr, comm_worker, NULL)) {
+	for (i = 0; i < worker_pool_count(); i++) {
+		if (pthread_create(&worker, &attr, comm_worker, NULL)) {
 			puts("Cannot create worker thread");
+			pthread_attr_destroy(&attr);
 			return -1;
 		}
 	}
+	pthread_attr_destroy(&attr);
 
 	// CALL JOIN
 	for (c = first_comm; c; c = c->next) {
 		if (c->fd >= 0) {
-			for (int i = 0; i < N_WORKER_THREADS; i++) {
-				if (pthread_join(c->read_thread, NULL)) {
-					puts("Error when joining read thread");
-					return -1;
-				}
+			if (pthread_join(c->read_thread, NULL)) {
+				puts("Error when joining read thread");
+				return -1;
 			}
 			if (pthread_join(c->write_thread, NULL)) {
 				puts("Error when joining write thread");
@@ -170,6 +256,7 @@ void *comm_worker(void *arg)
 {
 	int r = 0;
 
+	(void)arg;
 	if (tls_alloc_init())
 		return (void *)-1;
 
@@ -182,14 +269,17 @@ void *comm_worker(void *arg)
 		b = comm_buf_get_todo();
 		//printf("comm_worker: b->do_phase = %d, b->var_data = %p\n",
 		//		b->do_phase, b->var_data);
-		pthread_mutex_lock(&b->lock);
 		if (!b->var_data) {
-			b = comm_alloc_var_data(b);
-			if (!b) {
-				pthread_mutex_unlock(&b->lock);
+			struct comm_buffer_s *resized =
+				comm_buf_alloc_var_data(b);
+
+			if (!resized) {
+				b->bfree(b);
 				return (void *)-1;
 			}
+			b = resized;
 		}
+		pthread_mutex_lock(&b->lock);
 
 		if (b->do_phase < 1000) {
 			/*
@@ -356,9 +446,8 @@ int comm_error(const char *fmt, ...)
 	char buf[4096];
 
 	va_start(ap, fmt);
-	vsnprintf(buf, 4000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), "", fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 
 	return -1;
@@ -370,9 +459,8 @@ int comm_info(const char *fmt, ...)
 	char buf[4096];
 
 	va_start(ap, fmt);
-	vsnprintf(buf, 4000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), "", fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 
 	return -1;

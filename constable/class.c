@@ -7,12 +7,30 @@
 #include "constable.h"
 #include "object.h"
 #include "comm.h"
+#include "string_utils.h"
 
 #include <stdio.h>
 #include <pthread.h>
 
 static pthread_mutex_t classes_lock = PTHREAD_MUTEX_INITIALIZER;
 static struct class_names_s *classes;
+
+int class_names_visit(class_name_visitor_t visitor, void *argument)
+{
+	struct class_names_s *class_name;
+	int result = 0;
+
+	if (!visitor)
+		return -1;
+	pthread_mutex_lock(&classes_lock);
+	for (class_name = classes; class_name; class_name = class_name->next) {
+		result = visitor(class_name, argument);
+		if (result)
+			break;
+	}
+	pthread_mutex_unlock(&classes_lock);
+	return result;
+}
 
 struct class_names_s *get_class_by_name(char *name)
 {
@@ -37,7 +55,11 @@ struct class_names_s *get_class_by_name(char *name)
 	}
 
 	c->name = (char *)(c + 1);
-	strcpy(c->name, name);
+	if (string_copy(c->name, strlen(name) + 1, name)) {
+		free(c->classes);
+		free(c);
+		return NULL;
+	}
 	c->class_handler = NULL;
 
 	pthread_mutex_lock(&classes_lock);
@@ -165,12 +187,12 @@ struct class_s *add_class(struct comm_s *comm, struct medusa_class_s *mc, struct
  */
 int class_alloc_cinfo(u_int16_t cinfo_size, uintptr_t *cinfo_mask, u_int16_t cinfo_offset)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; (i < cinfo_size / DWORDS_PER_PTR) && (i < sizeof(cinfo_mask) * 8); i++) {
-		if (!(*cinfo_mask & 1 << i)) {
+		if (!(*cinfo_mask & (uintptr_t)1 << i)) {
 			/* found a free block */
-			*cinfo_mask |= 1 << i;
+			*cinfo_mask |= (uintptr_t)1 << i;
 			return cinfo_offset + i * sizeof(uintptr_t);
 		}
 	}
@@ -251,7 +273,8 @@ void attr_print(struct medusa_attribute_s *a, void (*out)(int arg, char *), int 
 		out(arg, "\t");
 		out(arg, a[i].name);
 		out(arg, "\t");
-		sprintf(buf, "(%d: %d)", a[i].offset, a[i].length);
+		snprintf(buf, sizeof(buf), "(%d: %d)",
+			 a[i].offset, a[i].length);
 		out(arg, buf);
 		out(arg, "\n");
 	}

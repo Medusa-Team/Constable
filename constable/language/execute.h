@@ -32,7 +32,7 @@ struct stack_s {
 	struct stack_s	*next;
 	int	size;
 	int	my_offset;
-	uintptr_t stack[0];
+	uintptr_t stack[];
 };
 
 struct execute_s {
@@ -58,6 +58,7 @@ typedef int(*buildin_t)(struct execute_s *e, struct register_s *ret, int(*getarg
 extern struct medusa_attribute_s execute_attr_int;
 extern struct medusa_attribute_s execute_attr_str;
 extern struct medusa_attribute_s execute_attr_pointer;
+extern struct event_handler_s *function_debug;
 
 struct object_s *r2o(const struct register_s *r, struct object_s *o);
 
@@ -70,7 +71,7 @@ void r_neg(struct register_s *v);
 void r_not(struct register_s *v);
 int r_nz(struct register_s *v);
 
-void do_bin_op(int op, struct register_s *v, struct register_s *d);
+int do_bin_op(int op, struct register_s *v, struct register_s *d);
 
 int load_constant(struct register_s *r, uintptr_t typ, char *name);
 
@@ -88,4 +89,3 @@ int execute_init_stacks(int n);
 int execute_registers_init(void);
 
 #endif /* _EXECUTE_H */
-

@@ -61,6 +61,7 @@ static void rbac_out( struct compiler_out_class *o, sym_t s, unsigned long d )
     struct user_s *u;
     struct role_s *p;
     struct space_s *t;
+    (void)o;
     //  vs_t *v;
     switch( s )
     {	case TEND:
@@ -104,7 +105,8 @@ static void rbac_out( struct compiler_out_class *o, sym_t s, unsigned long d )
 }
 
 static void out_destroy( struct compiler_out_class *this )
-{	return;
+{
+    (void)this;
 }
 
 static struct compiler_out_class s_rbac_out={
@@ -135,7 +137,7 @@ struct compile_tab_s rbac_tab[]={
 {R2,{T_id,END},{T_id,oADDSUBROLE,R23,T|';',R2,END}},
 {R23,{T|',',END},{T|',',T_id,oADDSUBROLE,R23,END}},
 {R23,{T|';',END},{END}},
-{END}
+COMPILE_TABLE_END
 };
 
 

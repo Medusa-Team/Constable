@@ -12,9 +12,11 @@
 #include "../event.h"
 #include "../tree.h"
 #include <stdlib.h>
+#include <limits.h>
 #include <errno.h>
 #include <string.h>
 #include <pthread.h>
+#include <mcompiler/checked_math.h>
 
 enum {
 	LS_start = (LS | 1),
@@ -213,12 +215,12 @@ lexstattab_t lex_tab[] = {
 	{LS_comment, NULL, rules_comment, NULL, NULL},
 	{LS_comment2, NULL, rules_comment2, NULL, NULL},
 	{LS_comment_line, NULL, rules_comment_line, NULL, NULL},
-	{END}
+	LEX_STATE_TABLE_END
 };
 
 struct str_archive_s {
 	struct str_archive_s *next;
-	char str[0];
+	char str[];
 };
 
 static struct str_archive_s *str_archive;
@@ -242,8 +244,7 @@ static char *store_string(char *s)
 		*errstr = Out_of_memory;
 		return NULL;
 	}
-	strcpy(n->str, s);
-	n->next = (*p);
+	memcpy(n->str, s, strlen(s) + 1);
 	n->next = (*p);
 	(*p) = n;
 	return n->str;
@@ -253,6 +254,7 @@ static void gen_lex_ident(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t
 {
 	lextab_t *l = keywords2;
 
+	(void)len;
 	if (l != NULL && want != T_id) {
 		while (l->keyword != NULL) {
 			if (!strcmp(l->keyword, buf)) {
@@ -271,6 +273,8 @@ static void gen_lex_ident(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t
 
 static void gen_lex_string(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_str;
 	*data = (uintptr_t)store_string(buf);
 	if (*data == 0)
@@ -279,6 +283,8 @@ static void gen_lex_string(char *buf, int len, sym_t *sym, uintptr_t *data, sym_
 
 static void gen_lex_et(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_path;
 	*data = (uintptr_t)(create_path(buf));
 	if (*data == 0)
@@ -287,6 +293,8 @@ static void gen_lex_et(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t wa
 
 static void gen_lex_char(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_num;
 	*data = (uintptr_t)(buf[0]);
 	if (buf[0] == 0 || buf[1] != 0) {
@@ -299,6 +307,8 @@ static void gen_lex_char(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t 
 
 static void gen_lex_num(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_num;
 	errno = 0;
 	*data = (uintptr_t)strtol(buf, NULL, 0);
@@ -312,6 +322,8 @@ static void gen_lex_num(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t w
 
 static void gen_lex_arg(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_arg;
 	errno = 0;
 	*data = (uintptr_t)strtol(buf, NULL, 0);
@@ -352,7 +364,12 @@ int lex_updatekeyword(char *keyword, sym_t sym, uintptr_t data)
 int lex_addkeyword(char *keyword, sym_t sym, uintptr_t data)
 {
 	lextab_t *l = keywords2;
+	lextab_t *replacement;
+	size_t bytes;
+	int new_count;
 
+	if (!keyword)
+		return -1;
 	if (l) {
 		while (l->keyword != NULL) {
 			if (!strcmp(l->keyword, keyword))
@@ -360,13 +377,22 @@ int lex_addkeyword(char *keyword, sym_t sym, uintptr_t data)
 			l++;
 		}
 	}
-	keywords2_nr++;
-	keywords2 = realloc(keywords2, (keywords2_nr + 1) * sizeof(lextab_t));
-	keywords2[keywords2_nr - 1].keyword = keyword;
-	keywords2[keywords2_nr - 1].sym = sym;
-	keywords2[keywords2_nr - 1].data = data;
-	keywords2[keywords2_nr].keyword = NULL;
-	keywords2[keywords2_nr].sym = 0;
-	keywords2[keywords2_nr].data = 0;
+	if (keywords2_nr == INT_MAX)
+		return -1;
+	new_count = keywords2_nr + 1;
+	if (!checked_size_multiply((size_t)new_count + 1,
+				   sizeof(*replacement), &bytes))
+		return -1;
+	replacement = realloc(keywords2, bytes);
+	if (!replacement)
+		return -1;
+	keywords2 = replacement;
+	keywords2[new_count - 1].keyword = keyword;
+	keywords2[new_count - 1].sym = sym;
+	keywords2[new_count - 1].data = data;
+	keywords2[new_count].keyword = NULL;
+	keywords2[new_count].sym = 0;
+	keywords2[new_count].data = 0;
+	keywords2_nr = new_count;
 	return 0;
 }

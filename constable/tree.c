@@ -9,6 +9,7 @@
 #include "comm.h"
 #include <regex.h>
 #include "space.h"
+#include <mcompiler/checked_math.h>
 
 /*
  * FIXME: Ak niekto chce vytvorit .*, mala by sa pod nou vytvorit este jedna .*
@@ -16,6 +17,8 @@
 
 /* The root's (of the Unified Name Space Tree) name. */
 #define GLOBAL_ROOT_NAME "/"
+#define REGEX_ANCHOR_BYTES 2
+#define STRING_TERMINATOR_BYTES 1
 
 /*
  * Set in medusa config file(s) by primary tree definition:
@@ -67,14 +70,15 @@ int tree_init(void)
 	global_root_type = calloc(1, sizeof(struct tree_type_s)+strlen(GLOBAL_ROOT_NAME)+1);
 	if (!global_root_type)
 		return -1;
-	strncpy(global_root_type->name, GLOBAL_ROOT_NAME, strlen(GLOBAL_ROOT_NAME)+1);
+	memcpy(global_root_type->name, GLOBAL_ROOT_NAME,
+	       sizeof(GLOBAL_ROOT_NAME));
 
 	global_root = calloc(1, sizeof(struct tree_s)+strlen(GLOBAL_ROOT_NAME)+1);
 	if (!global_root)
 		goto free_global_root_type;
 
 	global_root->type = global_root_type;
-	strncpy(global_root->name, GLOBAL_ROOT_NAME, strlen(GLOBAL_ROOT_NAME)+1);
+	memcpy(global_root->name, GLOBAL_ROOT_NAME, sizeof(GLOBAL_ROOT_NAME));
 
 	/*
 	 * Allocate ->events array only for dummy use in tree_comm_reinit()
@@ -107,15 +111,18 @@ free_global_root_type:
  */
 int tree_set_default_path(char *new)
 {
-	if (default_path != NULL)
-		free(default_path);
+	char *replacement;
 
-	default_path = strdup(new);
-	if (default_path == NULL) {
+	if (new == NULL)
+		return -1;
+	replacement = strdup(new);
+	if (replacement == NULL) {
 		error(Out_of_memory);
 		return -1;
 	}
 
+	free(default_path);
+	default_path = replacement;
 	return 0;
 }
 
@@ -169,27 +176,40 @@ static int isreg(char *name)
 
 static void *regcompile(char *reg)
 {
-	int l = strlen(reg);
-	char tmp[l+3];
+	size_t l;
+	size_t allocation;
+	char *tmp;
 	regex_t *r;
 
 	/* speed up .* */
 	if (!strcmp(reg, ".*"))
 		return (void *)1;
 
-	r = malloc(sizeof(regex_t));
-	if (r == NULL)
+	l = strlen(reg);
+	if (!checked_size_add(l, REGEX_ANCHOR_BYTES + STRING_TERMINATOR_BYTES,
+			      &allocation))
 		return NULL;
+	/* Policy expressions are input-sized, so keep this temporary off stack. */
+	tmp = malloc(allocation);
+	if (tmp == NULL)
+		return NULL;
+	r = calloc(1, sizeof(*r));
+	if (r == NULL) {
+		free(tmp);
+		return NULL;
+	}
 
 	tmp[0] = '^';
-	strcpy(tmp+1, reg);
+	memcpy(tmp + 1, reg, l);
 	tmp[l+1] = '$';
 	tmp[l+2] = 0;
 	if (regcomp(r, tmp, REG_EXTENDED|REG_NOSUB) != 0) {
 		error("Error in regexp '%s'", reg);
 		free(r);
+		free(tmp);
 		return NULL;
 	}
+	free(tmp);
 
 	return r;
 }
@@ -232,7 +252,8 @@ static struct tree_s *create_one_i(struct tree_s *base, char *name, int regexp)
 {
 	struct tree_s *p;
 	struct tree_type_s *type;
-	int l;
+	size_t l;
+	size_t allocation;
 
 	if (*name == 0)
 		return base;
@@ -252,13 +273,16 @@ static struct tree_s *create_one_i(struct tree_s *base, char *name, int regexp)
 	type = base->type->child_type;
 	if (type == NULL)
 		type = base->type;
-	p = malloc(type->size+l+1);
+	if (type->size < (int)sizeof(*p) ||
+	    !checked_size_add((size_t)type->size, l, &allocation) ||
+	    !checked_size_add(allocation, 1, &allocation))
+		return NULL;
+	p = calloc(1, allocation);
 	if (p == NULL)
 		return NULL;
 
-	memset(p, 0, type->size+l+1);
 	p->type = type;
-	strncpy(p->name, name, l);
+	memcpy(p->name, name, l);
 	p->name[l] = 0;
 	p->parent = base;
 	p->child = NULL;
@@ -307,24 +331,29 @@ static struct tree_s *create_one_i(struct tree_s *base, char *name, int regexp)
 static struct tree_s *create_one(struct tree_s *base, char **name)
 {
 	char *n;
-	int l = 0;
+	char *tmp;
+	struct tree_s *result;
+	size_t l;
+	size_t allocation;
 
 	while (**name == '/')
 		(*name)++;
 	n = *name;
-	while (*n != 0 && *n != '/') {
-		l++;
+	while (*n != 0 && *n != '/')
 		n++;
-	}
-
-	{
-		char tmp[l+1];
-
-		strncpy(tmp, *name, l);
-		tmp[l] = 0;
-		*name = n;
-		return create_one_i(base, tmp, isreg(tmp));
-	}
+	l = (size_t)(n - *name);
+	if (!checked_size_add(l, 1, &allocation))
+		return NULL;
+	/* Path components are input-sized, so keep this temporary off stack. */
+	tmp = malloc(allocation);
+	if (tmp == NULL)
+		return NULL;
+	memcpy(tmp, *name, l);
+	tmp[l] = 0;
+	*name = n;
+	result = create_one_i(base, tmp, isreg(tmp));
+	free(tmp);
+	return result;
 }
 
 struct tree_s *register_tree_type(struct tree_type_s *type)
@@ -345,6 +374,8 @@ struct tree_s *create_path(char *path)
 	struct tree_s *p;
 	char *d;
 
+	if (path == NULL || global_root == NULL)
+		return NULL;
 	p = global_root;
 	if (*path == '/') {
 		d = default_path;
@@ -394,6 +425,9 @@ static struct tree_s *find_one2(struct tree_s *base, char **name)
 {
 	struct tree_s *p;
 	char *b;
+	char *component;
+	size_t length;
+	size_t allocation;
 
 	while (**name == '/')
 		(*name)++;
@@ -407,19 +441,27 @@ static struct tree_s *find_one2(struct tree_s *base, char **name)
 
 	for (b = *name; *b != 0 && *b != '/'; b++)
 		;
-	{
-		char s[b - (*name) + 1];
-
-		strncpy(s, *name, b - (*name));
-		s[b - (*name)] = 0;
-		for (p = base->regex_child; p != NULL; p = p->next) {
-			if (!regcmp(p->compiled_regex, s)) {
-				*name = b;
-				return p;
-			}
+	if (base->regex_child == NULL)
+		goto no_match;
+	length = (size_t)(b - *name);
+	if (!checked_size_add(length, 1, &allocation))
+		return NULL;
+	/* Path components are input-sized, so keep this temporary off stack. */
+	component = malloc(allocation);
+	if (component == NULL)
+		return NULL;
+	memcpy(component, *name, length);
+	component[length] = 0;
+	for (p = base->regex_child; p != NULL; p = p->next) {
+		if (!regcmp(p->compiled_regex, component)) {
+			free(component);
+			*name = b;
+			return p;
 		}
 	}
+	free(component);
 
+no_match:
 	if (base->child == NULL && base->regex_child == NULL)
 		return base;
 
@@ -431,6 +473,8 @@ struct tree_s *find_path(char *path)
 	struct tree_s *p;
 	char *d;
 
+	if (path == NULL || global_root == NULL)
+		return NULL;
 	p = global_root;
 	if (*path == '/') {
 		d = default_path;
@@ -632,6 +676,8 @@ char *tree_get_path(struct tree_s *t)
 {
 	static char buf[4096];
 	static int pos;
+	size_t name_length;
+	size_t remaining;
 
 	if (t->parent == NULL) {
 		buf[(pos = 0)] = 0;
@@ -639,14 +685,17 @@ char *tree_get_path(struct tree_s *t)
 	}
 
 	tree_get_path(t->parent);
-	if (pos > 0)
+	if (pos >= (int)sizeof(buf) - 1)
+		return buf;
+	if (pos > 0 && pos < (int)sizeof(buf) - 1)
 		buf[pos++] = '/';
 
-	strncpy(buf + pos, t->name, 4095 - pos);
-	pos += strlen(t->name);
-
-	if (pos > 4095)
-		pos = 4095;
+	remaining = sizeof(buf) - 1 - (size_t)pos;
+	name_length = strlen(t->name);
+	if (name_length > remaining)
+		name_length = remaining;
+	memcpy(buf + pos, t->name, name_length);
+	pos += (int)name_length;
 	buf[pos] = 0;
 
 	return buf;

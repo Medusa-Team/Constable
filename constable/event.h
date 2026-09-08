@@ -7,11 +7,11 @@
 #ifndef _EVENT_H
 #define _EVENT_H
 
-#include <asm/types.h>
 #include "types.h"
 #include "object.h"
 #include "medusa_object.h"
 #include "access_types.h"
+#include "decision.h"
 #include "hash.h"
 #include "vs.h"
 
@@ -29,13 +29,6 @@
 #define	EHH_NOTIFY_DENY		3
 #define	EHH_LISTS		4
 
-#define	RESULT_ERR		-1	/* ERROR */
-#define	RESULT_FORCE_ALLOW	0	/* YES */
-#define	RESULT_DENY		1	/* NO */
-#define	RESULT_FAKE_ALLOW	2	/* SKIP */
-#define	RESULT_ALLOW		3	/* OK */
-#define	RESULT_RETRY		4	/* RETRY */
-
 #define	evhash_foreach(ev, hash)	for ((ev) = (hash); (ev) != NULL; (ev) = (ev)->next)
 #define	evhash_foreach_first(ev, hash)	((ev) = (hash))
 #define	evhash_foreach_next(ev)		((ev) = (ev)->next)
@@ -47,8 +40,8 @@ struct event_mask_s {
 };
 
 /*
- * Struct with variable length.
- * Allocated by event_type_add().
+ * Allocated by event_type_add(). The operation class is a separate,
+ * variable-length allocation because its attribute layout arrives at runtime.
  */
 struct event_type_s {
 	struct hash_ent_s	hashent;
@@ -58,7 +51,7 @@ struct event_type_s {
 	struct event_mask_s	mask[2];
 	//	struct event_type_s	*alt;
 	struct medusa_acctype_s	acctype;
-	struct class_s		operation_class;
+	struct class_s		*operation_class;
 };
 
 /*
@@ -103,7 +96,8 @@ struct event_handler_s {
 	 */
 	int (*handler)(struct comm_buffer_s *, struct event_handler_s *, struct event_context_s *);
 	struct object_s	*local_vars;
-	char		data[0];
+	/* Heap-backed bytecode owned by the handler registration. */
+	uintptr_t	*data;
 };
 
 struct event_hadler_hash_s {
@@ -124,19 +118,14 @@ struct event_context_s {
 	struct object_s *local_vars;
 };
 
-/*
- * RESULT_ERR -> *
- * RESULT_FORCE_ALLOW -> RESULT_DENY | RESULT_FAKE_ALLOW
- * RESULT_DENY -> -
- * RESULT_FAKE_ALLOW -> RESULT_DENY
- * RESULT_ALLOW -> RESULT_FORCE_ALLOW | RESULT_DENY | RESULT_FAKE_ALLOW
- */
-int evaluate_result(int old, int new);
 int do_event(struct comm_buffer_s *cb);
 
 int event_free_all_events(struct comm_s *comm);
 struct event_type_s *event_type_add(struct comm_s *comm, struct medusa_acctype_s *m, struct medusa_attribute_s *a);
 struct event_names_s *event_type_find_name(char *name, bool alloc_new);
+typedef int (*event_name_visitor_t)(const struct event_names_s *event,
+				    void *argument);
+int event_names_visit(event_name_visitor_t visitor, void *argument);
 
 int event_mask_clear(struct event_mask_s *e);
 int event_mask_clear2(struct event_mask_s *e);

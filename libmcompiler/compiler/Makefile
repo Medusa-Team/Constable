@@ -3,13 +3,17 @@
 
 THIS = objects.a
 INCDIR = ..
-CFLAGS = -Wall -ggdb
+CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -fPIC \
+	-D_GNU_SOURCE
+DEBUG ?= 0
+ifeq ($(DEBUG),1)
+override CFLAGS += -g
+endif
 
 OBJECTS = compiler.o synt.o special_out.o lex.o \
 	  nul_preprocesor.o gcc_preprocesor.o \
 	  f_preprocesor.o \
 	  c_lex.o
-# c_preprocesor.o
 
 all:	$(THIS)
 
@@ -22,14 +26,7 @@ $(THIS):	$(OBJECTS)
 	$(CC) $(CFLAGS) -I $(INCDIR) -c $<
 
 clean:
-	rm -f *.o core $(THIS) test_c_lex test_c_pre
+	rm -f *.o core $(THIS)
 
 pokus:
 	echo $(CFLAGS)
-
-test_c_lex:	test_c_lex.c objects.a
-	$(CC) $(CFLAGS) -I $(INCDIR) test_c_lex.c -o test_c_lex objects.a ../text/backslash.c -lm
-
-test_c_pre:	test_c_pre.c objects.a
-	$(CC) $(CFLAGS) -I $(INCDIR) test_c_pre.c -o test_c_pre objects.a
-

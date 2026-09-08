@@ -1,0 +1,2 @@
+class=file enforcement=active announced_events=3 enforced_events=3
+class=process enforcement=active announced_events=3 enforced_events=3

@@ -27,6 +27,8 @@ typedef struct	{
     lextab_t	*keywords;	/* separated by separators */
     void(*gen_lex)(char*,int,sym_t*,uintptr_t*,sym_t);
 } lexstattab_t;
+/* Fully initialize lexer sentinels under -Wmissing-field-initializers. */
+#define LEX_STATE_TABLE_END { END, NULL, NULL, NULL, NULL }
 #define	LEX_CONT	0x0000		/* pokracuj v nacitavani slova */
 #define	LEX_END		0x0001		/* slovo nacitane (znak nepridavaj)*/
 #define	LEX_VOID	0x0002		/* zahod tento znak */
@@ -49,4 +51,3 @@ struct compiler_lex_class *lex_create( lexstattab_t *stattab, struct compiler_pr
 #define	lexstruct(l)	((struct lexstruct_s*)(l))
 
 #endif /* _LEX_H */
-

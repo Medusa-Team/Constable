@@ -8,6 +8,7 @@
  */
 
 #include "execute.h"
+#include "../string_utils.h"
 #include "language.h"
 #include "variables.h"
 #include "../constable.h"
@@ -80,7 +81,7 @@ void obj_to_reg(struct register_s *r, struct object_s *o, char *attr)
 void R_pop(struct execute_s *e, struct register_s *r)
 {
 	uintptr_t x;
-	int i, n;
+	size_t i, n;
 
 	/* init register */
 	r->flags = OBJECT_FLAG_LOCAL;
@@ -319,14 +320,15 @@ static int execute_handler_do(struct execute_s *e)
 	uintptr_t *cmd_p;
 	struct register_s *r0 = pthread_getspecific(r0_key);
 	struct register_s *r1 = pthread_getspecific(r1_key);
-	char *runtime_pos;
 
 #ifdef DEBUG_TRACE
 	char *runtime_file;
+	char *runtime_pos;
 
 	runtime_file = (char *)pthread_getspecific(runtime_file_key);
-	strncpy(runtime_file, e->h->op_name + MEDUSA_OPNAME_MAX, sizeof(RUNTIME_FILE_TYPE));
-	runtime_file[sizeof(RUNTIME_FILE_TYPE) - 1] = 0;
+	(void)string_copy_field(runtime_file, sizeof(RUNTIME_FILE_TYPE),
+			       e->h->op_name + MEDUSA_OPNAME_MAX,
+			       DT_POS_MAX);
 #endif
 	for (;;) {
 		cmd_p = e->p;
@@ -540,6 +542,8 @@ static int execute_handler_do(struct execute_s *e)
 			} else
 				push((uintptr_t)(r0->class->comm->name));
 			push(LTS);
+			/* Preserve the historical conversion into a class reference. */
+			/* fall through */
 		case oS2C:
 			r_pop(r0);
 			if ((r0->attr->type & 0x0f) != MED_TYPE_STRING) {
@@ -566,6 +570,8 @@ static int execute_handler_do(struct execute_s *e)
 			e->comm = comm_find((char *)r0->data);
 			if (e->comm != NULL)
 				break;
+			/* An unknown connection restores the request's connection. */
+			/* fall through */
 		case oSCD:
 			e->comm = e->my_comm_buff->comm;
 			break;
@@ -587,7 +593,22 @@ static int execute_handler_do(struct execute_s *e)
 		case oXOR:
 			r_pop(r0);
 			r_pop(r1);
-			do_bin_op(cmd, r1, r0);
+			if (do_bin_op(cmd, r1, r0) < 0) {
+				/* Abort all nested calls and release their local variables.
+				 * Complete with DENY so an earlier allow cannot mask the
+				 * arithmetic failure in answer composition.
+				 */
+				do {
+					free_vars((struct object_s **)
+						  execute_stack_pointer(e, e->base));
+					e->pos = e->base;
+					e->base = pop();
+				} while (e->pos > e->start);
+				e->pos = e->start;
+				free_vars(&e->c->local_vars);
+				e->c->result = RESULT_DENY;
+				return 0;
+			}
 			r_push(r1);
 			break;
 		case oNOT:

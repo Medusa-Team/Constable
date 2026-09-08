@@ -13,8 +13,11 @@
 #include "../tree.h"
 #include "../space.h"
 #include "../generic.h"
+#include "../string_utils.h"
 
 #include "conf_lang.h"
+#include <limits.h>
+#include <mcompiler/checked_math.h>
 
 struct event_handler_s *function_init;
 struct event_handler_s *function_debug;
@@ -111,7 +114,7 @@ struct compile_tab_s conf_lang[] = {
 	{S6, {Tby, END}, {Tby, T_id, Pprogstart, S_exp, oRET, Ptreereg, T|';', START, END}},
 	{S6, {END}, {Ptreereg, T|';', START, END}},
 
-	{END}
+	COMPILE_TABLE_END
 };
 
 static struct event_handler_s *handler;
@@ -120,6 +123,7 @@ static int handler_pos;
 
 void conf_lang_out(struct compiler_out_class *o, sym_t s, uintptr_t d)
 {
+	(void)o;
 	if (s == TEND)
 		return;
 	if (handler == NULL) {
@@ -127,20 +131,34 @@ void conf_lang_out(struct compiler_out_class *o, sym_t s, uintptr_t d)
 		return;
 	}
 	if (handler_pos >= handler_size) {
-		handler_size = handler_pos + BYTECODE_CHUNK_SIZE;
-		handler = realloc(handler, sizeof(struct event_handler_s) + handler_size*sizeof(uintptr_t));
-		if (handler == NULL) {
+		int new_size;
+		size_t bytes;
+		uintptr_t *new_data;
+
+		if (handler_pos > INT_MAX - BYTECODE_CHUNK_SIZE ||
+		    !checked_size_multiply(
+			    (size_t)(handler_pos + BYTECODE_CHUNK_SIZE),
+			    sizeof(*new_data), &bytes)) {
+			error("Compiled handler is too large");
+			return;
+		}
+		new_size = handler_pos + BYTECODE_CHUNK_SIZE;
+		new_data = realloc(handler->data, bytes);
+		if (!new_data) {
 			error(Out_of_memory);
 			return;
 		}
+		handler->data = new_data;
+		handler_size = new_size;
 	}
 	if ((s & TYP) == O)
 		d = s;
-	((uintptr_t *)(handler->data))[handler_pos++] = d;
+	handler->data[handler_pos++] = d;
 }
 
 static void out_destroy(struct compiler_out_class *this)
 {
+	(void)this;
 }
 
 struct compiler_out_class s_canf_lang_out = {
@@ -148,6 +166,20 @@ struct compiler_out_class s_canf_lang_out = {
 	0,
 	conf_lang_out,
 };
+
+static int set_handler_name(char *destination, const char *prefix,
+			    const char *name)
+{
+	int result;
+
+	result = snprintf(destination, MEDUSA_OPNAME_MAX, "%s%s", prefix, name);
+	if (result < 0 || result >= MEDUSA_OPNAME_MAX) {
+		destination[0] = '\0';
+		error("Handler name '%s%s' is too long", prefix, name);
+		return -1;
+	}
+	return 0;
+}
 
 void conf_lang_param_out(struct compiler_class *c, sym_t s)
 {
@@ -188,6 +220,7 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 	switch (s) {
 	case Ppspace:
 		pspace = true;
+		/* fall through */
 	case Pspace:
 		if (c->l.data != 0) {
 			space = space_find((char *)(c->l.data));
@@ -289,8 +322,16 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 		ehh_list = EHH_VS_ALLOW;
 		handler_size = BYTECODE_CHUNK_SIZE;
 		handler_pos = 0;
-		handler = malloc(sizeof(struct event_handler_s) + handler_size*sizeof(uintptr_t));
+		handler = calloc(1, sizeof(*handler));
 		if (handler == NULL) {
+			error(Out_of_memory);
+			break;
+		}
+		/* Bytecode grows with realloc(), so it cannot share handler storage. */
+		handler->data = calloc(handler_size, sizeof(*handler->data));
+		if (handler->data == NULL) {
+			free(handler);
+			handler = NULL;
 			error(Out_of_memory);
 			break;
 		}
@@ -307,8 +348,16 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 			error("NULL function name");
 			break;
 		}
-		strcpy(handler->op_name, "func:");
-		strncpy(handler->op_name+5, op_name, MEDUSA_OPNAME_MAX-5);
+		if (handler == NULL) {
+			error("NULL function handler");
+			break;
+		}
+		if (set_handler_name(handler->op_name, "func:", op_name)) {
+			free(handler->data);
+			free(handler);
+			handler = NULL;
+			break;
+		}
 		if (!strcmp(op_name, "_init"))
 			function_init = handler;
 		else if (!strcmp(op_name, "_debug"))
@@ -316,12 +365,31 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 		else {
 			x = lex_getkeyword(op_name, Tcallfunc);
 			if (x == 0) {
-				x = (uintptr_t)(malloc(sizeof(void *)));
-				if (lex_addkeyword(op_name, Tcallfunc, x) < 0)
+				x = (uintptr_t)calloc(1, sizeof(uintptr_t));
+				if (x == 0) {
+					error(Out_of_memory);
+					free(handler->data);
+					free(handler);
+					handler = NULL;
+					break;
+				}
+				if (lex_addkeyword(op_name, Tcallfunc, x) < 0) {
 					error("Duplicate definition of function %s", op_name);
-			} else if (*((uintptr_t *)x) != 0)
+					free((void *)x);
+					free(handler->data);
+					free(handler);
+					handler = NULL;
+					break;
+				}
+			} else if (*((uintptr_t *)x) != 0) {
 				error("Duplicate definition of function %s", op_name);
-			*((uintptr_t *)x) = ((uintptr_t)handler) + ((uintptr_t)(((struct event_handler_s *)0)->data));
+				free(handler->data);
+				free(handler);
+				handler = NULL;
+				break;
+			}
+			*((uintptr_t *)x) = (uintptr_t)handler->data;
+			free(handler);
 		}
 		handler = NULL;
 		break;
@@ -331,11 +399,13 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 			error("NULL function name");
 			break;
 		}
-		x = (uintptr_t)(malloc(sizeof(void *)));
-		*((void **)x) = 0;
+		x = (uintptr_t)calloc(1, sizeof(uintptr_t));
+		if (x == 0) {
+			error(Out_of_memory);
+			break;
+		}
 		if (lex_addkeyword(op_name, Tcallfunc, x) < 0)
-			//warning("Duplicit declaration of function %s",op_name);
-			;
+			free((void *)x);
 		break;
 	case Pehh_list:
 		ehh_list = c->l.data;
@@ -347,7 +417,13 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 			error("NULL event name");
 			break;
 		}
-		strncpy(handler->op_name, op_name, MEDUSA_OPNAME_MAX);
+		if (set_handler_name(handler->op_name, "", op_name)) {
+			free(handler->data);
+			free(handler);
+			handler = NULL;
+			op_name = NULL;
+			break;
+		}
 		op_name = NULL;
 		if (space_add_event(handler, ehh_list, space1, space2, path1, path2) < 0)
 			error("Can't register handler - Unknown operation %s", handler->op_name);
@@ -360,7 +436,14 @@ void conf_lang_param_out(struct compiler_class *c, sym_t s)
 		}
 		event = NULL;
 		if (handler != NULL) {
-			strncpy(handler->op_name, tree_name, MEDUSA_OPNAME_MAX);
+			if (set_handler_name(handler->op_name, "", tree_name)) {
+				free(handler->data);
+				free(handler);
+				handler = NULL;
+				op_name = NULL;
+				tree_name = NULL;
+				break;
+			}
 			if (op_name == NULL) {
 				error("NULL event name");
 				break;

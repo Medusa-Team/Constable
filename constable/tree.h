@@ -19,7 +19,7 @@ struct tree_type_s {
 	struct class_handler_s *class_handler;
 	int (*init)(struct tree_s *t);
 	struct tree_type_s *child_type;
-	char	name[0];
+	char	name[];
 };
 
 struct tree_event_s {
@@ -41,7 +41,7 @@ struct tree_s {
 	struct event_hadler_hash_s	*subject_handlers[EHH_LISTS];
 	struct event_hadler_hash_s	*object_handlers[EHH_LISTS];
 	bool	visited; /* used for counting space members */
-	char	name[0];
+	char	name[];
 };
 
 extern struct tree_s *global_root;

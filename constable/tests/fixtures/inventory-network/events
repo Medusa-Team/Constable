@@ -1,0 +1,7 @@
+event=socket_create subject_class=process object_class=process event_bit=8 enforcement=active trigger=subject trigger_bitmap=subject delegation=sleepable fallback=baseline
+event=socket_bind_access subject_class=process object_class=socket event_bit=9 enforcement=active trigger=subject trigger_bitmap=subject delegation=sleepable fallback=baseline
+event=socket_connect_access subject_class=process object_class=socket event_bit=10 enforcement=active trigger=subject trigger_bitmap=subject delegation=sleepable fallback=baseline
+event=socket_listen_access subject_class=process object_class=socket event_bit=11 enforcement=active trigger=subject trigger_bitmap=subject delegation=sleepable fallback=baseline
+event=socket_accept_access subject_class=process object_class=socket event_bit=12 enforcement=active trigger=subject trigger_bitmap=subject delegation=sleepable fallback=baseline
+event=socket_sendmsg_access subject_class=process object_class=socket event_bit=13 enforcement=active trigger=subject trigger_bitmap=subject delegation=sleepable fallback=baseline
+event=socket_recvmsg_access subject_class=process object_class=socket event_bit=14 enforcement=active trigger=subject trigger_bitmap=subject delegation=sleepable fallback=baseline

@@ -7,16 +7,14 @@
  */
 
 #include "rbac.h"
+#include "rotate.h"
 #include "../space.h"
 #include "../language/language.h"
-#include <unistd.h>
-#include <string.h>
-#include <stdlib.h>
 
 static char *at2str( int a )
 { lextab_t *l=keywords;
     while(l->keyword!=NULL)
-    {	if( l->sym==Taccess && l->data==a )
+    {	if( l->sym==Taccess && l->data==(uintptr_t)a )
             return(l->keyword);
         l++;
     }
@@ -71,30 +69,13 @@ static void rbac_save_roles( FILE *f )
     pthread_rwlock_unlock(&rbac_roles_lock);
 }
 
-static void file_rotate( char *filename, int limit )
-{ char s[strlen(filename)+16];
-    char t[strlen(filename)+16];
-    if( limit==0 )
-    {	unlink(filename);
-        return;
-    }
-    sprintf(s,"%s.%d",filename,limit);
-    unlink(s);
-    for(limit--;limit>0;limit--)
-    {	sprintf(s,"%s.%d",filename,limit);
-        sprintf(t,"%s.%d",filename,limit+1);
-        rename(s,t);
-    }
-    rename(filename,s);
-}
-
 int rbac_save( char *file, int rotate )
 { FILE *f;
-    file_rotate(file,rotate);
+    if( rotate<0 || rbac_rotate_files(file,(unsigned int)rotate)<0 )
+        return(-1);
     if( (f=fopen(file,"w"))==NULL )
         return(-1);
     rbac_save_roles(f);
     fclose(f);
     return(0);
 }
-

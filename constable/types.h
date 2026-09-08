@@ -12,18 +12,17 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-/* Force a compilation error if condition is true, but also produce a
- * result (of value 0 and type int), so the expression can be used
- * e.g. in a structure initializer (or where-ever else comma expressions
- * aren't permitted).
- */
-#define BUILD_BUG_ON_ZERO(e) ((int)(sizeof(struct { int:(-!!(e)); })))
+/* Produce zero in expressions, but fail compilation when condition is true. */
+#define BUILD_BUG_ON_ZERO(condition) \
+	((int)(sizeof(struct { int dummy; int : -!!(condition); }) - \
+	       sizeof(int)))
 
-/* Are two types/vars the same type (ignoring qualifiers)? */
-#define __same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
-
-/* &a[0] degrades to a pointer: a different type from an array */
-#define __must_be_array(a) BUILD_BUG_ON_ZERO(__same_type((a), &(a)[0]))
-#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]) + __must_be_array(arr))
+/* Compiler type introspection keeps accidental pointer use from compiling. */
+#define SAME_TYPE(left, right) \
+	__builtin_types_compatible_p(__typeof__(left), __typeof__(right))
+#define MUST_BE_ARRAY(array) \
+	BUILD_BUG_ON_ZERO(SAME_TYPE((array), &(array)[0]))
+#define ARRAY_SIZE(array) \
+	(sizeof(array) / sizeof((array)[0]) + MUST_BE_ARRAY(array))
 
 #endif /* _TYPES_H */

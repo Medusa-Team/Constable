@@ -8,6 +8,7 @@
 
 #ifndef _MCP_H
 #define	_MCP_H
+#include <stdbool.h>
 #include "../comm.h"
 #include <netinet/in.h>
 
@@ -24,5 +25,8 @@ struct comm_s *mcp_alloc_comm(char *name);
 int mcp_open(struct comm_s *c, char *filename);
 struct comm_s *mcp_listen(in_port_t port);
 int mcp_to_accept(struct comm_s *c, struct comm_s *listen, in_addr_t ip, in_addr_t mask, in_port_t port);
+int mcp_renew_authrequest(struct comm_buffer_s *request);
+bool mcp_authrequest_cancelled(struct comm_buffer_s *request);
+int mcp_replace_policy(struct comm_s *comm);
 
 #endif /* _MCP_H */

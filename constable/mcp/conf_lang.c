@@ -9,8 +9,11 @@
 #include "../constable.h"
 #include "../comm.h"
 #include "../init.h"
+#include "../approval.h"
+#include "../string_utils.h"
 #include "mcp.h"
 #include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -23,6 +26,7 @@
 #include <mcompiler/lex.h>
 
 extern char *medusa_config_file;
+extern int medusa_config_file_explicit;
 
 enum {
 	START = N | 0x0000,
@@ -31,6 +35,7 @@ enum {
 	S1n,
 	S1p,
 	SM,
+	SA,
 };
 
 enum {
@@ -44,6 +49,11 @@ enum {
 	Tchdir,		/* chdir */
 	Tconfig,	/* config */
 	Tsystem,	/* system */
+	Tapproval,	/* approval */
+	Tsocket,	/* socket */
+	Tuid,		/* uid */
+	Tevents,	/* events */
+	Ttimeout,	/* timeout */
 };
 
 enum {
@@ -62,6 +72,11 @@ enum {
 	Pmodule,
 	Pmodfile,
 	Psystem,
+	Papproval_socket,
+	Papproval_uid,
+	Papproval_events,
+	Papproval_timeout,
+	Papproval,
 };
 
 /*
@@ -71,6 +86,7 @@ enum {
  * "name" file "filename";
  * "name" tcp:<port> <ip>[/<mask>][:<port>];
  * module "name" [file "filename"];
+ * approval socket "path" uid 1000 events "event,event" timeout 60;
  */
 
 struct compile_tab_s mcp_conf_lang[] = {
@@ -81,6 +97,14 @@ struct compile_tab_s mcp_conf_lang[] = {
 	{SM, {Tfile, END}, {Tfile, T_str, Pmodfile, END}},
 	{SM, {END}, {END}},
 	{START, {Tconfig, END}, {Tconfig, T_str, Pconfig, T | ';', START, END}},
+	{START, {Tapproval, END},
+	 {Tapproval, Tsocket, T_str, Papproval_socket,
+	  Tuid, T_num, Papproval_uid,
+	  SA, END}},
+	{SA, {Tevents, END},
+	 {Tevents, T_str, Papproval_events,
+	  Ttimeout, T_num, Papproval_timeout,
+	  Papproval, T | ';', START, END}},
 	{START, {T_str, END}, {T_str, Pname, S1, T | ';', START, END}},
 	{START, {TEND, END}, {END}},
 	{S1, {Tfile, END}, {Tfile, T_str, Pcommfile, END}},
@@ -91,7 +115,7 @@ struct compile_tab_s mcp_conf_lang[] = {
 	{S1m, {END}, {Pmaskfull, END}},
 	{S1p, {T | ':', END}, { T | ':', T_num, Pport, END}},
 	{S1p, {END}, {Pport0, END}},
-	{END}
+	COMPILE_TABLE_END
 };
 
 enum {
@@ -122,6 +146,11 @@ static lextab_t keywords[] = {
 	{"chdir", Tchdir, 0},
 	{"config", Tconfig, 0},
 	{"system", Tsystem, 0},
+	{"approval", Tapproval, 0},
+	{"socket", Tsocket, 0},
+	{"uid", Tuid, 0},
+	{"events", Tevents, 0},
+	{"timeout", Ttimeout, 0},
 	{NULL, END, 0},
 };
 
@@ -201,7 +230,7 @@ static lexstattab_t mcp_lex_tab[] = {
 	{LS_comment, NULL, rules_comment, NULL, NULL},
 	{LS_comment2, NULL, rules_comment2, NULL, NULL},
 	{LS_comment_line, NULL, rules_comment_line, NULL, NULL},
-	{END}
+	LEX_STATE_TABLE_END
 };
 
 static int mcp_error(const char *fmt, ...);
@@ -209,18 +238,28 @@ static int mcp_warning(const char *fmt, ...);
 
 static void gen_lex_ident(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_id;
 	*data = (uintptr_t)strdup(buf);
+	if (!*data)
+		*sym = eNOMEM;
 }
 
 static void gen_lex_str(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_str;
 	*data = (uintptr_t)strdup(buf);
+	if (!*data)
+		*sym = eNOMEM;
 }
 
 static void gen_lex_num(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_num;
 	*data = (uintptr_t)strtol(buf, NULL, 0);
 	if (errno == ERANGE)
@@ -229,6 +268,8 @@ static void gen_lex_num(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t w
 
 static void gen_lex_ip(char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want)
 {
+	(void)len;
+	(void)want;
 	*sym = T_ip;
 	*data = (uintptr_t)inet_addr(buf);
 }
@@ -239,15 +280,15 @@ static int mcp_error(const char *fmt, ...)
 {
 	va_list ap;
 	char buf[2048];
+	char prefix[96];
 
-	sprintf(buf, "%.40s [%d,%d]: Error: ",
-		mcp_compiler->lex->filename,
-		mcp_compiler->lex->row,
-		mcp_compiler->lex->col);
+	snprintf(prefix, sizeof(prefix), "%.40s [%d,%d]: Error: ",
+		 mcp_compiler->lex->filename,
+		 mcp_compiler->lex->row,
+		 mcp_compiler->lex->col);
 	va_start(ap, fmt);
-	vsnprintf(buf + strlen(buf), 1000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), prefix, fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 	mcp_compiler->err->errors++;
 	return 0;
@@ -257,15 +298,15 @@ static int mcp_warning(const char *fmt, ...)
 {
 	va_list ap;
 	char buf[2048];
+	char prefix[96];
 
-	sprintf(buf, "%.40s [%d,%d]: Warning: ",
-		mcp_compiler->lex->filename,
-		mcp_compiler->lex->row,
-		mcp_compiler->lex->col);
+	snprintf(prefix, sizeof(prefix), "%.40s [%d,%d]: Warning: ",
+		 mcp_compiler->lex->filename,
+		 mcp_compiler->lex->row,
+		 mcp_compiler->lex->col);
 	va_start(ap, fmt);
-	vsnprintf(buf + strlen(buf), 1000, fmt, ap);
+	string_vformat_line(buf, sizeof(buf), prefix, fmt, ap);
 	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
 	write(1, buf, strlen(buf));
 	mcp_compiler->err->warnings++;
 	return 0;
@@ -297,12 +338,13 @@ static char *sym2str(sym_t sym)
 			return l->keyword;
 		l++;
 	}
-	sprintf(buf, "?%04x?", sym);
+	snprintf(buf, sizeof(buf), "?%04x?", sym);
 	return buf;
 }
 
 static sym_t err_warning(struct compiler_err_class *this, sym_t errsym, sym_t info)
 {
+	(void)this;
 	if (errsym == TEND)
 		return 0;
 	if (errsym == END && (info & TYP) == E)
@@ -318,6 +360,7 @@ static sym_t err_error(struct compiler_err_class *this, sym_t errsym, sym_t info
 {
 	char **errstr;
 
+	(void)this;
 	if (errsym == TEND)
 		return 0;
 	if (errsym == END && info == eLEXERR) {
@@ -341,6 +384,7 @@ static sym_t err_error(struct compiler_err_class *this, sym_t errsym, sym_t info
 
 static void err_destroy(struct compiler_err_class *this)
 {
+	(void)this;
 }
 
 struct compiler_err_class mcp_s_error = {
@@ -354,10 +398,14 @@ struct compiler_err_class mcp_s_error = {
 
 static void conf_lang_out(struct compiler_out_class *o, sym_t s, unsigned long d)
 {
+	(void)o;
+	(void)s;
+	(void)d;
 }
 
 static void out_destroy(struct compiler_out_class *this)
 {
+	(void)this;
 }
 
 struct compiler_out_class mcp_s_canf_lang_out = {
@@ -374,7 +422,16 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 	static in_addr_t mask;
 	static in_port_t port;
 	static struct module_s *module;
+	static char *approval_socket;
+	static char *approval_events;
+	static uid_t approval_uid;
+	static unsigned int approval_timeout;
+	static bool approval_numbers_valid;
 	struct comm_s *comm;
+	char *token = NULL;
+
+	if (c->l.sym == T_id || c->l.sym == T_str)
+		token = (char *)c->l.data;
 
 	switch (s) {
 	case Pname:
@@ -416,6 +473,7 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		break;
 	case Pmaskfull:
 		c->l.data = 32;
+		/* fall through */
 	case Pmasknum:
 		if (c->l.data < 32)
 			mask = ((1 << (c->l.data)) - 1) << (32 - (c->l.data));
@@ -424,6 +482,7 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		break;
 	case Pport0:
 		c->l.data = 0;
+		/* fall through */
 	case Pport:
 		port = (in_port_t)(c->l.data);
 		break;
@@ -435,8 +494,45 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		if (system((char *)c->l.data) < 0)
 			mcp_error("%s: %s", (char *)(c->l.data), strerror(errno));
 		break;
+	case Papproval_socket:
+		free(approval_socket);
+		approval_socket = strdup((char *)c->l.data);
+		if (!approval_socket)
+			mcp_error("Out of memory");
+		approval_numbers_valid = true;
+		break;
+	case Papproval_uid:
+		if (c->l.data > UINT_MAX)
+			approval_numbers_valid = false;
+		else
+			approval_uid = (uid_t)c->l.data;
+		break;
+	case Papproval_events:
+		free(approval_events);
+		approval_events = strdup((char *)c->l.data);
+		if (!approval_events)
+			mcp_error("Out of memory");
+		break;
+	case Papproval_timeout:
+		if (c->l.data > UINT_MAX)
+			approval_numbers_valid = false;
+		else
+			approval_timeout = (unsigned int)c->l.data;
+		break;
+	case Papproval:
+		if (!approval_socket || !approval_events ||
+		    !approval_numbers_valid ||
+		    approval_configure_file(approval_socket, approval_events,
+					    approval_uid, approval_timeout))
+			mcp_error("Invalid user approval configuration");
+		free(approval_socket);
+		free(approval_events);
+		approval_socket = NULL;
+		approval_events = NULL;
+		break;
 	case Pconfig:
-		medusa_config_file = strdup((char *)(c->l.data));
+		if (!medusa_config_file_explicit)
+			medusa_config_file = strdup((char *)(c->l.data));
 		break;
 	case Pmodule:
 		module = activate_module((char *)(c->l.data));
@@ -453,6 +549,10 @@ static void mcp_conf_lang_param_out(struct compiler_class *c, sym_t s)
 		mcp_error("mcp language error");
 		break;
 	}
+
+	free(token);
+	if (token)
+		c->l.data = 0;
 }
 
 int mcp_language_do(char *filename)

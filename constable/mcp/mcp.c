@@ -1,1138 +1,1435 @@
 // SPDX-License-Identifier: GPL-2.0
-/**
- * @file mcp.c
- * @short Medusa Communication Protocol handler
- *
- * (c)2002 by Marek Zelem <marek@terminus.sk>
- */
 
-#include <stdio.h>
-
-#include <unistd.h>
-#include <stdarg.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
+#include <pthread.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include "../comm.h"
 #include "../constable.h"
+#include "../event.h"
+#include "../fallback_policy.h"
+#include "../domain_rule.h"
+#include "../approval.h"
 #include "../medusa_object.h"
 #include "../object.h"
-#include "../event.h"
-#include <sys/param.h>
-#include <endian.h>
-#include <errno.h>
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-
+#include "../string_utils.h"
 #include "mcp.h"
+#include "validate.h"
 
 extern struct event_handler_s *function_init;
-static struct comm_s *all_comms;
-
-/**
- * Enumeration of possible return values for mcp handlers
- */
-enum read_result {
-	READ_ERROR = -1,    /**< an error during read operation */
-	READ_DONE,          /**< successful read operation */
-	READ_FREE,          /**< successful read operation and caller should free the buffer */
-};
-
-static int get_event_context(struct comm_s *comm, struct event_context_s *c,
-			     struct event_type_s *t, void *data);
-static struct comm_buffer_s *mcp_opened(struct comm_s *c);
-static int mcp_accept(struct comm_s *c);
-static enum read_result mcp_r_greeting(struct comm_buffer_s *b);
-static int mcp_read_worker(struct comm_s *c);
-static enum read_result mcp_r_head(struct comm_buffer_s *b);
-static enum read_result mcp_r_query(struct comm_buffer_s *b);
-static int mcp_answer(struct comm_s *c, struct comm_buffer_s *b);
-static enum read_result mcp_r_classdef_attr(struct comm_buffer_s *b);
-static enum read_result mcp_r_acctypedef_attr(struct comm_buffer_s *b);
-static enum read_result mcp_r_discard(struct comm_buffer_s *b);
-static enum read_result mcp_r_ready_request(struct comm_buffer_s *b);
-static int mcp_write(struct comm_s *c);
-static int mcp_nowrite(struct comm_s *c);
-static int mcp_close(struct comm_s *c);
-static int mcp_fetch_object(struct comm_s *c, int cont, struct object_s *o,
-			    struct comm_buffer_s *wake);
-static enum read_result mcp_r_fetch_answer(struct comm_buffer_s *b);
-static enum read_result mcp_r_fetch_answer_done(struct comm_buffer_s *b);
-static int mcp_update_object(struct comm_s *c, int cont, struct object_s *o,
-			     struct comm_buffer_s *wake);
-static enum read_result mcp_r_update_answer(struct comm_buffer_s *b);
-static int mcp_conf_error(struct comm_s *c, const char *fmt, ...);
-
-static int get_event_context(struct comm_s *comm,
-			     struct event_context_s *c,
-			     struct event_type_s *t,
-			     void *data)
-{
-	c->operation.next = &c->subject;
-	c->operation.attr.offset = 0;
-	c->operation.attr.length = t->acctype.size;
-	c->operation.attr.type = MED_TYPE_END;
-	strncpy(c->operation.attr.name, t->acctype.name,
-		MIN(MEDUSA_ATTRNAME_MAX, MEDUSA_OPNAME_MAX));
-	c->operation.flags = comm->flags;
-	c->operation.class = &t->operation_class;
-	c->operation.data = (char *)(data) + 2 * sizeof(MCPptr_t);
-
-	c->subject.next = &c->object;
-	c->subject.attr.offset = 0;
-	c->subject.attr.length = 0;
-	c->subject.attr.type = MED_TYPE_END;
-	strncpy(c->subject.attr.name, t->acctype.op_name[0], MEDUSA_ATTRNAME_MAX);
-	c->subject.flags = comm->flags;
-	c->subject.class = t->op[0];
-	c->subject.data = (char *)(data) + 2 * sizeof(MCPptr_t) + (t->acctype.size);
-	c->object.next = NULL;
-	c->object.attr.offset = 0;
-	c->object.attr.length = 0;
-	c->object.attr.type = MED_TYPE_END;
-	strncpy(c->object.attr.name, t->acctype.op_name[1], MEDUSA_ATTRNAME_MAX);
-	c->object.flags = comm->flags;
-	c->object.class = t->op[1];
-	c->object.data = (char *)(data) + 2 * sizeof(MCPptr_t) + (t->acctype.size);
-	if (c->subject.class) {
-		c->object.data += c->subject.class->m.size;
-		c->subject.attr.length = c->subject.class->m.size;
-	}
-	if (c->object.class)
-		c->object.attr.length = c->object.class->m.size;
-	c->local_vars = NULL;
-
-	return 0;
-}
 
 struct mcp_comm_s {
-	struct comm_s	*next;
-	struct comm_s	*to_accept;
-	in_addr_t	allow_ip;
-	in_addr_t	allow_mask;
-	in_port_t	allow_port;
+	uint64_t generation;
+	uint64_t enabled_features;
+	uint64_t next_request_id;
+	pthread_mutex_t request_lock;
+	struct v4_cancelled_request *cancelled;
+	uint64_t replacement_generation;
+	bool replacement_pending;
 };
 
-struct comm_s *mcp_alloc_comm(char *name)
+struct v4_cancelled_request {
+	struct v4_cancelled_request *next;
+	uint64_t request_id;
+};
+
+struct v4_tlv_view {
+	uint16_t type;
+	uint16_t flags;
+	const uint8_t *value;
+	size_t length;
+};
+
+struct v4_builder {
+	struct comm_buffer_s *buffer;
+	size_t capacity;
+};
+
+#define MCP_DATA(c) ((struct mcp_comm_s *)comm_user_data(c))
+
+static uint16_t from_le16(uint16_t value)
 {
-	struct comm_s *c;
-
-	c = comm_new(name, sizeof(struct mcp_comm_s));
-	if (unlikely(!c))
-		return NULL;
-
-	c->state = 0;
-	c->read = mcp_read_worker;
-	c->write = mcp_write;
-	c->close = mcp_close;
-	c->answer = mcp_answer;
-	c->fetch_object = mcp_fetch_object;
-	c->update_object = mcp_update_object;
-	c->conf_error = mcp_conf_error;
-
-	return c;
-}
-
-/**
- * Prepares the communication interface for usage. Creates a buffer for the
- * greeting message. Called from comm_do() for each communication interface.
- */
-static struct comm_buffer_s *mcp_opened(struct comm_s *c)
-{
-	struct comm_buffer_s *b;
-
-	class_free_all_clases(c);
-	event_free_all_events(c);
-	c->open_counter++;
-	b = comm_buf_get(2048, c);
-	if (unlikely(!b)) {
-		fatal("Not enough memory for communication buffer");
-		return NULL;
-	}
-	b->want = 2 * sizeof(MCPptr_t);
-	b->completed = mcp_r_greeting;
-	return b;
-}
-
-/**
- * Opens a file descriptor of the communication interface. Called from the
- * configuration file parser.
- */
-int mcp_open(struct comm_s *c, char *filename)
-{
-	c->fd = comm_open_skip_stdfds(filename, O_RDWR, 0);
-	if (unlikely(c->fd < 0))
-		return -1;
-	return 0;
-}
-
-#define MCP_DATA(c)	((struct mcp_comm_s *)(comm_user_data(c)))
-
-struct comm_s *mcp_listen(in_port_t port)
-{
-	struct comm_s *p;
-	struct sockaddr_in addr;
-
-	for (p = all_comms; p; p = MCP_DATA(p)->next) {
-		if (MCP_DATA(p)->allow_port == port)
-			return p;
-	}
-	p = mcp_alloc_comm(retprintf("#%d", port));
-	if (unlikely(!p))
-		return NULL;
-	MCP_DATA(p)->allow_port = port;
-	p->fd = socket(PF_INET, SOCK_STREAM, 0);
-	if (unlikely(p->fd < 0)) {
-		init_error("Can't create socket");
-		return NULL;
-	}
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons(port);
-	if (unlikely(bind(p->fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_in)) < 0)) {
-		close(p->fd);
-		p->fd = -1;
-		init_error("Can't bind to port %d", port);
-		return NULL;
-	}
-	listen(p->fd, 8);
-	p->open_counter++;
-	p->read = mcp_accept;
-	p->write = mcp_nowrite;
-	MCP_DATA(p)->next = all_comms;
-	all_comms = p;
-
-	return p;
-}
-
-int mcp_to_accept(struct comm_s *c, struct comm_s *listen,
-		  in_addr_t ip,	in_addr_t mask, in_port_t port)
-{
-	if (unlikely(!listen))
-		return -1;
-
-	MCP_DATA(c)->allow_ip = ip;
-	MCP_DATA(c)->allow_mask = mask;
-	MCP_DATA(c)->allow_port = port;
-	MCP_DATA(c)->next = MCP_DATA(listen)->to_accept;
-	MCP_DATA(listen)->to_accept = c;
-
-	return 0;
-}
-
-static int mcp_accept(struct comm_s *c)
-{
-	struct sockaddr_in addr;
-	socklen_t len;
-	int sock;
-	struct comm_s *p;
-
-	len = sizeof(addr);
-	sock = accept(c->fd, (struct sockaddr *)(&addr), &len);
-	if (unlikely(sock < 0)) {
-		comm_error("comm %s: error in accept()", c->name);
-		return -1;
-	}
-
-	for (p = MCP_DATA(c)->to_accept; p; p = MCP_DATA(p)->next) {
-		if ((MCP_DATA(p)->allow_ip & MCP_DATA(p)->allow_mask)
-		    == (addr.sin_addr.s_addr & MCP_DATA(p)->allow_mask) &&
-		    (MCP_DATA(p)->allow_port == 0 ||
-		    (MCP_DATA(p)->allow_port == ntohs(addr.sin_port)))
-		   ) {
-			if (p->fd >= 0) {
-				comm_error("comm %s: reconnect", p->name);
-				p->close(p);
-			}
-			p->fd = sock;
-			return 0;
-		}
-	}
-
-	comm_error("comm %s: unauthorized access from [%s:%d] => close",
-		   c->name, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
-	close(sock);
-	return 0;
-}
-
-#undef MCP_DATA
-
-/**
- * Reads the greeting message from the kernel and sets endianness used for
- * communication.
- */
-static enum read_result mcp_r_greeting(struct comm_buffer_s *b)
-{
-	switch (((MCPptr_t *)(b->comm_buf))[0]) {
-	case 0x66007e5a:
-		comm_info("comm %s: has native byte order ;-D", b->comm->name);
-		b->comm->flags = 0;
-		break;
-	case 0x5a7e0066:
-		comm_info("comm %s: need to translate byte order ;-)", b->comm->name);
-		b->comm->flags = OBJECT_FLAG_CHENDIAN;
-		break;
-	case 0x00000000:
-		comm_error("comm %s: does not support greeting ;-(", b->comm->name);
-		b->comm->flags = 0;
-		b->want = sizeof(MCPptr_t) + sizeof(unsigned int);
-		b->completed = mcp_r_head;
-		return READ_DONE;
-#if __BYTE_ORDER == __BIG_ENDIAN
-	case 0x00665a7e:
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-	case 0x7e5a6600:
-#endif
-		comm_error("comm %s: has PDP byte order ;-/", b->comm->name);
-		return READ_ERROR;
-#if __BYTE_ORDER == __BIG_ENDIAN
-	case 0x66001fcb:
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-	case 0xcb1f0066:
-#endif
-		comm_error("comm %s: is 9 bit big endian ;-S", b->comm->name);
-		return READ_ERROR;
-#if __BYTE_ORDER == __BIG_ENDIAN
-	case 0x9b3f800c:
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-	case 0x0c803f9b:
-#endif
-		comm_error("comm %s: is 9 bit little endian ;-s", b->comm->name);
-		return READ_ERROR;
-	default:
-		comm_error("comm %s: has some exotic byte order ;-|", b->comm->name);
-		return READ_ERROR;
-	}
-
-	b->comm->version = ((uint64_t *)(b->comm_buf))[1];
-	comm_info("comm %s: protocol version %llu", b->comm->name, b->comm->version);
-	b->completed = NULL;
-	return READ_FREE;
-}
-
-static inline int mcp_check_size_and_read(struct comm_buffer_s **buf)
-{
-	fd_set rd;
-	int r;
-
-	if ((*buf)->want > (*buf)->size && (*buf)->p_comm_buf == (*buf)->comm_buf) {
-		struct comm_buffer_s *b;
-
-		b = comm_buf_resize(*buf, (*buf)->want);
-		if (unlikely(!b)) {
-			fatal(Out_of_memory);
-			return -1;
-		}
-		*buf = b;
-	}
-
-	while ((*buf)->len < (*buf)->want) {
-		FD_ZERO(&rd);
-		FD_SET((*buf)->comm->fd, &rd);
-		r = select((*buf)->comm->fd + 1, &rd, NULL, NULL, NULL);
-		if (unlikely(r == -1)) {
-			fprintf(stderr, "%s: select error %d", __func__, errno);
-			return -1;
-		}
-		if (FD_ISSET((*buf)->comm->fd, &rd))
-			r = read((*buf)->comm->fd,
-				 (*buf)->p_comm_buf + (*buf)->len,
-				 (*buf)->want - (*buf)->len);
-		else
-			continue;
-		if (unlikely(r <= 0)) {
-			comm_error("medusa comm %s: Read error or EOF (%d)",
-				   (*buf)->comm->name, errno);
-			return -1;
-		}
-		(*buf)->len += r;
-	}
-	return 0;
-}
-
-static inline int mcp_read_loop(struct comm_buffer_s **buf)
-{
-	enum read_result result;
-
-	while ((*buf)->completed) {
-		if (unlikely(mcp_check_size_and_read(buf) < 0))
-			goto error;
-		result = (*buf)->completed(*buf);
-		if (unlikely(result < READ_DONE)) {
-			goto error;
-		} else if (result == READ_FREE) {
-			(*buf)->bfree(*buf);
-			return 0;
-		}
-	}
-	return 0;
-error:
-	(*buf)->comm->close((*buf)->comm);
-	(*buf)->bfree(*buf);
-	return -1;
-}
-
-int mcp_receive_greeting(struct comm_s *c)
-{
-	struct comm_buffer_s *b;
-
-	b = mcp_opened(c);
-	return mcp_read_loop(&b);
-}
-
-/**
- * Last function in the function chain of completed functions *must* set the
- * completed attribute to NULL if it finishes successfully.
- */
-int mcp_read_worker(struct comm_s *c)
-{
-	struct comm_buffer_s *buf;
-
-	if (unlikely(tls_alloc_init()))
-		return -1;
-
-	while (1) {
-		pthread_mutex_lock(&c->read_lock);
-		buf = comm_buf_get(2048, c);
-		buf->want = sizeof(uint32_t) + sizeof(MCPptr_t);
-		buf->completed = mcp_r_head;
-		if (unlikely(mcp_read_loop(&buf))) {
-			comm_error("%s: read error", __func__);
-			c->close(c);
-			pthread_mutex_unlock(&c->read_lock);
-			return -1;
-		}
-		pthread_mutex_unlock(&c->read_lock);
-	}
-}
-
-/**
- *  Read header of the received buffer and determine number of bytes to be
- *  read in the next read call.
- */
-static enum read_result mcp_r_head(struct comm_buffer_s *b)
-{
-	MCPptr_t x;
-
-	x = ((MCPptr_t *)(b->comm_buf))[0];
-	if (likely(x != 0)) {
-		// This is a decision request
-		b->event = (struct event_type_s *)hash_find(&b->comm->events, x);
-		if (unlikely(!b->event)) {
-			comm_error("comm %s: Unknown access type %p!", b->comm->name, x);
-			return READ_ERROR;
-		}
-		b->want = sizeof(uint32_t) + b->len + (b->event->acctype.size);
-		if (likely(b->event->op[0]))
-			b->want += b->event->op[0]->m.size;
-		if (b->event->op[1])
-			b->want += b->event->op[1]->m.size;
-		b->completed = mcp_r_query;
-
-		return READ_DONE;
-	}
-
-	switch (byte_reorder_get_int32(b->comm->flags,
-				       ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0])) {
-	case MEDUSA_COMM_CLASSDEF:
-		b->want = b->len + sizeof(struct medusa_comm_class_s)
-			  + sizeof(struct medusa_comm_attribute_s);
-		b->completed = mcp_r_classdef_attr;
-		break;
-	case MEDUSA_COMM_ACCTYPEDEF:
-		b->want = b->len + sizeof(struct medusa_comm_acctype_s)
-			  + sizeof(struct medusa_comm_attribute_s);
-		b->completed = mcp_r_acctypedef_attr;
-		break;
-	case MEDUSA_COMM_CLASSUNDEF:
-	case MEDUSA_COMM_ACCTYPEUNDEF:
-		runtime("Huh, I don't know how to undef class or acctype ;-|");
-		b->want = b->len + sizeof(unsigned int);
-		b->completed = mcp_r_discard;
-		break;
-	case MEDUSA_COMM_FETCH_ERROR:
-	case MEDUSA_COMM_FETCH_ANSWER:
-		b->want = b->len + 2 * sizeof(MCPptr_t); //+sizeof(unsigned int);
-		b->completed = mcp_r_fetch_answer;
-		break;
-	case MEDUSA_COMM_UPDATE_ANSWER:
-		b->want = b->len + 2 * sizeof(MCPptr_t) + sizeof(unsigned int);
-		b->completed = mcp_r_update_answer;
-		break;
-	case MEDUSA_COMM_READY_REQUEST:
-		/* only redirect to mcp_r_ready_request() */
-		b->completed = mcp_r_ready_request;
-		break;
-	default:
-		comm_error("comm %s: Communication protocol error! (%d)",
-			   b->comm->name, ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0]);
-		return READ_ERROR;
-	}
-
-	return READ_DONE;
-}
-
-/**
- * Reads an authorization query from the kernel and saves it to a queue for
- * later processing.
- */
-static enum read_result mcp_r_query(struct comm_buffer_s *b)
-{
-	get_event_context(b->comm, &b->context, b->event, b->comm_buf);
-	b->ehh_list = EHH_VS_ALLOW;
-	pthread_mutex_lock(&b->comm->state_lock);
-
-	/*
-	 * ParanoYa sanity check: `comm->init_buffer` is not allocated yet.
-	 *
-	 * For protocol version >= 3 this is a bug, for version < 3 this is a legitimate
-	 * state: this is the first decision request from the kernel and the comm interface
-	 * should be initialized.
-	 */
-	if (unlikely(b->comm->state == 0)) {
-		if (b->comm->version < 3) {
-			/*
-			 * Initialize comm and allocate a buffer for _init(), if defined in med
-			 * config file. Do not use locking; b->comm->state_lock is already held.
-			 */
-			if (unlikely(comm_conn_init(b->comm, false) < 0)) {
-				pthread_mutex_unlock(&b->comm->state_lock);
-				return READ_ERROR;
-			}
-			goto after_init;
-		}
-
-		comm_error("Corrupted comm '%s' state: comm->init_buffer is not allocated yet!",
-			   b->comm->name);
-		pthread_mutex_unlock(&b->comm->state_lock);
-		return READ_ERROR;
-	}
-
-after_init:
-	if (function_init && b->comm->init_buffer) {
-		/* Enqueue incoming requests to be processed after _init() finishes. */
-		comm_buf_to_queue(&b->comm->init_buffer->to_wake, b);
-		/* `b->completed` should be set to NULL before `unlock(state_lock)`.
-		 * After _init() finishes, comm_worker() calls `free(init_buffer)`,
-		 * which inserts `b` into `comm_todo`. As free() is called with locked
-		 * `state_lock`, it cannot be done until `state_lock` is not unlocked
-		 * here. In this way is guaranteed that the state of `b` is properly
-		 * initialized before scheduling it for execution by some worker.
-		 */
-		b->completed = NULL;
-		pthread_mutex_unlock(&b->comm->state_lock);
-		return READ_DONE;
-	}
-
-	/* In this case comes `unlock(state_lock)` before `b->completed = NULL`.
-	 * Integrity of `b` is not damaged and the code path is more effective (in
-	 * the terms of concurrency).
-	 */
-	pthread_mutex_unlock(&b->comm->state_lock);
-	b->completed = NULL;
-	/* After _init() was processed, new requests are always inserted here. */
-	comm_buf_todo(b);
-	return READ_DONE;
-}
-
-static int mcp_answer(struct comm_s *c, struct comm_buffer_s *b)
-{
-#ifdef DEBUG_TRACE
-	struct medusa_attribute_s *apid, *acmdline;
-	struct object_s *object;
-	int pid;
-	char cmdline[256];
-	char *result;
-#endif
-	struct comm_buffer_s *r;
-	#pragma pack(push)
-	#pragma pack(1)
-	struct out_struct {
-		MCPptr_t ans, id;
-		uint16_t res;
-	} *out;
-	#pragma pack(pop)
-	int i;
-
-	/* TODO: only if changed */
-
-	if (b->context.result >= 0 && b->context.subject.class) {
-		/*
-		 * The value od `do_phase` can't be zero, because the function
-		 * `mcp_answer()` is called only once from `comm_worker()` when
-		 * `do_phase` >= 1000. So the following expression shouldn't be
-		 * true.
-		 */
-		if (b->do_phase == 0)
-			b->do_phase = 1000;
-		i = c->update_object(c, b->do_phase - 1000, &b->context.subject, b);
-		/*
-		 * See documentation of update_object() in `struct comm_s`. Negative
-		 * return values of update_object() are silently ignored (including
-		 * FAILURE of update operation). Values greather than zero indicate
-		 * unfinished operation (i.e. waiting for kernel response about success
-		 * or failure of the update operation). Value 0 of the variable `i`
-		 * means successfully finished update operation.
-		 */
-		if (i > 0) {
-			b->do_phase = i + 1000;
-			return i;
-		}
-		/* `b->do_phase` after finished update operation remains 1000 */
-	}
-
-	r = comm_buf_get(sizeof(*out), c);
-	if (unlikely(!r)) {
-		fatal("Can't alloc buffer for send answer!");
-		return -1;
-	}
-	out = (void *)&r->comm_buf;
-	out->ans = byte_reorder_put_int64(c->flags, MEDUSA_COMM_AUTHANSWER);
-	out->id = ((MCPptr_t *)(b->comm_buf + sizeof(MCPptr_t)))[0];
-#ifdef TRANSLATE_RESULT
-	switch (b->context.result) {
-	case RESULT_FORCE_ALLOW:
-		out->res = MED_FORCE_ALLOW;
-		break;
-	case RESULT_DENY:
-		out->res = MED_DENY;
-		break;
-	case RESULT_FAKE_ALLOW:
-		out->res = MED_FAKE_ALLOW;
-		break;
-	case RESULT_ALLOW:
-		out->res = MED_ALLOW;
-		break;
-	default:
-		out->res = MED_ERR;
-	}
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	return __builtin_bswap16(value);
 #else
-	out->res = b->context.result;
+	return value;
 #endif
-	out->res = byte_reorder_put_int16(c->flags, out->res);
-	r->len = sizeof(*out);
-	r->want = 0;
-	r->completed = NULL;
+}
 
-#ifdef DEBUG_TRACE
-	switch ((short)out->res) {
-	case MED_ERR: // -1
-		result = "ERR  ";
-		break;
-	case MED_FORCE_ALLOW: // 0
-		result = "FORCE_ALLOW";
-		break;
-	case MED_DENY: // 1
-		result = "DENY ";
-		break;
-	case MED_FAKE_ALLOW: // 2
-		result = "FAKE_ALLOW ";
-		break;
-	case MED_ALLOW: // 3
-		result = "ALLOW";
-		break;
-	default: // BUG
-		result = "__UNKNOWN__";
-	}
-
-	printf("answer 0x%016lx %s for %s",
-	       out->id, result, b->context.operation.class->m.name);
-
-	pid = -1;
-	memset(cmdline, '\0', sizeof(cmdline));
-
-	// search for the `pid' attr in the subject
-	object = &b->context.subject;
-	apid = get_attribute(b->context.subject.class, "pid");
-	acmdline = get_attribute(b->context.subject.class, "cmdline");
-
-	// if `pid' is not part of subject's attrs, search for it in
-	// operation's attrs
-	if (!apid) {
-		object = &b->context.operation;
-		apid = get_attribute(b->context.operation.class, "pid");
-		acmdline = get_attribute(b->context.operation.class, "cmdline");
-	}
-
-	// get values for `pid' and `cmdline'
-	if (apid) {
-		object_get_val(object, apid, &pid, sizeof(pid));
-		printf(" [PID %d", pid);
-
-		// not all events have `cmdline' attr defined
-		if (acmdline) {
-			object_get_val(object, acmdline, cmdline, 128);
-			if (*cmdline)
-				printf(", '%s'", cmdline);
-			else
-				printf(", <empty cmdline>");
-		}
-		printf("]");
-	}
-
-	printf("\n");
+static uint32_t from_le32(uint32_t value)
+{
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	return __builtin_bswap32(value);
+#else
+	return value;
 #endif
-
-	comm_buf_output_enqueue(c, r);
-
-	/* `b->do_phase` after finished update operation remains 1000 */
-	return 0;
 }
 
-static void unify_bitmap_types(struct medusa_comm_attribute_s *a)
+static uint64_t from_le64(uint64_t value)
 {
-	/*
-	 * kernel bitmap is BITMAP_8 type, which is also default type BITMAP
-	 */
-	while (a->type != MED_COMM_TYPE_END) {
-		switch (a->type) {
-		case MED_COMM_TYPE_BITMAP_8:
-		case MED_COMM_TYPE_BITMAP_16:
-		case MED_COMM_TYPE_BITMAP_32:
-			a->type = MED_COMM_TYPE_BITMAP;
-		}
-		a++;
-	}
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	return __builtin_bswap64(value);
+#else
+	return value;
+#endif
 }
 
-#define OFF_ATTR (sizeof(MCPptr_t) + sizeof(uint32_t))
-#define OFF_ATTR_CLASS (OFF_ATTR + sizeof(struct medusa_comm_class_s))
-#define OFF_ATTR_ACCTYPE (OFF_ATTR + sizeof(struct medusa_comm_acctype_s))
+#define to_le16(value) from_le16(value)
+#define to_le32(value) from_le32(value)
+#define to_le64(value) from_le64(value)
 
-static enum read_result mcp_r_classdef_attr(struct comm_buffer_s *b)
+static uint16_t load_le16(const void *source)
 {
-	struct class_s *cl;
-	char *last_attr = b->comm_buf + b->len - sizeof(struct medusa_comm_attribute_s);
+	uint16_t value;
 
-	if (((struct medusa_comm_attribute_s *)(last_attr))->type != MED_TYPE_END) {
-		b->want = b->len + sizeof(struct medusa_comm_attribute_s);
-		return READ_DONE;
-	}
-	byte_reorder_class(b->comm->flags, (struct medusa_class_s *)(b->comm_buf + OFF_ATTR));
-	byte_reorder_attrs(b->comm->flags,
-			   (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS));
-	unify_bitmap_types((struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS));
-	cl = add_class(b->comm,
-		       (struct medusa_class_s *)(b->comm_buf + OFF_ATTR),
-		       (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_CLASS));
-	if (unlikely(!cl))
-		comm_error("comm %s: Can't add class", b->comm->name);
-	b->completed = NULL;
-	return READ_FREE;
+	memcpy(&value, source, sizeof(value));
+	return from_le16(value);
 }
 
-static enum read_result mcp_r_acctypedef_attr(struct comm_buffer_s *b)
+static uint32_t load_le32(const void *source)
 {
-	struct event_type_s *ev;
-	char *last_attr = b->comm_buf + b->len - sizeof(struct medusa_comm_attribute_s);
+	uint32_t value;
 
-	if (((struct medusa_comm_attribute_s *)(last_attr))->type != MED_TYPE_END) {
-		b->want = b->len + sizeof(struct medusa_comm_attribute_s);
-		return READ_DONE;
-	}
-	byte_reorder_acctype(b->comm->flags, (struct medusa_acctype_s *)(b->comm_buf + OFF_ATTR));
-	byte_reorder_attrs(b->comm->flags,
-			   (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE));
-	unify_bitmap_types((struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE));
-	ev = event_type_add(b->comm,
-			    (struct medusa_acctype_s *)(b->comm_buf + OFF_ATTR),
-			    (struct medusa_attribute_s *)(b->comm_buf + OFF_ATTR_ACCTYPE));
-	if (unlikely(!ev))
-		comm_error("comm %s: Can't add acctype", b->comm->name);
-	b->completed = NULL;
-	return READ_FREE;
+	memcpy(&value, source, sizeof(value));
+	return from_le32(value);
 }
 
-#undef OFF_ATTR
-#undef OFF_ATTR_CLASS
-#undef OFF_ATTR_ACCTYPE
-
-static enum read_result mcp_r_discard(struct comm_buffer_s *b)
+static uint64_t load_le64(const void *source)
 {
-	b->completed = NULL;
-	return READ_FREE;
+	uint64_t value;
+
+	memcpy(&value, source, sizeof(value));
+	return from_le64(value);
 }
 
-int mcp_ready_answer(struct comm_s *c)
+static void store_le16(void *destination, uint16_t value)
 {
-	struct comm_buffer_s *r;
-	MCPptr_t *out;
-
-	r = comm_buf_get(sizeof(MCPptr_t), c);
-	if (unlikely(!r)) {
-		fatal("Can't alloc buffer for COMM_READY answer!");
-		return -1;
-	}
-	out = (void *)&r->comm_buf;
-	*out = byte_reorder_put_int64(c->flags, MEDUSA_COMM_READY_ANSWER);
-	r->len = sizeof(*out);
-	r->want = 0;
-	r->completed = NULL;
-
-	comm_buf_output_enqueue(c, r);
-	return 0;
+	value = to_le16(value);
+	memcpy(destination, &value, sizeof(value));
 }
 
-static enum read_result mcp_r_ready_request(struct comm_buffer_s *b)
+static void store_le32(void *destination, uint32_t value)
 {
-	b->completed = NULL;
-
-	/* initialize comm and allocate a buffer for _init(), if defined in med config file */
-	if (comm_conn_init(b->comm, true) < 0)
-		return READ_ERROR;
-
-	/*
-	 * If _init() is not defined, initialization is complete, send READY_ANSWER to kernel.
-	 * If it's defined, READY_ANSWER is send after _init() finishes, from comm_buf_free()
-	 * when the _init()'s buffer will be destroyed
-	 */
-	if (!function_init && mcp_ready_answer(b->comm) < 0) {
-		fatal("%s: MEDUSA_COMM_READY_ANSWER not send to the kernel", __func__);
-		return READ_ERROR;
-	}
-
-	return READ_FREE;
+	value = to_le32(value);
+	memcpy(destination, &value, sizeof(value));
 }
 
-/*
- * Each comm has its own thread performing `mcp_write` function.
- * A buffer is inserted into output queue of the comm interface `c`
- * from four operations:
- * 1) answer (at the end of the processing of the kernel request)
- * 2) update (when updating an object on the kernel site)
- * 3) fetch (when requesting an object from the kernel site)
- * 4) ready answer (an answer to ready query from the kernel site after initialization)
- *
- * Using of this function requires that the buffers in the output queue are
- * not used from another threads of Constable. Why? This function always
- * destroyes the processed buffers.
- */
-static int mcp_write(struct comm_s *c)
+static void store_le64(void *destination, uint64_t value)
 {
-	int r;
-	struct comm_buffer_s *b;
+	value = to_le64(value);
+	memcpy(destination, &value, sizeof(value));
+}
 
-	b = comm_buf_output_dequeue(c);
+static int v4_next_tlv(const uint8_t *frame, size_t length, size_t *offset,
+		       struct v4_tlv_view *view)
+{
+	const struct medusa_tlv *tlv;
+	size_t tlv_length;
 
-	/* Ignore buffers incoming from another comm interfaces. */
-	if (unlikely(b->open_counter != c->open_counter)) {
-		b->bfree(b);
-		return 1;
-	}
-
-	while (b->want < b->len) {
-		r = write(c->fd, b->p_comm_buf + b->want, b->len - b->want);
-		if (unlikely(r <= 0)) {
-			comm_error("medusa comm %s: Write error: %s", c->name, strerror(errno));
-			return r;
-		}
-		b->want += r;
-		if (unlikely(b->want < b->len))
-			comm_info("medusa comm %s: Non-atomic write", c->name);
-	}
-
-	b->bfree(b);
+	if (*offset == length)
+		return 0;
+	if (*offset < MEDUSA_FRAME_HEADER_SIZE ||
+	    length - *offset < MEDUSA_TLV_HEADER_SIZE)
+		return -EMSGSIZE;
+	tlv = (const struct medusa_tlv *)(frame + *offset);
+	tlv_length = load_le32(&tlv->length);
+	view->type = load_le16(&tlv->type);
+	view->flags = load_le16(&tlv->flags);
+	view->value = (const uint8_t *)tlv + MEDUSA_TLV_HEADER_SIZE;
+	view->length = tlv_length - MEDUSA_TLV_HEADER_SIZE;
+	*offset += MEDUSA_TLV_ALIGN_UP(tlv_length);
 	return 1;
 }
 
-static int mcp_nowrite(struct comm_s *c)
+static const uint8_t *v4_find_tlv(const uint8_t *frame, size_t length,
+				  uint16_t type, size_t *value_length,
+				  bool required)
 {
-	struct comm_buffer_s *b;
+	struct v4_tlv_view view;
+	const uint8_t *found = NULL;
+	size_t offset = MEDUSA_FRAME_HEADER_SIZE;
+	int result;
 
-	while ((b = comm_buf_from_queue_locked(&c->output)) != NULL) {
-		b->bfree(b);
-		return 0;
+	while ((result = v4_next_tlv(frame, length, &offset, &view)) > 0) {
+		if (view.type != type)
+			continue;
+		if (found)
+			return NULL;
+		found = view.value;
+		*value_length = view.length;
+	}
+	if (result < 0 || (!found && required))
+		return NULL;
+	return found;
+}
+
+static int v4_get_u8(const uint8_t *frame, size_t length, uint16_t type,
+		     uint8_t *value)
+{
+	size_t value_length = 0;
+	const uint8_t *wire =
+		v4_find_tlv(frame, length, type, &value_length, true);
+
+	if (!wire)
+		return -ENOENT;
+	if (value_length != sizeof(*value))
+		return -EMSGSIZE;
+	*value = *wire;
+	return 0;
+}
+
+static int v4_get_u16(const uint8_t *frame, size_t length, uint16_t type,
+		      uint16_t *value)
+{
+	size_t value_length = 0;
+	const uint8_t *wire =
+		v4_find_tlv(frame, length, type, &value_length, true);
+
+	if (!wire)
+		return -ENOENT;
+	if (value_length != sizeof(*value))
+		return -EMSGSIZE;
+	*value = load_le16(wire);
+	return 0;
+}
+
+static int v4_get_u32(const uint8_t *frame, size_t length, uint16_t type,
+		      uint32_t *value)
+{
+	size_t value_length = 0;
+	const uint8_t *wire =
+		v4_find_tlv(frame, length, type, &value_length, true);
+
+	if (!wire)
+		return -ENOENT;
+	if (value_length != sizeof(*value))
+		return -EMSGSIZE;
+	*value = load_le32(wire);
+	return 0;
+}
+
+static int v4_get_u64(const uint8_t *frame, size_t length, uint16_t type,
+		      uint64_t *value)
+{
+	size_t value_length = 0;
+	const uint8_t *wire =
+		v4_find_tlv(frame, length, type, &value_length, true);
+
+	if (!wire)
+		return -ENOENT;
+	if (value_length != sizeof(*value))
+		return -EMSGSIZE;
+	*value = load_le64(wire);
+	return 0;
+}
+
+static struct v4_builder v4_builder_new(struct comm_s *comm, uint16_t type,
+					uint64_t request_id,
+					uint64_t generation,
+					size_t payload_capacity)
+{
+	struct v4_builder builder = { 0 };
+	struct medusa_frame_header *header;
+	size_t total;
+
+	if (payload_capacity > MEDUSA_FRAME_MAX_PAYLOAD ||
+	    payload_capacity > SIZE_MAX - MEDUSA_FRAME_HEADER_SIZE)
+		return builder;
+	total = MEDUSA_FRAME_HEADER_SIZE + payload_capacity;
+	if (total > INT_MAX)
+		return builder;
+	builder.buffer = comm_buf_get((int)total, comm);
+	if (!builder.buffer)
+		return builder;
+	memset(builder.buffer->comm_buf, 0, total);
+	builder.buffer->len = MEDUSA_FRAME_HEADER_SIZE;
+	builder.buffer->want = 0;
+	builder.buffer->completed = NULL;
+	builder.capacity = total;
+	header = (struct medusa_frame_header *)builder.buffer->comm_buf;
+	store_le16(&header->version, MEDUSA_PROTOCOL_VERSION);
+	store_le16(&header->type, type);
+	store_le64(&header->request_id, request_id);
+	store_le64(&header->policy_generation, generation);
+	return builder;
+}
+
+static int v4_builder_add(struct v4_builder *builder, uint16_t type,
+			  uint16_t flags, const void *value,
+			  size_t value_length)
+{
+	struct medusa_frame_header *header;
+	struct medusa_tlv *tlv;
+	size_t tlv_length;
+	size_t aligned;
+
+	if (!builder || !builder->buffer ||
+	    value_length > SIZE_MAX - MEDUSA_TLV_HEADER_SIZE)
+		return -EINVAL;
+	tlv_length = MEDUSA_TLV_HEADER_SIZE + value_length;
+	aligned = MEDUSA_TLV_ALIGN_UP(tlv_length);
+	if (aligned < tlv_length ||
+	    aligned > builder->capacity - (size_t)builder->buffer->len)
+		return -EMSGSIZE;
+	tlv = (struct medusa_tlv *)(builder->buffer->comm_buf +
+				    builder->buffer->len);
+	store_le16(&tlv->type, type);
+	store_le16(&tlv->flags, flags);
+	store_le32(&tlv->length, (uint32_t)tlv_length);
+	if (value_length)
+		memcpy((uint8_t *)tlv + MEDUSA_TLV_HEADER_SIZE, value,
+		       value_length);
+	builder->buffer->len += (int)aligned;
+	header = (struct medusa_frame_header *)builder->buffer->comm_buf;
+	store_le32(&header->payload_length,
+		   (uint32_t)(builder->buffer->len -
+			      (int)MEDUSA_FRAME_HEADER_SIZE));
+	return 0;
+}
+
+static int v4_builder_add_u8(struct v4_builder *builder, uint16_t type,
+			     uint8_t value)
+{
+	return v4_builder_add(builder, type, 0, &value, sizeof(value));
+}
+
+static int v4_builder_add_u16(struct v4_builder *builder, uint16_t type,
+			      uint16_t value)
+{
+	uint16_t wire = to_le16(value);
+
+	return v4_builder_add(builder, type, 0, &wire, sizeof(wire));
+}
+
+static int v4_builder_add_u32(struct v4_builder *builder, uint16_t type,
+			      uint32_t value)
+{
+	uint32_t wire = to_le32(value);
+
+	return v4_builder_add(builder, type, 0, &wire, sizeof(wire));
+}
+
+static int v4_builder_add_u64(struct v4_builder *builder, uint16_t type,
+			      uint64_t value)
+{
+	uint64_t wire = to_le64(value);
+
+	return v4_builder_add(builder, type, 0, &wire, sizeof(wire));
+}
+
+static int v4_write_buffer(struct comm_s *comm, struct comm_buffer_s *buffer)
+{
+	ssize_t written;
+
+	written = write(comm->fd, buffer->comm_buf, (size_t)buffer->len);
+	if (written != buffer->len) {
+		if (written >= 0)
+			errno = EIO;
+		return -1;
 	}
 	return 0;
 }
 
-static int mcp_close(struct comm_s *c)
+static int v4_send_now(struct comm_s *comm, struct v4_builder *builder)
 {
-	struct comm_buffer_s *b;
+	int result;
 
-	close(c->fd);
-	c->fd = -1;
-	pthread_mutex_lock(&c->output.lock);
-	while ((b = comm_buf_from_queue(&c->output)) != NULL)
-		b->bfree(b);
-	pthread_mutex_unlock(&c->output.lock);
-	pthread_mutex_lock(&c->wait_for_answer.lock);
-	while ((b = comm_buf_from_queue(&c->wait_for_answer)) != NULL)
-		b->bfree(b);
-	pthread_mutex_unlock(&c->wait_for_answer.lock);
-	c->open_counter--;
+	if (!builder->buffer)
+		return -1;
+	result = v4_write_buffer(comm, builder->buffer);
+	builder->buffer->bfree(builder->buffer);
+	builder->buffer = NULL;
+	return result;
+}
+
+static int v4_enqueue(struct comm_s *comm, struct v4_builder *builder)
+{
+	if (!builder->buffer)
+		return -1;
+	comm_buf_output_enqueue(comm, builder->buffer);
+	builder->buffer = NULL;
 	return 0;
 }
 
-static int mcp_fetch_object(struct comm_s *c,
-			    int cont,
-			    struct object_s *o,
+static uint64_t mcp_next_request_id(struct comm_s *comm)
+{
+	uint64_t id;
+
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	id = ++MCP_DATA(comm)->next_request_id;
+	if (!id)
+		id = ++MCP_DATA(comm)->next_request_id;
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+	return id;
+}
+
+static int v4_cancel_add(struct comm_s *comm, uint64_t request_id)
+{
+	struct v4_cancelled_request *cancelled = malloc(sizeof(*cancelled));
+
+	if (!cancelled)
+		return -ENOMEM;
+	cancelled->request_id = request_id;
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	cancelled->next = MCP_DATA(comm)->cancelled;
+	MCP_DATA(comm)->cancelled = cancelled;
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+	return 0;
+}
+
+static bool v4_cancel_take(struct comm_s *comm, uint64_t request_id)
+{
+	struct v4_cancelled_request **link;
+	struct v4_cancelled_request *cancelled = NULL;
+
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	for (link = &MCP_DATA(comm)->cancelled; *link; link = &(*link)->next) {
+		if ((*link)->request_id != request_id)
+			continue;
+		cancelled = *link;
+		*link = cancelled->next;
+		break;
+	}
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+	free(cancelled);
+	return cancelled != NULL;
+}
+
+bool mcp_authrequest_cancelled(struct comm_buffer_s *request)
+{
+	struct v4_cancelled_request *cancelled;
+	uint64_t request_id;
+	bool found = false;
+
+	if (!request || !request->comm ||
+	    request->len < (int)(2 * sizeof(MCPptr_t)))
+		return true;
+	request_id = ((MCPptr_t *)request->comm_buf)[1];
+	pthread_mutex_lock(&MCP_DATA(request->comm)->request_lock);
+	for (cancelled = MCP_DATA(request->comm)->cancelled;
+	     cancelled; cancelled = cancelled->next) {
+		if (cancelled->request_id == request_id) {
+			found = true;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&MCP_DATA(request->comm)->request_lock);
+	return found;
+}
+
+static void v4_cancel_clear(struct comm_s *comm)
+{
+	struct v4_cancelled_request *cancelled;
+
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	cancelled = MCP_DATA(comm)->cancelled;
+	MCP_DATA(comm)->cancelled = NULL;
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+	while (cancelled) {
+		struct v4_cancelled_request *next = cancelled->next;
+
+		free(cancelled);
+		cancelled = next;
+	}
+}
+
+static int get_event_context(struct comm_s *comm,
+			     struct event_context_s *context,
+			     struct event_type_s *event, void *data)
+{
+	context->operation.next = &context->subject;
+	context->operation.attr.offset = 0;
+	context->operation.attr.length = event->acctype.size;
+	context->operation.attr.type = MED_TYPE_END;
+	if (string_copy_field(context->operation.attr.name,
+			      sizeof(context->operation.attr.name),
+			      event->acctype.name,
+			      sizeof(event->acctype.name)))
+		return -EPROTO;
+	context->operation.flags = comm->flags;
+	context->operation.class = event->operation_class;
+	context->operation.data = (char *)data + 2 * sizeof(MCPptr_t);
+
+	context->subject.next = &context->object;
+	context->subject.attr.offset = 0;
+	context->subject.attr.length = event->op[0] ? event->op[0]->m.size : 0;
+	context->subject.attr.type = MED_TYPE_END;
+	if (string_copy_field(context->subject.attr.name,
+			      sizeof(context->subject.attr.name),
+			      event->acctype.op_name[0],
+			      sizeof(event->acctype.op_name[0])))
+		return -EPROTO;
+	context->subject.flags = comm->flags;
+	context->subject.class = event->op[0];
+	context->subject.data = (char *)data + 2 * sizeof(MCPptr_t) +
+				event->acctype.size;
+
+	context->object.next = NULL;
+	context->object.attr.offset = 0;
+	context->object.attr.length = event->op[1] ? event->op[1]->m.size : 0;
+	context->object.attr.type = MED_TYPE_END;
+	if (string_copy_field(context->object.attr.name,
+			      sizeof(context->object.attr.name),
+			      event->acctype.op_name[1],
+			      sizeof(event->acctype.op_name[1])))
+		return -EPROTO;
+	context->object.flags = comm->flags;
+	context->object.class = event->op[1];
+	context->object.data = context->subject.data +
+			       context->subject.attr.length;
+	context->local_vars = NULL;
+	return 0;
+}
+
+static uint8_t v4_internal_attr_type(uint16_t type, uint16_t flags)
+{
+	uint8_t internal = (uint8_t)type;
+
+	if (flags & MEDUSA_ATTR_F_READ_ONLY)
+		internal |= MED_TYPE_READ_ONLY;
+	if (flags & MEDUSA_ATTR_F_PRIMARY_KEY)
+		internal |= MED_TYPE_PRIMARY_KEY;
+	if (flags & MEDUSA_ATTR_F_BIG_ENDIAN)
+		internal |= MED_TYPE_BIG_ENDIAN;
+	if (flags & MEDUSA_ATTR_F_LITTLE_ENDIAN)
+		internal |= MED_TYPE_LITTLE_ENDIAN;
+	return internal;
+}
+
+static struct medusa_attribute_s *
+v4_parse_attributes(const uint8_t *frame, size_t length, uint32_t object_size)
+{
+	struct medusa_attribute_s *attributes;
+	struct v4_tlv_view view;
+	size_t count = 0;
+	size_t index = 0;
+	size_t offset = MEDUSA_FRAME_HEADER_SIZE;
+	int result;
+
+	while ((result = v4_next_tlv(frame, length, &offset, &view)) > 0)
+		if (view.type == MEDUSA_TLV_ATTRIBUTE)
+			count++;
+	if (result < 0 || count > MCP_DEFINITION_ATTRIBUTE_LIMIT)
+		return NULL;
+	attributes = calloc(count + 1, sizeof(*attributes));
+	if (!attributes)
+		return NULL;
+	offset = MEDUSA_FRAME_HEADER_SIZE;
+	while ((result = v4_next_tlv(frame, length, &offset, &view)) > 0) {
+		const struct medusa_attribute_definition *definition;
+		uint32_t attr_offset;
+		uint32_t attr_length;
+		uint16_t name_length;
+		uint16_t type;
+		uint16_t flags;
+
+		if (view.type != MEDUSA_TLV_ATTRIBUTE)
+			continue;
+		if (view.length < sizeof(*definition))
+			goto invalid;
+		definition =
+			(const struct medusa_attribute_definition *)view.value;
+		attr_offset = load_le32(&definition->offset);
+		attr_length = load_le32(&definition->length);
+		name_length = load_le16(&definition->name_length);
+		type = load_le16(&definition->type);
+		flags = load_le16(&definition->flags);
+		if (!attr_length || attr_offset > UINT16_MAX ||
+		    attr_length > UINT16_MAX ||
+		    attr_offset > object_size ||
+		    attr_length > object_size - attr_offset ||
+		    name_length == 0 ||
+		    name_length >= sizeof(attributes[index].name) ||
+		    view.length != sizeof(*definition) + name_length ||
+		    type < MEDUSA_ATTR_UNSIGNED || type > MEDUSA_ATTR_BYTES)
+			goto invalid;
+		attributes[index].offset = (uint16_t)attr_offset;
+		attributes[index].length = (uint16_t)attr_length;
+		attributes[index].type = v4_internal_attr_type(type, flags);
+		memcpy(attributes[index].name,
+		       view.value + sizeof(*definition), name_length);
+		attributes[index].name[name_length] = '\0';
+		index++;
+	}
+	return attributes;
+invalid:
+	free(attributes);
+	return NULL;
+}
+
+static int v4_copy_name(const uint8_t *frame, size_t length, uint16_t type,
+			char *destination, size_t capacity, bool allow_empty)
+{
+	size_t name_length = 0;
+	const uint8_t *name =
+		v4_find_tlv(frame, length, type, &name_length, true);
+
+	if (!name || name_length >= capacity ||
+	    (!allow_empty && name_length == 0) ||
+	    memchr(name, '\0', name_length))
+		return -EINVAL;
+	memcpy(destination, name, name_length);
+	destination[name_length] = '\0';
+	return 0;
+}
+
+static int v4_handle_class_definition(struct comm_s *comm,
+				      const uint8_t *frame, size_t length)
+{
+	struct medusa_attribute_s *attributes;
+	struct medusa_class_s definition = { 0 };
+	uint32_t class_id;
+	uint32_t object_size;
+	int error;
+
+	error = v4_get_u32(frame, length, MEDUSA_TLV_CLASS_ID, &class_id);
+	if (!error)
+		error = v4_get_u32(
+			frame, length, MEDUSA_TLV_OBJECT_SIZE, &object_size);
+	if (!error)
+		error = v4_copy_name(
+			frame, length, MEDUSA_TLV_NAME, definition.name,
+			sizeof(definition.name), false);
+	if (error || !class_id || object_size > UINT16_MAX)
+		return -EPROTO;
+	attributes = v4_parse_attributes(frame, length, object_size);
+	if (!attributes)
+		return -EPROTO;
+	definition.classid = class_id;
+	definition.size = (uint16_t)object_size;
+	if (!add_class(comm, &definition, attributes))
+		error = -ENOMEM;
+	free(attributes);
+	return error;
+}
+
+static int v4_handle_event_definition(struct comm_s *comm,
+				      const uint8_t *frame, size_t length)
+{
+	struct medusa_attribute_s *attributes;
+	struct medusa_acctype_s definition = { 0 };
+	uint32_t event_id;
+	uint32_t event_size;
+	uint32_t subject_class;
+	uint32_t object_class;
+	uint16_t trigger;
+	uint8_t kind;
+	int error;
+
+	error = v4_get_u32(frame, length, MEDUSA_TLV_EVENT_ID, &event_id);
+	if (!error)
+		error = v4_get_u32(
+			frame, length, MEDUSA_TLV_EVENT_SIZE, &event_size);
+	if (!error)
+		error = v4_get_u32(
+			frame, length, MEDUSA_TLV_SUBJECT_CLASS_ID,
+			&subject_class);
+	if (!error)
+		error = v4_get_u32(
+			frame, length, MEDUSA_TLV_OBJECT_CLASS_ID,
+			&object_class);
+	if (!error)
+		error = v4_get_u16(
+			frame, length, MEDUSA_TLV_TRIGGER, &trigger);
+	if (!error)
+		error = v4_get_u8(
+			frame, length, MEDUSA_TLV_EVENT_KIND, &kind);
+	if (!error)
+		error = v4_copy_name(
+			frame, length, MEDUSA_TLV_NAME, definition.name,
+			sizeof(definition.name), false);
+	if (!error)
+		error = v4_copy_name(
+			frame, length, MEDUSA_TLV_SUBJECT_NAME,
+			definition.op_name[0], sizeof(definition.op_name[0]),
+			true);
+	if (!error)
+		error = v4_copy_name(
+			frame, length, MEDUSA_TLV_OBJECT_NAME,
+			definition.op_name[1], sizeof(definition.op_name[1]),
+			true);
+	if (error || !mcp_validate_event_kind(kind) || !event_id ||
+	    !subject_class || !object_class ||
+	    event_size > UINT16_MAX)
+		return -EPROTO;
+	attributes = v4_parse_attributes(frame, length, event_size);
+	if (!attributes)
+		return -EPROTO;
+	definition.opid = event_id;
+	definition.size = (uint16_t)event_size;
+	definition.actbit = trigger;
+	definition.kind = kind;
+	definition.op_class[0] = subject_class;
+	definition.op_class[1] = object_class;
+	if (!event_type_add(comm, &definition, attributes))
+		error = -ENOMEM;
+	free(attributes);
+	return error;
+}
+
+static int v4_configured_events_announced(struct comm_s *comm)
+{
+	unsigned int index;
+
+	for (index = 0; index < fallback_policy_count(); index++) {
+		const struct fallback_policy_config *policy =
+			fallback_policy_at(index);
+		struct event_names_s *name =
+			event_type_find_name((char *)policy->event, false);
+
+		if (!name || !name->events[comm->conn]) {
+			comm_error("comm %s: fallback event '%s' was not announced",
+				   comm->name, policy->event);
+			return -ENOENT;
+		}
+		if (name->events[comm->conn]->acctype.kind ==
+		    MEDUSA_EVENT_OBJECT_NOTIFICATION) {
+			comm_error("comm %s: fallback policy is not valid for object-notification event '%s'",
+				   comm->name, policy->event);
+			return -EOPNOTSUPP;
+		}
+	}
+	for (index = 0; index < domain_rule_count(); index++) {
+		const struct domain_rule_config *rule = domain_rule_at(index);
+		struct event_names_s *name =
+			event_type_find_name((char *)rule->event, false);
+
+		if (!name || !name->events[comm->conn]) {
+			comm_error("comm %s: domain-rule event '%s' was not announced",
+				   comm->name, rule->event);
+			return -ENOENT;
+		}
+		if (name->events[comm->conn]->acctype.kind ==
+		    MEDUSA_EVENT_OBJECT_NOTIFICATION) {
+			comm_error("comm %s: domain decision rule is not valid for object-notification event '%s'",
+				   comm->name, rule->event);
+			return -EOPNOTSUPP;
+		}
+	}
+	if (domain_rule_count() &&
+	    !(MCP_DATA(comm)->enabled_features &
+	      MEDUSA_FEATURE_DOMAIN_DECISION_CACHE)) {
+		comm_error("comm %s: kernel lacks domain decision cache support",
+			   comm->name);
+		return -EOPNOTSUPP;
+	}
+	return 0;
+}
+
+struct v4_policy_context {
+	struct comm_s *comm;
+	uint64_t generation;
+	int error;
+};
+
+static int v4_send_event_policy(const struct event_names_s *name,
+				void *argument)
+{
+	struct v4_policy_context *context = argument;
+	struct event_type_s *event;
+	struct v4_builder builder;
+	uint8_t policy;
+	unsigned int rule_count;
+	unsigned int index;
+
+	if (context->error)
+		return context->error;
+	event = name->events[context->comm->conn];
+	if (!event)
+		return 0;
+	policy = fallback_policy_for_event(name->name);
+	rule_count = domain_rule_count_for_event(name->name);
+	builder = v4_builder_new(
+		context->comm, MEDUSA_MSG_POLICY_EVENT, 0,
+		context->generation, 32 + rule_count * 40);
+	if (!builder.buffer ||
+	    v4_builder_add_u32(
+		    &builder, MEDUSA_TLV_EVENT_ID,
+		    (uint32_t)event->acctype.opid) ||
+	    v4_builder_add_u8(
+		    &builder, MEDUSA_TLV_FALLBACK_POLICY, policy)) {
+		context->error = -EIO;
+		goto out;
+	}
+	for (index = 0; index < domain_rule_count(); index++) {
+		const struct domain_rule_config *rule = domain_rule_at(index);
+		struct medusa_domain_rule wire = { 0 };
+
+		if (strcmp(rule->event, name->name))
+			continue;
+		store_le64(&wire.subject_domain, rule->subject_domain);
+		store_le64(&wire.object_domain, rule->object_domain);
+		store_le64(&wire.selector, rule->selector);
+		wire.answer = rule->answer;
+		if (v4_builder_add(&builder, MEDUSA_TLV_DOMAIN_RULE,
+				   MEDUSA_TLV_F_ARRAY, &wire, sizeof(wire))) {
+			context->error = -EIO;
+			goto out;
+		}
+	}
+	if (v4_send_now(context->comm, &builder)) {
+		context->error = -EIO;
+out:
+		if (builder.buffer)
+			builder.buffer->bfree(builder.buffer);
+	}
+	return context->error;
+}
+
+static int v4_install_policy_generation(struct comm_s *comm,
+					uint64_t generation)
+{
+	struct v4_policy_context context = {
+		.comm = comm,
+		.generation = generation,
+	};
+	struct v4_builder builder;
+
+	/*
+	 * The initial generation binds compiled policy handlers to the announced
+	 * classes and events.  A live replacement reuses that immutable binding;
+	 * rebuilding it would allocate duplicate per-tree communication metadata
+	 * and could not be published atomically.
+	 */
+	if (generation == MCP_DATA(comm)->generation) {
+		if (v4_configured_events_announced(comm))
+			return -1;
+		if (comm_conn_init(comm, true) < 0)
+			return -1;
+	}
+	builder = v4_builder_new(
+		comm, MEDUSA_MSG_POLICY_BEGIN, 0,
+		generation, 0);
+	if (v4_send_now(comm, &builder))
+		return -1;
+	if (event_names_visit(v4_send_event_policy, &context) ||
+	    context.error)
+		return -1;
+	builder = v4_builder_new(
+		comm, MEDUSA_MSG_POLICY_COMMIT, 0,
+		generation, 0);
+	return v4_send_now(comm, &builder);
+}
+
+static int v4_install_policy(struct comm_s *comm)
+{
+	return v4_install_policy_generation(
+		comm, MCP_DATA(comm)->generation);
+}
+
+static int v4_send_hello(struct comm_s *comm)
+{
+	struct v4_builder builder =
+		v4_builder_new(comm, MEDUSA_MSG_HELLO, 0, 0, 64);
+	uint64_t optional = MEDUSA_FEATURE_DECISION_PROGRESS |
+			    MEDUSA_FEATURE_OBJECT_FETCH_UPDATE |
+			    MEDUSA_FEATURE_ATOMIC_POLICY_REPLACE |
+			    MEDUSA_FEATURE_REPLY_CACHE_UPDATE |
+			    MEDUSA_FEATURE_DOMAIN_DECISION_CACHE;
+
+	if (!builder.buffer ||
+	    v4_builder_add_u16(
+		    &builder, MEDUSA_TLV_MIN_VERSION, MEDUSA_PROTOCOL_VERSION) ||
+	    v4_builder_add_u16(
+		    &builder, MEDUSA_TLV_MAX_VERSION, MEDUSA_PROTOCOL_VERSION) ||
+	    v4_builder_add_u64(
+		    &builder, MEDUSA_TLV_REQUIRED_FEATURES,
+		    MEDUSA_REQUIRED_FEATURES) ||
+	    v4_builder_add_u64(
+		    &builder, MEDUSA_TLV_OPTIONAL_FEATURES, optional)) {
+		if (builder.buffer)
+			builder.buffer->bfree(builder.buffer);
+		return -1;
+	}
+	return v4_send_now(comm, &builder);
+}
+
+static ssize_t v4_read_frame(struct comm_s *comm, uint8_t *frame)
+{
+	ssize_t length;
+
+	do {
+		length = read(comm->fd, frame, MEDUSA_FRAME_MAX_SIZE);
+	} while (length < 0 && errno == EINTR);
+	if (length <= 0)
+		return -1;
+	if (mcp_validate_v4_frame(frame, (size_t)length)) {
+		errno = EPROTO;
+		return -1;
+	}
+	return length;
+}
+
+static int mcp_receive_handshake(struct comm_s *comm)
+{
+	uint8_t *frame;
+	bool definitions_done = false;
+	bool hello_done = false;
+	int result = -1;
+
+	class_free_all_clases(comm);
+	event_free_all_events(comm);
+	comm->open_counter++;
+	comm->flags = 0;
+	comm->version = MEDUSA_PROTOCOL_VERSION;
+	frame = malloc(MEDUSA_FRAME_MAX_SIZE);
+	if (!frame)
+		return -1;
+	if (v4_send_hello(comm))
+		goto out;
+	for (;;) {
+		const struct medusa_frame_header *header;
+		ssize_t length = v4_read_frame(comm, frame);
+		uint16_t type;
+
+		if (length < 0)
+			goto out;
+		header = (const struct medusa_frame_header *)frame;
+		type = load_le16(&header->type);
+		if (type == MEDUSA_MSG_HELLO_ACK && !hello_done) {
+			uint64_t enabled;
+
+			if (v4_get_u64(
+				    frame, (size_t)length,
+				    MEDUSA_TLV_ENABLED_FEATURES, &enabled) ||
+			    (enabled & MEDUSA_REQUIRED_FEATURES) !=
+				    MEDUSA_REQUIRED_FEATURES)
+				goto out;
+			if (approval_is_configured() &&
+			    !(enabled & MEDUSA_FEATURE_DECISION_PROGRESS))
+				goto out;
+			MCP_DATA(comm)->generation =
+				load_le64(&header->policy_generation);
+			MCP_DATA(comm)->enabled_features = enabled;
+			hello_done = true;
+		} else if (type == MEDUSA_MSG_CLASS_DEFINITION &&
+			   hello_done && !definitions_done) {
+			if (v4_handle_class_definition(
+				    comm, frame, (size_t)length))
+				goto out;
+		} else if (type == MEDUSA_MSG_EVENT_DEFINITION &&
+			   hello_done && !definitions_done) {
+			if (v4_handle_event_definition(
+				    comm, frame, (size_t)length))
+				goto out;
+		} else if (type == MEDUSA_MSG_DEFINITIONS_DONE &&
+			   hello_done && !definitions_done) {
+			definitions_done = true;
+			if (v4_install_policy(comm))
+				goto out;
+		} else if (type == MEDUSA_MSG_POLICY_READY &&
+			   definitions_done &&
+			   load_le64(&header->policy_generation) ==
+				   MCP_DATA(comm)->generation) {
+			result = 0;
+			goto out;
+		} else {
+			errno = EPROTO;
+			goto out;
+		}
+	}
+out:
+	free(frame);
+	return result;
+}
+
+static int v4_queue_decision(struct comm_s *comm, const uint8_t *frame,
+			     size_t length)
+{
+	const struct medusa_frame_header *header =
+		(const struct medusa_frame_header *)frame;
+	struct comm_buffer_s *buffer;
+	struct event_type_s *event;
+	const uint8_t *event_data;
+	const uint8_t *subject_data;
+	const uint8_t *object_data;
+	size_t event_length = 0;
+	size_t subject_length = 0;
+	size_t object_length = 0;
+	size_t synthetic_length;
+	uint32_t event_id;
+	uint64_t request_id = load_le64(&header->request_id);
+
+	if (!request_id ||
+	    load_le64(&header->policy_generation) !=
+		    MCP_DATA(comm)->generation ||
+	    v4_get_u32(frame, length, MEDUSA_TLV_EVENT_ID, &event_id))
+		return -EPROTO;
+	event = (struct event_type_s *)hash_find(&comm->events, event_id);
+	if (!event)
+		return -ENOENT;
+	event_data = v4_find_tlv(
+		frame, length, MEDUSA_TLV_EVENT_DATA, &event_length, true);
+	subject_data = v4_find_tlv(
+		frame, length, MEDUSA_TLV_SUBJECT_DATA, &subject_length, true);
+	object_data = v4_find_tlv(
+		frame, length, MEDUSA_TLV_OBJECT_DATA, &object_length, true);
+	if (!event_data || !subject_data || !object_data ||
+	    event_length != event->acctype.size ||
+	    !event->op[0] || subject_length != event->op[0]->m.size ||
+	    (event->op[1] && object_length != event->op[1]->m.size))
+		return -EMSGSIZE;
+	synthetic_length = 2 * sizeof(MCPptr_t) + event_length +
+			   subject_length +
+			   (event->op[1] ? object_length : 0);
+	if (synthetic_length > INT_MAX)
+		return -EOVERFLOW;
+	buffer = comm_buf_get((int)synthetic_length, comm);
+	if (!buffer)
+		return -ENOMEM;
+	((MCPptr_t *)buffer->comm_buf)[0] = event_id;
+	((MCPptr_t *)buffer->comm_buf)[1] = request_id;
+	memcpy(buffer->comm_buf + 2 * sizeof(MCPptr_t),
+	       event_data, event_length);
+	memcpy(buffer->comm_buf + 2 * sizeof(MCPptr_t) + event_length,
+	       subject_data, subject_length);
+	if (event->op[1])
+		memcpy(buffer->comm_buf + 2 * sizeof(MCPptr_t) + event_length +
+			       subject_length,
+		       object_data, object_length);
+	buffer->len = (int)synthetic_length;
+	buffer->event = event;
+	if (get_event_context(
+		    comm, &buffer->context, event, buffer->comm_buf)) {
+		buffer->bfree(buffer);
+		return -EPROTO;
+	}
+	buffer->ehh_list = EHH_VS_ALLOW;
+	pthread_mutex_lock(&comm->state_lock);
+	if (function_init && comm->init_buffer)
+		comm_buf_to_queue(&comm->init_buffer->to_wake, buffer);
+	else
+		comm_buf_todo(buffer);
+	pthread_mutex_unlock(&comm->state_lock);
+	return 0;
+}
+
+static struct comm_buffer_s *
+v4_take_waiter(struct comm_s *comm, uint32_t reply_type, uint64_t request_id)
+{
+	struct comm_buffer_s *found = NULL;
+	struct queue_item_s *previous = NULL;
+	struct queue_item_s *item;
+
+	pthread_mutex_lock(&comm->wait_for_answer.lock);
+	for (item = comm->wait_for_answer.first; item; item = item->next) {
+		if (item->buffer->waiting.to == reply_type &&
+		    item->buffer->waiting.seq == request_id) {
+			found = comm_buf_del(
+				&comm->wait_for_answer, previous, item);
+			break;
+		}
+		previous = item;
+	}
+	pthread_mutex_unlock(&comm->wait_for_answer.lock);
+	return found;
+}
+
+static int v4_handle_object_reply(struct comm_s *comm, const uint8_t *frame,
+				  size_t length, uint32_t type)
+{
+	const struct medusa_frame_header *header =
+		(const struct medusa_frame_header *)frame;
+	struct comm_buffer_s *waiter;
+	const uint8_t *object_data;
+	size_t object_length = 0;
+	uint64_t request_id = load_le64(&header->request_id);
+	uint32_t wire_status;
+	int32_t status;
+
+	if (!request_id ||
+	    load_le64(&header->policy_generation) !=
+		    MCP_DATA(comm)->generation ||
+	    v4_get_u32(frame, length, MEDUSA_TLV_STATUS, &wire_status))
+		return -EPROTO;
+	status = (int32_t)wire_status;
+	waiter = v4_take_waiter(comm, type, request_id);
+	if (!waiter)
+		return -ENOENT;
+	if (type == MEDUSA_MSG_OBJECT_FETCH_REPLY && status == 0) {
+		struct object_s *object = waiter->user1;
+
+		object_data = v4_find_tlv(
+			frame, length, MEDUSA_TLV_OBJECT_DATA,
+			&object_length, true);
+		if (!object_data || !object ||
+		    object_length != object->class->m.size) {
+			waiter->user_data = -1;
+		} else {
+			memcpy(object->data, object_data, object_length);
+			waiter->user_data = 0;
+		}
+	} else {
+		waiter->user_data = status;
+	}
+	waiter->waiting.to = 0;
+	comm_buf_todo(waiter);
+	return 0;
+}
+
+static int mcp_read_worker(struct comm_s *comm)
+{
+	uint8_t *frame = malloc(MEDUSA_FRAME_MAX_SIZE);
+
+	if (!frame || tls_alloc_init()) {
+		free(frame);
+		return -1;
+	}
+	for (;;) {
+		const struct medusa_frame_header *header;
+		ssize_t length = v4_read_frame(comm, frame);
+		uint16_t type;
+		int error;
+
+		if (length < 0)
+			break;
+		header = (const struct medusa_frame_header *)frame;
+		type = load_le16(&header->type);
+		if (type == MEDUSA_MSG_DECISION_REQUEST)
+			error = v4_queue_decision(comm, frame, (size_t)length);
+		else if (type == MEDUSA_MSG_OBJECT_FETCH_REPLY ||
+			 type == MEDUSA_MSG_OBJECT_UPDATE_REPLY)
+			error = v4_handle_object_reply(
+				comm, frame, (size_t)length, type);
+		else if (type == MEDUSA_MSG_DECISION_CANCEL) {
+			uint64_t request_id = load_le64(&header->request_id);
+
+			if (!request_id ||
+			    load_le64(&header->policy_generation) !=
+				    MCP_DATA(comm)->generation ||
+			    (size_t)length != MEDUSA_FRAME_HEADER_SIZE)
+				error = -EPROTO;
+			else
+				error = v4_cancel_add(comm, request_id);
+		} else if (type == MEDUSA_MSG_AUDIT)
+			error = 0;
+		else if (type == MEDUSA_MSG_POLICY_READY) {
+			uint64_t generation =
+				load_le64(&header->policy_generation);
+
+			pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+			if ((size_t)length != MEDUSA_FRAME_HEADER_SIZE ||
+			    load_le64(&header->request_id) ||
+			    !MCP_DATA(comm)->replacement_pending ||
+			    generation !=
+				    MCP_DATA(comm)->replacement_generation) {
+				error = -EPROTO;
+			} else {
+				MCP_DATA(comm)->generation = generation;
+				MCP_DATA(comm)->replacement_pending = false;
+				error = 0;
+			}
+			pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+		}
+		else
+			error = -EPROTO;
+		if (error) {
+			errno = EPROTO;
+			break;
+		}
+	}
+	free(frame);
+	comm->close(comm);
+	return -1;
+}
+
+static int mcp_write(struct comm_s *comm)
+{
+	struct comm_buffer_s *buffer = comm_buf_output_dequeue(comm);
+	int result;
+
+	if (buffer->open_counter != comm->open_counter) {
+		buffer->bfree(buffer);
+		return 1;
+	}
+	result = v4_write_buffer(comm, buffer);
+	buffer->bfree(buffer);
+	return result ? -1 : 1;
+}
+
+static int mcp_close(struct comm_s *comm)
+{
+	struct comm_buffer_s *buffer;
+
+	if (comm->fd >= 0)
+		close(comm->fd);
+	comm->fd = -1;
+	pthread_mutex_lock(&comm->output.lock);
+	while ((buffer = comm_buf_from_queue(&comm->output)) != NULL)
+		buffer->bfree(buffer);
+	pthread_mutex_unlock(&comm->output.lock);
+	pthread_mutex_lock(&comm->wait_for_answer.lock);
+	while ((buffer = comm_buf_from_queue(&comm->wait_for_answer)) != NULL)
+		comm_buf_todo(buffer);
+	pthread_mutex_unlock(&comm->wait_for_answer.lock);
+	comm->open_counter--;
+	v4_cancel_clear(comm);
+	return 0;
+}
+
+static int mcp_conf_error(struct comm_s *comm, const char *format, ...)
+{
+	va_list arguments;
+	char message[4096];
+	char prefix[96];
+
+	snprintf(prefix, sizeof(prefix), "comm %.63s: ", comm->name);
+	va_start(arguments, format);
+	string_vformat_line(
+		message, sizeof(message), prefix, format, arguments);
+	va_end(arguments);
+	write(STDOUT_FILENO, message, strlen(message));
+	return -1;
+}
+
+static int mcp_answer(struct comm_s *comm, struct comm_buffer_s *request)
+{
+	struct v4_builder builder;
+	uint64_t request_id;
+	int16_t answer;
+	uint8_t cache_update = MEDUSA_CACHE_UPDATE_NONE;
+
+	request_id = ((MCPptr_t *)request->comm_buf)[1];
+	if (!request->approval_done && request->event &&
+	    request->event->acctype.kind == MEDUSA_EVENT_ACCESS &&
+	    (request->context.result == MED_ALLOW ||
+	     request->context.result == MED_DENY) &&
+	    approval_enabled_for(request->event->evname->name)) {
+		request->context.result = approval_decide(
+			request, request_id, request->event->evname->name,
+			request->context.result);
+		request->approval_done = 1;
+	}
+	if (request->context.result >= 0 && request->context.subject.class) {
+		int continuation = request->do_phase == 0 ?
+			0 : request->do_phase - 1000;
+		int result = comm->update_object(
+			comm, continuation, &request->context.subject, request);
+
+		if (result > 0) {
+			request->do_phase = result + 1000;
+			return result;
+		}
+	}
+	if (v4_cancel_take(comm, request_id))
+		return 0;
+	if (request->event &&
+	    request->event->acctype.kind == MEDUSA_EVENT_OBJECT_NOTIFICATION &&
+	    (request->context.result == MED_ALLOW ||
+	     request->context.result == MED_DENY))
+		request->context.result = MED_ALLOW;
+	answer = request->context.result;
+	if (answer != MED_ERR && answer != MED_DENY && answer != MED_ALLOW)
+		answer = MED_ERR;
+	if (answer == MED_ALLOW && request->event &&
+	    request->event->acctype.kind == MEDUSA_EVENT_ACCESS &&
+	    (MCP_DATA(comm)->enabled_features &
+	     MEDUSA_FEATURE_REPLY_CACHE_UPDATE)) {
+		if (request->event->monitored_operand == request->event->op[0])
+			cache_update = MEDUSA_CACHE_UPDATE_SUBJECT;
+		else if (request->event->monitored_operand ==
+			 request->event->op[1])
+			cache_update = MEDUSA_CACHE_UPDATE_OBJECT;
+	}
+	builder = v4_builder_new(
+		comm, MEDUSA_MSG_DECISION_REPLY, request_id,
+		MCP_DATA(comm)->generation, 32);
+	if (!builder.buffer ||
+	    v4_builder_add_u16(
+		    &builder, MEDUSA_TLV_ANSWER, (uint16_t)answer) ||
+	    (cache_update != MEDUSA_CACHE_UPDATE_NONE &&
+	     v4_builder_add_u8(
+		     &builder, MEDUSA_TLV_CACHE_UPDATE, cache_update))) {
+		if (builder.buffer)
+			builder.buffer->bfree(builder.buffer);
+		return -1;
+	}
+	v4_enqueue(comm, &builder);
+	return 0;
+}
+
+int mcp_renew_authrequest(struct comm_buffer_s *request)
+{
+	struct v4_builder builder;
+	uint64_t request_id;
+
+	if (!request || !request->comm ||
+	    request->len < (int)(2 * sizeof(MCPptr_t)))
+		return -EINVAL;
+	request_id = ((MCPptr_t *)request->comm_buf)[1];
+	builder = v4_builder_new(
+		request->comm, MEDUSA_MSG_DECISION_PROGRESS, request_id,
+		MCP_DATA(request->comm)->generation, 0);
+	if (!builder.buffer)
+		return -ENOMEM;
+	return v4_enqueue(request->comm, &builder);
+}
+
+static int mcp_object_request(struct comm_s *comm, int continuation,
+			      struct object_s *object,
+			      struct comm_buffer_s *wake, bool update)
+{
+	struct v4_builder builder;
+	uint64_t request_id;
+	uint32_t reply_type = update ?
+		MEDUSA_MSG_OBJECT_UPDATE_REPLY :
+		MEDUSA_MSG_OBJECT_FETCH_REPLY;
+
+	if (continuation == 3) {
+		if (update)
+			return wake->user_data == MED_ALLOW ||
+			       wake->user_data == 0 ? 0 : -1;
+		return wake->user_data;
+	}
+	if (!object || !object->class ||
+	    object->class->m.classid > UINT32_MAX)
+		return -EINVAL;
+	request_id = mcp_next_request_id(comm);
+	builder = v4_builder_new(
+		comm, update ? MEDUSA_MSG_OBJECT_UPDATE :
+			       MEDUSA_MSG_OBJECT_FETCH,
+		request_id, MCP_DATA(comm)->generation,
+		32 + object->class->m.size);
+	if (!builder.buffer ||
+	    v4_builder_add_u32(
+		    &builder, MEDUSA_TLV_CLASS_ID,
+		    (uint32_t)object->class->m.classid) ||
+	    v4_builder_add(
+		    &builder, MEDUSA_TLV_OBJECT_DATA, 0, object->data,
+		    object->class->m.size)) {
+		if (builder.buffer)
+			builder.buffer->bfree(builder.buffer);
+		return -ENOMEM;
+	}
+	wake->user_data = -1;
+	wake->user1 = update ? NULL : object;
+	wake->waiting.to = reply_type;
+	wake->waiting.cid = object->class->m.classid;
+	wake->waiting.seq = request_id;
+	comm_buf_to_queue_locked(&comm->wait_for_answer, wake);
+	return v4_enqueue(comm, &builder) ? -1 : 3;
+}
+
+static int mcp_fetch_object(struct comm_s *comm, int continuation,
+			    struct object_s *object,
 			    struct comm_buffer_s *wake)
 {
-	static MCPptr_t id = 2;
-	static pthread_mutex_t id_lock = PTHREAD_MUTEX_INITIALIZER;
-	struct comm_buffer_s *r;
-
-	if (cont == 3) {
-		if (unlikely(debug_do_out)) {
-			pthread_mutex_lock(&debug_do_lock);
-			debug_do_out(debug_do_arg, "fetch ");
-			object_print(o, debug_do_out, debug_do_arg);
-			pthread_mutex_unlock(&debug_do_lock);
-		}
-		return wake->user_data;	/* done */
-	}
-
-	wake->user_data = -1;
-	r = comm_buf_get(3 * sizeof(MCPptr_t) + o->class->m.size, c);
-	if (unlikely(!r)) {
-		fatal("Can't alloc buffer for fetch!");
-		return -1;
-	}
-	wake->user1 = (void *)o;
-	object_set_byte_order(o, c->flags);
-	((MCPptr_t *)(r->comm_buf))[0] = byte_reorder_put_int32(c->flags,
-								MEDUSA_COMM_FETCH_REQUEST);
-	((MCPptr_t *)(r->comm_buf))[1] = o->class->m.classid;
-	pthread_mutex_lock(&id_lock);
-	((MCPptr_t *)(r->comm_buf))[2] = id++;
-	pthread_mutex_unlock(&id_lock);
-	memcpy(((MCPptr_t *)(r->comm_buf)) + 3, o->data, o->class->m.size);
-	r->len = 3 * sizeof(MCPptr_t) + o->class->m.size;
-	r->want = 0;
-	r->completed = NULL;
-
-	/*
-	 * Enqueue buffer `wake` to the queue of buffers waiting for an answer from the
-	 * kernel. After the answer is received, the buffer is removed from the
-	 * queue in mcp_r_fetch_answer().
-	 */
-	wake->waiting.to = MEDUSA_COMM_FETCH_REQUEST;
-	wake->waiting.cid = ((MCPptr_t *)(r->comm_buf))[1];
-	wake->waiting.seq = ((MCPptr_t *)(r->comm_buf))[2];
-	comm_buf_to_queue_locked(&wake->comm->wait_for_answer, wake);
-	/*
-	 * Send buffer `r` to the output. Buffer is destroyed in the `mcp_write`
-	 * function.
-	 */
-	comm_buf_output_enqueue(c, r);
-	return 3;
+	return mcp_object_request(
+		comm, continuation, object, wake, false);
 }
 
-static enum read_result mcp_r_fetch_answer(struct comm_buffer_s *b)
-{
-	struct comm_buffer_s *p = NULL;
-	struct queue_item_s *prev = NULL, *item;
-	#pragma pack(push)
-	#pragma pack(1)
-	struct {
-		MCPptr_t cid, seq;
-	} *bmask = (void *)(b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t));
-	#pragma pack(pop)
-
-	pthread_mutex_lock(&b->comm->wait_for_answer.lock);
-	item = b->comm->wait_for_answer.first;
-	while (item) {
-		if (item->buffer->waiting.to == MEDUSA_COMM_FETCH_REQUEST &&
-		    item->buffer->waiting.cid == bmask->cid &&
-		    item->buffer->waiting.seq == bmask->seq) {
-			p = comm_buf_del(&b->comm->wait_for_answer, prev, item);
-			break;
-		}
-		prev = item;
-		item = item->next;
-	}
-	pthread_mutex_unlock(&b->comm->wait_for_answer.lock);
-
-	if (byte_reorder_get_int32(b->comm->flags,
-				   ((unsigned int *)(b->comm_buf + sizeof(MCPptr_t)))[0])
-				    == MEDUSA_COMM_FETCH_ERROR) {
-		/* the return value is preset to -1 (p->user_data) in `mcp_fetch_object()` */
-		if (likely(p))
-			comm_buf_todo(p);
-		b->completed = NULL;
-		return READ_FREE;
-	}
-
-	if (likely(p)) {
-		b->len = 0;
-		b->want = ((struct object_s *)(p->user1))->class->m.size;
-		b->p_comm_buf = ((struct object_s *)(p->user1))->data;
-		b->user1 = (void *)p;
-		b->completed = mcp_r_fetch_answer_done;
-	} else {
-		/*
-		 * Arrived answer to FETCH request, but there is nothing waiting for it;
-		 * there is necessary to read arrived k-object and discard it.
-		 */
-		struct class_s *cl;
-		char *errmsg = "Arrived answer to FETCH request, nobody is waiting for it!";
-
-		cl = (struct class_s *)hash_find(&b->comm->classes, bmask->cid);
-		if (unlikely(!cl)) {
-			fatal("comm %s: Can't find class by class id. %s", b->comm->name, errmsg);
-			return READ_ERROR;
-		}
-		fatal("comm %s: %s", b->comm->name, errmsg);
-		b->want = b->len + cl->m.size;
-		b->completed = mcp_r_discard;
-	}
-	return READ_DONE;
-}
-
-static enum read_result mcp_r_fetch_answer_done(struct comm_buffer_s *b)
-{
-	struct comm_buffer_s *p;
-	/*
-	 * `p` cannot be NULL, function is called only once from
-	 * `mcp_r_fetch_answer()` if `p` != NULL.
-	 */
-	p = (struct comm_buffer_s *)(b->user1);
-	p->user_data = 0;	/* success */
-	p->waiting.to = 0;
-	p->user1 = NULL;
-	comm_buf_todo(p);
-
-	b->completed = NULL;
-	return READ_FREE;
-}
-
-static int mcp_update_object(struct comm_s *c,
-			     int cont,
-			     struct object_s *o,
+static int mcp_update_object(struct comm_s *comm, int continuation,
+			     struct object_s *object,
 			     struct comm_buffer_s *wake)
 {
-	static MCPptr_t id = 2;
-	static pthread_mutex_t id_lock = PTHREAD_MUTEX_INITIALIZER;
-	struct comm_buffer_s *r;
-
-	/*
-	 * It's the second pass of this function. Result of the `update` operation
-	 * is available from the kernel. If successful, mcp_update_object() returns
-	 * 0, -1 otherwise.
-	 */
-	if (cont == 3) {
-#ifdef TRANSLATE_RESULT
-		if (wake->user_data == MED_ALLOW)
-#else
-		if (wake->user_data == RESULT_ALLOW)
-#endif
-			return 0;	/* done */
-		return -1;	/* done */
-	}
-
-	/*
-	 * It's the first pass of this function. Moving on...
-	 */
-
-#ifdef TRANSLATE_RESULT
-	wake->user_data = MED_ERR;
-#else
-	wake->user_data = RESULT_ERR;
-#endif
-	r = comm_buf_get(3 * sizeof(MCPptr_t) + ((struct object_s *)((void *)o))->class->m.size, c);
-	if (unlikely(!r)) {
-		fatal("Can't alloc buffer for update!");
-		return -1;
-	}
-
-	if (unlikely(debug_do_out)) {
-		pthread_mutex_lock(&debug_do_lock);
-		debug_do_out(debug_do_arg, "update ");
-		object_print(o, debug_do_out, debug_do_arg);
-		pthread_mutex_unlock(&debug_do_lock);
-	}
-
-	((MCPptr_t *)(r->comm_buf))[0] = byte_reorder_put_int32(c->flags,
-								MEDUSA_COMM_UPDATE_REQUEST);
-	((MCPptr_t *)(r->comm_buf))[1] = o->class->m.classid;
-	pthread_mutex_lock(&id_lock);
-	((MCPptr_t *)(r->comm_buf))[2] = id++;
-	pthread_mutex_unlock(&id_lock);
-	memcpy(((MCPptr_t *)(r->comm_buf)) + 3, o->data, o->class->m.size);
-
-	object_set_byte_order(o, r->comm->flags);
-	r->len = 3 * sizeof(MCPptr_t) + o->class->m.size;
-	r->want = 0;
-	r->completed = NULL;
-
-	/*
-	 * Enqueue buffer `wake` to the queue of buffers waiting for an answer from the
-	 * kernel. After the answer is received, the buffer is removed from the
-	 * queue in mcp_r_update_answer().
-	 */
-	wake->waiting.to = MEDUSA_COMM_UPDATE_ANSWER;
-	wake->waiting.cid = ((MCPptr_t *)(r->comm_buf))[1];
-	wake->waiting.seq = ((MCPptr_t *)(r->comm_buf))[2];
-	comm_buf_to_queue_locked(&wake->comm->wait_for_answer, wake);
-	/*
-	 * Send buffer `r` to the output. Buffer is destroyed in the `mcp_write`
-	 * function.
-	 */
-	comm_buf_output_enqueue(c, r);
-	return 3;
+	return mcp_object_request(
+		comm, continuation, object, wake, true);
 }
 
-/**
- * Reads an update answer message from the kernel.
- *
- * \param b received buffer with the update answer message
- */
-static enum read_result mcp_r_update_answer(struct comm_buffer_s *b)
+struct comm_s *mcp_alloc_comm(char *name)
 {
-	struct comm_buffer_s *p = NULL;
-	struct queue_item_s *prev = NULL, *item;
-	#pragma pack(push)
-	#pragma pack(1)
-	struct {
-		MCPptr_t cid, seq;
-		uint32_t update_result;
-	} *bmask = (void *)(b->comm_buf + sizeof(uint32_t) + sizeof(MCPptr_t));
-	#pragma pack(pop)
+	struct comm_s *comm =
+		comm_new(name, sizeof(struct mcp_comm_s));
 
-	pthread_mutex_lock(&b->comm->wait_for_answer.lock);
-	item = b->comm->wait_for_answer.first;
-	while (item) {
-		if (item->buffer->waiting.to == MEDUSA_COMM_UPDATE_ANSWER &&
-		    item->buffer->waiting.cid == bmask->cid &&
-		    item->buffer->waiting.seq == bmask->seq) {
-			p = comm_buf_del(&b->comm->wait_for_answer, prev, item);
-			break;
-		}
-		prev = item;
-		item = item->next;
+	if (!comm)
+		return NULL;
+	if (pthread_mutex_init(&MCP_DATA(comm)->request_lock, NULL))
+		return NULL;
+	comm->read = mcp_read_worker;
+	comm->write = mcp_write;
+	comm->close = mcp_close;
+	comm->answer = mcp_answer;
+	comm->fetch_object = mcp_fetch_object;
+	comm->update_object = mcp_update_object;
+	comm->conf_error = mcp_conf_error;
+	return comm;
+}
+
+int mcp_open(struct comm_s *comm, char *filename)
+{
+	comm->fd = comm_open_skip_stdfds(filename, O_RDWR, 0);
+	return comm->fd < 0 ? -1 : 0;
+}
+
+int mcp_receive_greeting(struct comm_s *comm)
+{
+	return mcp_receive_handshake(comm);
+}
+
+int mcp_replace_policy(struct comm_s *comm)
+{
+	struct v4_builder abort;
+	uint64_t generation;
+	int error;
+
+	if (!comm || comm->fd < 0)
+		return -ENOTCONN;
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	if (!(MCP_DATA(comm)->enabled_features &
+	      MEDUSA_FEATURE_ATOMIC_POLICY_REPLACE)) {
+		error = -EOPNOTSUPP;
+		goto out;
 	}
-	pthread_mutex_unlock(&b->comm->wait_for_answer.lock);
-
-	if (likely(p)) {
-		p->user_data = byte_reorder_put_int32(b->comm->flags, bmask->update_result);
-		p->waiting.to = 0;
-		comm_buf_todo(p);
-	} else {
-		fatal("comm %s: Arrived answer to UPDATE request, nobody is waiting for it!",
-		      b->comm->name);
+	if (MCP_DATA(comm)->replacement_pending) {
+		error = -EBUSY;
+		goto out;
 	}
+	if (MCP_DATA(comm)->generation == UINT64_MAX) {
+		error = -EOVERFLOW;
+		goto out;
+	}
+	generation = MCP_DATA(comm)->generation + 1;
+	MCP_DATA(comm)->replacement_generation = generation;
+	MCP_DATA(comm)->replacement_pending = true;
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
 
-	b->completed = NULL;
-	return READ_FREE;
+	error = v4_install_policy_generation(comm, generation);
+	if (!error)
+		return 0;
+	abort = v4_builder_new(
+		comm, MEDUSA_MSG_POLICY_ABORT, 0, generation, 0);
+	v4_send_now(comm, &abort);
+	pthread_mutex_lock(&MCP_DATA(comm)->request_lock);
+	MCP_DATA(comm)->replacement_pending = false;
+out:
+	pthread_mutex_unlock(&MCP_DATA(comm)->request_lock);
+	return error;
+}
+
+struct comm_s *mcp_listen(in_port_t port)
+{
+	(void)port;
+	errno = EOPNOTSUPP;
+	return NULL;
+}
+
+int mcp_to_accept(struct comm_s *comm, struct comm_s *listener,
+		  in_addr_t address, in_addr_t mask, in_port_t port)
+{
+	(void)comm;
+	(void)listener;
+	(void)address;
+	(void)mask;
+	(void)port;
+	return -EOPNOTSUPP;
+}
+
+int mcp_ready_answer(struct comm_s *comm)
+{
+	(void)comm;
+	return 0;
 }
 
 int mcp_init(char *filename)
 {
 	return mcp_language_do(filename);
-}
-
-static int mcp_conf_error(struct comm_s *comm, const char *fmt, ...)
-{
-	va_list ap;
-	char buf[4096];
-
-	sprintf(buf, "comm %s: ", comm->name);
-	va_start(ap, fmt);
-	vsnprintf(buf + strlen(buf), 4000, fmt, ap);
-	va_end(ap);
-	sprintf(buf + strlen(buf), "\n");
-	write(1, buf, strlen(buf));
-
-	return -1;
 }

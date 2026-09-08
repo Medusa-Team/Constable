@@ -5,11 +5,14 @@
  */
 
 #include <stdlib.h>
+#include <float.h>
 #include <string.h>
 #include <ctype.h>
 //#include <math.h>
 #include <mcompiler/c_language.h>
 #include <mcompiler/backslash.h>
+
+#include <mcompiler/checked_math.h>
 
 lextab_t clex_operators[]={
     {"+",T|'+',0}, {"-",T|'-',0}, {"*",T|'*',0}, {"/",T|'/',0},
@@ -147,18 +150,23 @@ lexstattab_t clex_states[]={
     {LSC_aposbs,NULL,clex_rules_aposbs,NULL,clex_gen_lex_apos},
     {LSC_comment,clex_comment_op,clex_rules_comm,NULL,NULL},
     {LSC_comment_line,NULL,clex_rules_comml,NULL,NULL},
-    {END,NULL,NULL,NULL,NULL}
+    LEX_STATE_TABLE_END
 };
 
 void clex_gen_lex_ident( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t want )
 { val_t *v;
-    if( (v=malloc(sizeof(val_t)+len+1))==NULL )
+    size_t allocation;
+    (void)want;
+    if( len<0 ||
+        !checked_size_add(sizeof(val_t),(size_t)len,&allocation) ||
+        !checked_size_add(allocation,1,&allocation) ||
+        (v=calloc(1,allocation))==NULL )
     {	*sym=eNOMEM;
         return;
     }
     v->typ=VT_ID;
     v->size=len;
-    strncpy(v->value,buf,len);
+    memcpy(v->value,buf,len);
     v->value[len]=0;
     *sym=CL_ID;
     *data=(uintptr_t)v;
@@ -173,7 +181,7 @@ double m_pow( float base , int exp )
     return(r);
 }
 
-static void parse_float( char **buf, double *f )
+static int parse_float( char **buf, double *f )
 { double d;
     //int sign=1;
     int exp=0;
@@ -193,13 +201,16 @@ static void parse_float( char **buf, double *f )
         else if( **buf=='-' )
         { /* sign=-1;*/ (*buf)++; }
         while( **buf>='0' && **buf<='9' )
-        {	exp*=10; exp+=**buf-'0';
+        {	int digit=**buf-'0';
+            if( exp>(DBL_MAX_10_EXP-digit)/10 )
+                return(-1);
+            exp*=10; exp+=digit;
             (*buf)++;
             /* !!! otestovat hranivu exponentu */
         }
         (*f) *= m_pow(10,exp);
     }
-    return;
+    return(0);
 }
 
 void clex_gen_lex_numb( char *buf, int blen, sym_t *sym, uintptr_t *data, sym_t want )
@@ -209,6 +220,9 @@ void clex_gen_lex_numb( char *buf, int blen, sym_t *sym, uintptr_t *data, sym_t 
     int typ,len;
     unsigned long long l,b;
     double f;
+    (void)want;
+    if( blen<0 )
+        goto Err;
     buf[blen]=0;
     l=0; b=0; f=0;
     if( *buf==0 )
@@ -232,7 +246,9 @@ void clex_gen_lex_numb( char *buf, int blen, sym_t *sym, uintptr_t *data, sym_t 
     }
     typ=0;
     if( base==10 && *buf=='.' )
-    {	f=l; parse_float(&buf,&f); typ=VT_double;	}
+    {	f=l;
+        if( parse_float(&buf,&f)<0 ) goto Err;
+        typ=VT_double;	}
     else if( base==10 && tolower(*buf)=='e' )
     {	if( buf[1]==0 )
         {	if( *sym==LSC_exponent )	goto Err;
@@ -240,7 +256,9 @@ void clex_gen_lex_numb( char *buf, int blen, sym_t *sym, uintptr_t *data, sym_t 
             *data=LEX_CONT;
             return;
         }
-        f=l; parse_float(&buf,&f); typ=VT_double;
+        f=l;
+        if( parse_float(&buf,&f)<0 ) goto Err;
+        typ=VT_double;
     }
     if( typ==VT_double )	len=sizeof(double);
     else
@@ -260,7 +278,7 @@ void clex_gen_lex_numb( char *buf, int blen, sym_t *sym, uintptr_t *data, sym_t 
         else goto Err;
     }
     if( *buf!=0 )	goto Err;
-    if( (v=malloc(sizeof(val_t)+len))==NULL )
+    if( (v=calloc(1,sizeof(val_t)+len))==NULL )
     {	*sym=eNOMEM;
         return;
     }
@@ -283,7 +301,12 @@ void clex_gen_lex_string( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t
 { val_t *v;
     int p;
     long l;
-    if( (v=malloc(sizeof(val_t)+len+1))==NULL )
+    size_t allocation;
+    (void)want;
+    if( len<0 ||
+        !checked_size_add(sizeof(val_t),(size_t)len,&allocation) ||
+        !checked_size_add(allocation,1,&allocation) ||
+        (v=calloc(1,allocation))==NULL )
     {	*sym=eNOMEM;
         return;
     }
@@ -305,7 +328,12 @@ void clex_gen_lex_apos( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t w
 { val_t *v;
     int p;
     long l;
-    if( (v=malloc(sizeof(val_t)+len+1))==NULL )
+    size_t allocation;
+    (void)want;
+    if( len<0 ||
+        !checked_size_add(sizeof(val_t),(size_t)len,&allocation) ||
+        !checked_size_add(allocation,1,&allocation) ||
+        (v=calloc(1,allocation))==NULL )
     {	*sym=eNOMEM;
         return;
     }
@@ -327,4 +355,3 @@ void clex_gen_lex_apos( char *buf, int len, sym_t *sym, uintptr_t *data, sym_t w
     *sym=CL_CHAR;
     *data=(uintptr_t)v;
 }
-

@@ -7,6 +7,7 @@
 #include "constable.h"
 #include "object.h"
 #include "event.h"
+#include "string_utils.h"
 #include <sys/param.h>
 
 int object_is_invalid(struct object_s *o)
@@ -79,8 +80,8 @@ int object_add_event(struct object_s *o, struct event_mask_s *e)
 	/* object */
 	n = o->class->event_size;
 	if (n > 0) {
-		if (n > sizeof(e->bitmap))
-			n = sizeof(e->bitmap);
+		if (n > (int)sizeof(e->bitmap))
+			n = (int)sizeof(e->bitmap);
 		f = e[1].bitmap;
 		t = o->data + o->class->event_offset;
 		for (i = 0; i < n; i++)
@@ -91,8 +92,8 @@ int object_add_event(struct object_s *o, struct event_mask_s *e)
 	/* subject */
 	n = o->class->subject.event_size;
 	if (n > 0) {
-		if (n > sizeof(e->bitmap))
-			n = sizeof(e->bitmap);
+		if (n > (int)sizeof(e->bitmap))
+			n = (int)sizeof(e->bitmap);
 		f = e[0].bitmap;
 		t = o->data + o->class->subject.event_offset;
 		for (i = 0; i < n; i++)
@@ -194,11 +195,14 @@ int object_add_vs(struct object_s *o, int n, vs_t *vs)
 #include <stdio.h>
 void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 {
+	unsigned char byte;
 	int i, j, bp;
 	struct medusa_attribute_s *a;
 	char buf[1024];
 	unsigned long tmp;
 	unsigned long long tmpl;
+	signed long signed_tmp;
+	signed long long signed_tmpl;
 
 	out(arg, "[\"");
 	out(arg, o->class->comm->name);
@@ -215,30 +219,32 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 		out(arg, "=");
 
 		switch (a[i].type & 0x0f) {
-		case MED_COMM_TYPE_UNSIGNED:
+		case MED_TYPE_UNSIGNED:
 			if (a[i].length > sizeof(tmp)) {
 				object_get_val(o, a+i, &tmpl, sizeof(tmpl));
-				sprintf(buf, "0x%llx", tmpl);
+				snprintf(buf, sizeof(buf), "0x%llx", tmpl);
 			} else {
 				object_get_val(o, a+i, &tmp, sizeof(tmp));
-				sprintf(buf, "0x%lx", tmp);
+				snprintf(buf, sizeof(buf), "0x%lx", tmp);
 			}
 			out(arg, buf);
 			break;
-		case MED_COMM_TYPE_SIGNED:
+		case MED_TYPE_SIGNED:
 			if (a[i].length > sizeof(tmp)) {
-				object_get_val(o, a+i, &tmpl, sizeof(tmpl));
-				sprintf(buf, "%lld", tmpl);
+				object_get_val(o, a+i, &signed_tmpl,
+					       sizeof(signed_tmpl));
+				snprintf(buf, sizeof(buf), "%lld", signed_tmpl);
 			} else {
-				object_get_val(o, a+i, &tmp, sizeof(tmp));
-				sprintf(buf, "%ld", tmp);
+				object_get_val(o, a+i, &signed_tmp,
+					       sizeof(signed_tmp));
+				snprintf(buf, sizeof(buf), "%ld", signed_tmp);
 			}
 			out(arg, buf);
 			break;
-		case MED_COMM_TYPE_STRING:
+		case MED_TYPE_STRING:
 			out(arg, "\"");
 			for (j = 0, bp = 0; j < a[i].length; j++) {
-				if (bp >= sizeof(buf)-8) {
+				if ((size_t)bp >= sizeof(buf)-8) {
 					buf[bp] = 0;
 					out(arg, buf);
 					bp = 0;
@@ -263,8 +269,11 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 						buf[bp] = 'a';
 						break;
 					default:
-						sprintf(buf+bp, "\\x%02x", buf[bp]);
-						bp += 3;
+						byte = (unsigned char)buf[bp];
+						buf[bp++] = '\\';
+						buf[bp++] = 'x';
+						string_hex_byte(buf + bp, byte);
+						bp++;
 					}
 				}
 				bp++;
@@ -275,17 +284,21 @@ void object_print(struct object_s *o, void(*out)(int arg, char *), int arg)
 				}
 			out(arg, "\"");
 			break;
-		case MED_COMM_TYPE_BITMAP:
+		case MED_TYPE_BITMAP:
 #ifdef BITMAP_DIPLAY_LEFT_RIGHT
 			for (j = 0; j < a[i].length; j++) {
 				if (j > 0 && (j&0x03) == 0)
 					out(arg, ":");
-				sprintf(buf, "%02x", ((unsigned char *)(o->data+a[i].offset))[j]);
+				string_hex_byte(buf,
+					((unsigned char *)(o->data +
+							  a[i].offset))[j]);
 				out(arg, buf);
 			}
 #else
 			for (j = a[i].length-1; j >= 0; j--) {
-				sprintf(buf, "%02x", ((unsigned char *)(o->data+a[i].offset))[j]);
+				string_hex_byte(buf,
+					((unsigned char *)(o->data +
+							  a[i].offset))[j]);
 				out(arg, buf);
 				if (j > 0 && (j&0x03) == 0)
 					out(arg, ":");

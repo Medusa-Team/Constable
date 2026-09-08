@@ -46,7 +46,7 @@ char backslash_parse( const char *bslash, long *len )
     {	switch( *p )
         { case 'a':	x='\a';	p++; break;
         case 'b':	x='\b';	p++; break;
-        case 'e':	x='\e';	p++; break;
+        case 'e':	x='\033';	p++; break;
         case 'f':	x='\f';	p++; break;
         case 'n':	x='\n';	p++; break;
         case 'r':	x='\r';	p++; break;
@@ -62,4 +62,3 @@ char backslash_parse( const char *bslash, long *len )
     {	*len= p-bslash;		}
     return((char)(x&0xff));
 }
-

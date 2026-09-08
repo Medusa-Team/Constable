@@ -81,7 +81,8 @@ static struct medusa_comm_class_s rbac_user_mclass={
                 };
 
                 static struct medusa_comm_acctype_s rbac_acc_create_role={
-                    1,0,0xffff,{0,0},"create_role",{"process","process"}
+                    1,0,0xffff,{0,0},"create_role",{"process","process"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static struct medusa_comm_attribute_s rbac_acc_attr_create_role[]={
@@ -89,7 +90,8 @@ static struct medusa_comm_class_s rbac_user_mclass={
                 };
 
                 static struct medusa_comm_acctype_s rbac_acc_delete_role={
-                    2,0,0xffff,{0,3},"delete_role",{"process","role"}
+                    2,0,0xffff,{0,3},"delete_role",{"process","role"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static struct medusa_comm_attribute_s rbac_acc_attr_none[]={
@@ -97,23 +99,30 @@ static struct medusa_comm_class_s rbac_user_mclass={
                 };
 
                 static struct medusa_comm_acctype_s rbac_acc_role_hierarchy={
-                    3,0,0xffff,{0,3},"role_hierarchy",{"process","role"}
+                    3,0,0xffff,{0,3},"role_hierarchy",{"process","role"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static struct medusa_comm_acctype_s rbac_acc_user_assign={
-                    4,0,0xffff,{0,1},"uses_assign",{"process","user"}
+                    4,0,0xffff,{0,1},"uses_assign",{"process","user"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static struct medusa_comm_acctype_s rbac_acc_role_assign={
-                    5,0,0xffff,{0,3},"role_assign",{"process","role"}
+                    5,0,0xffff,{0,3},"role_assign",{"process","role"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static struct medusa_comm_acctype_s rbac_acc_perm_assign={
-                    6,0,0xffff,{0,2},"permission_assign",{"process","permission"}
+                    6,0,0xffff,{0,2},"permission_assign",{"process","permission"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static int rbac_set_roles( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )
                 {
+                    (void)h;
+                    (void)comm;
+                    (void)o;
                     VALIDATE_ROLES();
                     return(0);
                 }
@@ -123,6 +132,8 @@ static struct medusa_comm_class_s rbac_user_mclass={
                     char space[64];
                     struct space_s *s;
                     struct tree_s *t;
+                    (void)h;
+                    (void)comm;
                     if( object_get_val(o,get_attribute(o->class,"access"),&access,sizeof(access))<0
                             || object_get_val(o,get_attribute(o->class,"space"),&space,sizeof(space))<0 )
                         return(-1);
@@ -142,6 +153,10 @@ static struct medusa_comm_class_s rbac_user_mclass={
                 static int rbac_enter_tree_node( struct class_handler_s *h, struct comm_s *comm, struct object_s *o, struct tree_s *node )
                 {
                     char **errstr = (char**) pthread_getspecific(errstr_key);
+                    (void)h;
+                    (void)comm;
+                    (void)o;
+                    (void)node;
                     *errstr=Out_of_memory;
                     return(-1);
                 }
@@ -152,6 +167,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
 
                 int rbac_comm_alloc( struct module_s *m )
                 {
+                    (void)m;
                     if( (rbac_comm=comm_new("_RBAC",sizeof(struct comm_s)))==NULL )
                         return(-1);
                     rbac_comm->state=0;
@@ -166,6 +182,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
 
                 int rbac_comm_init( struct module_s *m )
                 {
+                    (void)m;
                     if( (rbac_user_class=add_class(rbac_comm,&rbac_user_mclass,rbac_user_attr))==NULL )
                         return(init_error("rbac: Can't register user class"));
                     if( (rbac_perm_class=add_class(rbac_comm,&rbac_perm_mclass,rbac_perm_attr))==NULL )
@@ -206,7 +223,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                         init_error(Out_of_memory);
                         return(-1);
                     }
-                    strncpy(rbac_t_user->name, "user", strlen("user")+1);
+                    memcpy(rbac_t_user->name, "user", sizeof("user"));
                     rbac_t_user->size=sizeof(struct tree_s);
                     rbac_t_user->class_handler=ch;
                     rbac_t_user->init=NULL;
@@ -233,7 +250,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                         init_error(Out_of_memory);
                         return(-1);
                     }
-                    strncpy(rbac_t_user->name, "perm", strlen("perm")+1);
+                    memcpy(rbac_t_user->name, "perm", sizeof("perm"));
                     rbac_t_perm->size=sizeof(struct tree_s);
                     rbac_t_perm->class_handler=ch;
                     rbac_t_perm->init=NULL;
@@ -260,7 +277,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                         init_error(Out_of_memory);
                         return(-1);
                     }
-                    strncpy(rbac_t_user->name, "role", strlen("role")+1);
+                    memcpy(rbac_t_user->name, "role", sizeof("role"));
                     rbac_t_role->size=sizeof(struct tree_s);
                     rbac_t_role->class_handler=ch;
                     rbac_t_role->init=NULL;
@@ -287,7 +304,7 @@ static struct medusa_comm_class_s rbac_user_mclass={
                         init_error(Out_of_memory);
                         return(-1);
                     }
-                    strncpy(rbac_t_user->name, "ROLE", strlen("ROLE")+1);
+                    memcpy(rbac_t_user->name, "ROLE", sizeof("ROLE"));
                     rbac_t_ROLE->size=sizeof(struct tree_s);
                     rbac_t_ROLE->class_handler=ch;
                     rbac_t_ROLE->init=NULL;
@@ -324,4 +341,3 @@ static struct medusa_comm_class_s rbac_user_mclass={
                 {
                     return(add_module(&rbac_module));
                 }
-

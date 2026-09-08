@@ -10,6 +10,7 @@
 #include "../space.h"
 #include "../generic.h"
 #include "../language/error.h"
+#include "../string_utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
@@ -33,17 +34,23 @@ struct role_s * rbac_role_add( char *name )
         *errstr=Out_of_memory;
         return(NULL);
     }
-    if( (n=malloc(sizeof(struct role_s)))==NULL )
+    if( (n=calloc(1,sizeof(struct role_s)))==NULL )
     {
         pthread_rwlock_unlock(&rbac_roles_lock);
         char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
         return(NULL);
     }
-    memset(n,0,sizeof(struct role_s));
     //	for(x=0;i<NR_ACCESS_TYPES;x++)
     //		vs_clear(n->vs[x]);
-    strncpy(n->name,name,sizeof(n->name));
+    if (string_copy(n->name, sizeof(n->name), name)) {
+        char **errstr = (char **)pthread_getspecific(errstr_key);
+
+        *errstr = Name_too_long;
+        free(n);
+        pthread_rwlock_unlock(&rbac_roles_lock);
+        return NULL;
+    }
     n->ua=NULL;
     n->perm=NULL;
     n->sup=n->sub=NULL;
@@ -63,6 +70,8 @@ struct role_s * rbac_role_add( char *name )
 int rbac_role_del( struct role_s *role )
 { struct role_s **p,*o;
     struct permission_assignment_s *a;
+    if( role==NULL )
+        return(-1);
     pthread_rwlock_wrlock(&rbac_roles_lock);
     for(p=&rbac_roles;(*p)!=NULL;p=&((*p)->next))
         if( (*p)==role )
@@ -70,6 +79,7 @@ int rbac_role_del( struct role_s *role )
     if( (*p)!=role )
     {	char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
+        pthread_rwlock_unlock(&rbac_roles_lock);
         return(-1);
     }
 
@@ -106,33 +116,36 @@ struct role_s * rbac_role_find( char *name )
 
 int rbac_add_ua( struct user_s *user, struct role_s *role )
 { struct user_assignment_s *n;
-    int i;
-    if( (n=malloc(sizeof(struct user_assignment_s)))==NULL )
-    {	char **errstr = (char**) pthread_getspecific(errstr_key);
-        *errstr=Out_of_memory;
+    int i,slot;
+    if( user==NULL || role==NULL || user->nr_roles<0 ||
+        user->nr_roles>USER_MAX_ROLES )
         return(-1);
-    }
     for(i=0;i<user->nr_roles;i++)
     {	if( user->roles[i]==role )
-        {	free(n);
-            char **errstr = (char**) pthread_getspecific(errstr_key);
+        {   char **errstr = (char**) pthread_getspecific(errstr_key);
             *errstr=Out_of_memory;
             return(-1);
         }
     }
-    if( user->nr_roles >= USER_MAX_ROLES )
-    {	for(i=0;i<USER_MAX_ROLES;i++)
-            if( user->roles[i]==NULL )
+    slot=user->nr_roles;
+    if( slot>=USER_MAX_ROLES )
+    {	for(slot=0;slot<USER_MAX_ROLES;slot++)
+            if( user->roles[slot]==NULL )
                 break;
-        if( i>=USER_MAX_ROLES )
+        if( slot>=USER_MAX_ROLES )
         {	char **errstr = (char**) pthread_getspecific(errstr_key);
             *errstr=Out_of_memory;
             return(-1);
         }
-        user->roles[i]=role;
     }
-    else
-        user->roles[user->nr_roles++]=role;
+    if( (n=calloc(1,sizeof(struct user_assignment_s)))==NULL )
+    {	char **errstr = (char**) pthread_getspecific(errstr_key);
+        *errstr=Out_of_memory;
+        return(-1);
+    }
+    user->roles[slot]=role;
+    if( slot==user->nr_roles )
+        user->nr_roles++;
     n->user=user;
     n->role=role;
     n->next_role=user->ua;
@@ -232,6 +245,8 @@ int rbac_roles_reinit( void )
 
 static int is_subrole( struct role_s *role, struct role_s *test )
 { struct hierarchy_s *h;
+    if( role==test )
+        return(1);
     for(h=role->sub;h!=NULL;h=h->next_sub)
     {	if( h->sub_role==test )
             return(1);
@@ -242,13 +257,19 @@ static int is_subrole( struct role_s *role, struct role_s *test )
 }
 
 int rbac_set_hierarchy( struct role_s *sup_role, struct role_s *sub_role )
-{ struct hierarchy_s *n;
+{ struct hierarchy_s *n,*h;
+    if( sup_role==NULL || sub_role==NULL )
+        return(-1);
+    /* Reject duplicate edges and cycles before mutating either role list. */
+    for(h=sup_role->sub;h!=NULL;h=h->next_sub)
+        if( h->sub_role==sub_role )
+            return(-1);
     if( is_subrole(sub_role,sup_role) )
     {	char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
         return(-1);
     }
-    if( (n=malloc(sizeof(struct hierarchy_s)))==NULL )
+    if( (n=calloc(1,sizeof(struct hierarchy_s)))==NULL )
     {	char **errstr = (char**) pthread_getspecific(errstr_key);
         *errstr=Out_of_memory;
         return(-1);
@@ -266,6 +287,8 @@ int rbac_set_hierarchy( struct role_s *sup_role, struct role_s *sub_role )
 
 int rbac_del_hierarchy( struct role_s *sup_role, struct role_s *sub_role )
 { struct hierarchy_s *h,**p,**b;
+    if( sup_role==NULL || sub_role==NULL )
+        return(-1);
     for(h=sup_role->sub;h!=NULL;h=h->next_sub)
     {	if( h->sub_role==sub_role )
             break;
@@ -296,13 +319,11 @@ int rbac_role_add_perm( struct role_s *role, int which, struct space_s *t )
         if( (*p)->n < 8 )
             break;
     if( *p==NULL )
-    {	if( (*p=malloc(sizeof(struct permission_assignment_s)))==NULL )
+    {	if( (*p=calloc(1,sizeof(struct permission_assignment_s)))==NULL )
         {	char **errstr = (char**) pthread_getspecific(errstr_key);
             *errstr=Out_of_memory;
             return(-1);
         }
-        (*p)->next=NULL;
-        (*p)->n=0;
     }
     (*p)->access[(*p)->n]=which;
     (*p)->space[(*p)->n]=t;
@@ -344,4 +365,3 @@ int rbac_role_del_perm( struct role_s *role, int which, struct space_s *t )
     *errstr=Out_of_memory;
     return(-1);
 }
-

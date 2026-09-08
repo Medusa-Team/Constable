@@ -15,7 +15,7 @@
 #include <semaphore.h>
 #include <stdio.h>
 
-#define	P_COMM_BUF_VAR_DATA(cb, ofs)	((cb)->var_data + (ofs))
+#define	P_COMM_BUF_VAR_DATA(cb, ofs)	((char *)(cb)->var_data + (ofs))
 #define	PUPTR_COMM_BUF_VAR_DATA(cb, ofs)  ((uintptr_t *)P_COMM_BUF_VAR_DATA((cb), (ofs)))
 
 extern struct comm_buffer_queue_s comm_todo;
@@ -64,6 +64,7 @@ struct comm_buffer_s {
 	int			do_phase; /**< Saves state between asynchronous calls to
 					    * handlers.
 					    */
+	int			approval_done; /**< User approval was already requested. */
 	int			ehh_list;
 	struct event_hadler_hash_s *hh; /**< Stores pointer to the current handler
 					  * being processed in an asynchronous call.
@@ -82,7 +83,7 @@ struct comm_buffer_s {
 	int (*completed)(struct comm_buffer_s *c); /* for comm */
 	void			*var_data;
 	char			*p_comm_buf;	/* for read/write */
-	char			comm_buf[0];	/* for comm */
+	char			comm_buf[];	/* for comm */
 };
 
 struct comm_s {
@@ -142,16 +143,18 @@ struct comm_s {
 			      struct comm_buffer_s *wake);
 
 	int (*conf_error)(struct comm_s *c, const char *fmt, ...);
-	char		user_data_[0]; /**< TODO change type to `mcp/mcp.c: struct mcp_comm_s` */
+	char		user_data_[]; /**< TODO change type to `mcp/mcp.c: struct mcp_comm_s` */
 };
 
 #define	comm_user_data(c)	((void *)(&((c)->user_data_[0])))
 
 struct comm_buffer_s *comm_buf_get(int size, struct comm_s *comm);
 struct comm_buffer_s *comm_buf_resize(struct comm_buffer_s *b, int size);
+struct comm_buffer_s *comm_buf_alloc_var_data(struct comm_buffer_s *buffer);
 
 void *comm_new_array(int size);
 int comm_alloc_buf_var_data(int size);
+void comm_seal_buf_var_data(void);
 
 struct comm_s *comm_new(char *name, int user_size);
 struct comm_s *comm_find(char *name);
@@ -170,7 +173,8 @@ int comm_error(const char *fmt, ...);
 int comm_info(const char *fmt, ...);
 
 int comm_buf_to_queue(struct comm_buffer_queue_s *q, struct comm_buffer_s *b);
-inline int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q, struct comm_buffer_s *b)
+static inline int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q,
+					    struct comm_buffer_s *b)
 {
 	int ret;
 
@@ -181,7 +185,8 @@ inline int comm_buf_to_queue_locked(struct comm_buffer_queue_s *q, struct comm_b
 }
 
 struct comm_buffer_s *comm_buf_from_queue(struct comm_buffer_queue_s *q);
-inline struct comm_buffer_s *comm_buf_from_queue_locked(struct comm_buffer_queue_s *q)
+static inline struct comm_buffer_s *
+comm_buf_from_queue_locked(struct comm_buffer_queue_s *q)
 {
 	struct comm_buffer_s *ret;
 

@@ -7,12 +7,13 @@ DESTDIR = $(PREFIX)
 BINDIR = $(DESTDIR)/bin
 CC = gcc
 #CC = clang
-#CFLAGS = -Wall -O2
-CFLAGS = -Wall -ggdb -DRBAC -DDEBUG_TRACE -I`pwd`/../libmcompiler/ -D_GNU_SOURCE
-#CFLAGS = -Wall -ggdb -DDEBUG_TRACE
-#CFLAGS = -Wall -O2 -DRBAC
-#CFLAGS = -Wall -O2
-#CFLAGS = -Wall -ggdb
+CFLAGS ?= -std=c11 -Wall -Wextra -Wpedantic -pedantic-errors -DRBAC \
+	-I$(CURDIR)/../libmcompiler -D_GNU_SOURCE
+override CFLAGS += -I$(CURDIR)/../include
+DEBUG ?= 0
+ifeq ($(DEBUG),1)
+override CFLAGS += -g
+endif
 LD = ld
 #LDFLAGS = ../libmcompiler/libmcompiler.a -lefence
 LDFLAGS = ../libmcompiler/libmcompiler.a -pthread
@@ -26,13 +27,20 @@ CP = cp
 
 # Do not touch rest of the file!
 
-OBJECTS = vs.o tree.o space.o class.o object.o object_endian.o event.o \
-	  comm.o comm_buf.o hash.o constable.o init.o generic.o \
-	  access_types.o
-MODULES = language mcp rbac # force
+OBJECTS = vs.o tree.o space.o class.o object.o object_endian.o decision.o event.o \
+	  comm.o comm_buf.o hash.o constable.o init.o generic.o string_utils.o \
+	  threading.o \
+	  access_types.o policy_event_test.o policy_inspect.o policy_validate.o \
+	  cli_options.o fallback_policy.o domain_rule.o approval.o
+MODULES = language mcp rbac
 ADDON = Mlibc
 
+.PHONY: test
+
 all:	constable rbacadm
+
+test: constable
+	$(MAKE) -C tests CC="$(CC)" CFLAGS="$(CFLAGS)"
 
 remake:	clean all
 
@@ -73,9 +81,9 @@ clean:
 	rm -f *.o modules.a constable rbacadm
 	$(MAKE) modules TARGET=clean
 	$(MAKE) addon TARGET=clean
+	$(MAKE) -C tests clean
 
 mrproper:
 	rm -f *.o modules.a constable rbacadm
 	$(MAKE) modules TARGET=mrproper
 	$(MAKE) addon TARGET=mrproper
-

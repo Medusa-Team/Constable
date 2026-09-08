@@ -9,8 +9,9 @@
 #define _COMPILER_H
 
 #include <stdint.h>
+#include <stddef.h>
 
-int compiler_verlib(char *ver);
+int compiler_verlib(char *ver, size_t ver_size);
 
 typedef unsigned short sym_t;
 
@@ -49,6 +50,9 @@ struct compile_tab_s	{
 #define	TTT	0xfffd	/* az, pri terminaloch v tabulke */
 #define	NEXTLINE 0xfffe	/* Pokracovanie pravidla z predchadzajuceho riadku */
 #define	END	0xffff	/* Koniec */
+
+/* Fully initialize grammar sentinels under -Wmissing-field-initializers. */
+#define COMPILE_TABLE_END { END, { END }, { END } }
 
 /* niektore chyby, ktore generuje compiler */
 #define	eNOMEM	(E|0x0fff)	/* fatalna chyba - nedostatok pamati */
@@ -228,4 +232,3 @@ struct compiler_preprocessor_class *gcc_preprocessor_create( char *filename );
     } while(0)
 
 #endif /* _COMPILER_H */
-

@@ -23,7 +23,7 @@ typedef struct { char *buf;
                                                         int ml;
                }  ddata_t;
 
-typedef struct { void *buf;
+typedef struct { char *buf;
                  int len;
                               int n;
                                            int size;
@@ -42,9 +42,9 @@ typedef struct { void *buf;
 #define	dd_n(dd)	((dd)->n)
 #define dd_entry(dd,pos)	((void *)(((dd)->buf)+(pos)*((dd)->size)))
 
-int lds_verlib(char *ver);
+int lds_verlib(char *ver, size_t ver_size);
 
-int dl_verlib(char *ver);	/* historical */
+int dl_verlib(char *ver, size_t ver_size);	/* historical */
 
 /* prototypy funkcii */
 
@@ -74,7 +74,8 @@ int dd_getdd( ddata_t *dd, FILE *f, void *eol, int include_eol );
 
 #define dfifo_data(df)	((void*)(((char *)((df)->buf))+(((df)->pos)*((df)->size))))
 #define	dfifo_n(df)	(((df)->n)-((df)->pos))
-#define dfifo_entry(df,ent)	((void *)(((df)->buf)+((ent)+((df)->pos))*((df)->size)))
+#define dfifo_entry(df,ent)	((void *)((char *)((df)->buf) + \
+				((ent) + ((df)->pos)) * ((df)->size)))
 
 dfifo_t *dfifo_create( int size, int minlen );
 int dfifo_delete( dfifo_t *df );
@@ -152,7 +153,7 @@ struct dfield_dim_s {
     struct dfield_dim_s **me;
     int	dim;
     int	n;
-    struct dfield_dim_s *r[0];
+    struct dfield_dim_s *r[];
 };
 
 dfield_t *dfield_create( int dim, int unit_size, int(*del_func)(void*) );
@@ -166,4 +167,3 @@ int dfield_add( struct dfield_dim_s *r );
 int dfield_add_data( struct dfield_dim_s *r, void *data );
 
 #endif /* _DYNAMIC_H */
-

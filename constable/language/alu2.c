@@ -49,8 +49,16 @@ void r_imm(struct register_s *r)
 		return;
 	n = LEN_ALIGN(r->attr->length);
 	if (n > MAX_REG_SIZE) {
+		/*
+		 * Registers have fixed inline storage. Preserve the historical
+		 * truncation semantics, but expose the effective length so later
+		 * operations cannot read beyond the materialized value.
+		 */
 		runtime("Variable too long");
 		n = LEN_MAX;
+		r->tmp_attr = *r->attr;
+		r->tmp_attr.length = (uint16_t)n;
+		r->attr = &r->tmp_attr;
 	}
 	if (r->attr->type == MED_TYPE_END && n > 0)
 		memcpy(r->buf, r->data + r->attr->offset, n);
@@ -73,8 +81,6 @@ void r_sto(struct register_s *v, struct register_s *d)
 
 	if (v->data == v->buf) {
 		runtime("Invalid lvalue");
-		//if ((d->attr->type & 0x0f) == MED_TYPE_STRING)
-		printf("ZZZ: %s: str=\"%s\"\n", __func__, d->data);
 		return;
 	}
 	if (!(v->flags & OBJECT_FLAG_LOCAL) && v->attr->type & MED_TYPE_READ_ONLY) {
@@ -113,6 +119,11 @@ void r_resize(struct register_s *v, int size)
 {
 	int nv;
 
+	if (!v || !v->attr || !v->data || size <= 0 ||
+	    size > MAX_REG_SIZE) {
+		runtime("Invalid variable resize");
+		return;
+	}
 	if (v->data != v->buf)
 		r_imm(v);
 	nv = v->attr->length;
@@ -120,11 +131,9 @@ void r_resize(struct register_s *v, int size)
 	case MED_TYPE_END:
 		runtime("Object can't be resized");
 		return;
-	case MED_TYPE_UNSIGNED:
-	case MED_TYPE_SIGNED:
-		nv = LEN_ALIGN(nv);
 	}
 	if (nv >= size)
 		return;
-	object_resize_data(v->data, v->attr, size);
+	if (object_resize_data(v->data, v->attr, size) < 0)
+		runtime("Invalid variable resize");
 }

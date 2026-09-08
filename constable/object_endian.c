@@ -5,16 +5,23 @@
  */
 
 #include "object.h"
-#include <endian.h>
+#include <stdint.h>
 #include <sys/param.h>
 #include <string.h>
 
+#ifndef __BYTE_ORDER
+#define __BYTE_ORDER __BYTE_ORDER__
+#define __LITTLE_ENDIAN __ORDER_LITTLE_ENDIAN__
+#define __BIG_ENDIAN __ORDER_BIG_ENDIAN__
+#endif
+
 void memrcpy(void *dest, const void *src, size_t n)
 {
-	while (n > 0) {
-		*((char *)dest) = ((char *)src)[--n];
-		dest++;
-	}
+	char *destination = dest;
+	const char *source = src;
+
+	while (n > 0)
+		*destination++ = source[--n];
 }
 
 int object_get_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, int maxlen)
@@ -22,20 +29,29 @@ int object_get_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, 
 	int n;
 	int s = 0;
 
+	if (!o || !a || !buf || maxlen <= 0 || a->length == 0)
+		return -1;
+
 	switch (a->type & 0x0f) {
-	case MED_TYPE_STRING:
-		n = MIN(a->length, maxlen);
-		strncpy(buf, o->data+a->offset, n);
-		((char *)(buf))[(maxlen > n ? n : n-1)] = 0;
+	case MED_TYPE_STRING: {
+		size_t source_length;
+		size_t copy_length;
+
+		source_length = strnlen(o->data + a->offset, a->length);
+		copy_length = MIN(source_length, (size_t)maxlen - 1);
+		memcpy(buf, o->data + a->offset, copy_length);
+		((char *)buf)[copy_length] = '\0';
 		return 0;
+	}
 	case MED_TYPE_BITMAP:
 		n = MIN(a->length, maxlen);
 		memcpy(buf, o->data+a->offset, n);
 		if (maxlen > n)
-			memset(buf+n, 0, maxlen-n);
+			memset((char *)buf+n, 0, maxlen-n);
 		return 0;
 	case MED_TYPE_SIGNED:
 		s = 1;
+		/* fall through */
 	case MED_TYPE_UNSIGNED:
 		n = MIN(a->length, maxlen);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -45,15 +61,16 @@ int object_get_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, 
 			memcpy(buf, o->data+a->offset, n);
 		if (maxlen > n) {
 			if (s && ((char *)buf)[n-1] & 0x80)
-				memset(buf+n, 0xff, maxlen-n);
+				memset((char *)buf+n, 0xff, maxlen-n);
 			else
-				memset(buf+n, 0, maxlen-n);
+				memset((char *)buf+n, 0, maxlen-n);
 		}
 #elif __BYTE_ORDER == __BIG_ENDIAN
 		if (o->flags & OBJECT_FLAG_CHENDIAN)
-			memrcpy(buf+maxlen-n, o->data+a->offset, n);
+			memrcpy((char *)buf+maxlen-n, o->data+a->offset, n);
 		else
-			memcpy(buf+maxlen-n, o->data+a->offset+a->length-n, n);
+			memcpy((char *)buf+maxlen-n,
+			       o->data+a->offset+a->length-n, n);
 		if (maxlen > n) {
 			if (s && ((char *)buf)[maxlen-n] & 0x080)
 				memset(buf, 0xff, maxlen-n);
@@ -74,12 +91,21 @@ int object_set_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, 
 	int n;
 	int s = 0;
 
+	if (!o || !a || !buf || maxlen <= 0 || a->length == 0)
+		return -1;
+
 	switch (a->type & 0x0f) {
-	case MED_TYPE_STRING:
-		n = MIN(a->length, maxlen);
-		strncpy(o->data+a->offset, buf, n);
-		((char *)(o->data+a->offset))[(a->length > n?n:n-1)] = 0;
+	case MED_TYPE_STRING: {
+		size_t source_length;
+		size_t copy_length;
+
+		source_length = strnlen(buf, (size_t)maxlen);
+		copy_length = MIN(source_length, (size_t)a->length - 1);
+		memcpy(o->data + a->offset, buf, copy_length);
+		memset(o->data + a->offset + copy_length, 0,
+		       (size_t)a->length - copy_length);
 		return 0;
+	}
 	case MED_TYPE_BITMAP:
 		n = MIN(a->length, maxlen);
 		memcpy(o->data+a->offset, buf, n);
@@ -88,6 +114,7 @@ int object_set_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, 
 		return 0;
 	case MED_TYPE_SIGNED:
 		s = 1;
+		/* fall through */
 	case MED_TYPE_UNSIGNED:
 		n = MIN(a->length, maxlen);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -110,7 +137,7 @@ int object_set_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, 
 		}
 #elif __BYTE_ORDER == __BIG_ENDIAN
 		if (o->flags & OBJECT_FLAG_CHENDIAN) {
-			memrcpy(o->data+a->offset, buf+maxlen-n, n);
+			memrcpy(o->data+a->offset, (char *)buf+maxlen-n, n);
 			if (a->length > n) {
 				if (s && ((char *)buf)[0] & 0x80)
 					memset(o->data+a->offset+n, 0xff, a->length-n);
@@ -118,7 +145,8 @@ int object_set_val(struct object_s *o, struct medusa_attribute_s *a, void *buf, 
 					memset(o->data+a->offset+n, 0, a->length-n);
 			}
 		} else {
-			memcpy(o->data+a->offset+a->length-n, buf+maxlen-n, n);
+			memcpy(o->data+a->offset+a->length-n,
+			       (char *)buf+maxlen-n, n);
 			if (a->length > n) {
 				if (s && ((char *)buf)[0] & 0x80)
 					memset(o->data+a->offset, 0xff, a->length-n);
@@ -197,7 +225,7 @@ static int object_resize_data_short(void *buf, struct medusa_attribute_s *a, int
 	case MED_TYPE_UNSIGNED:
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #elif __BYTE_ORDER == __BIG_ENDIAN
-		memmove(buf, buf+a->length-newlen, newlen);
+		memmove(buf, (char *)buf+a->length-newlen, newlen);
 #else
 #error "Unsupported endian type"
 #endif
@@ -211,6 +239,10 @@ int object_resize_data(void *buf, struct medusa_attribute_s *a, int newlen)
 {
 	int s = 0;
 
+	/* The wire-format medusa_attribute_s.length field is uint16_t. */
+	if (!buf || !a || !a->length || newlen <= 0 ||
+	    newlen > (int)UINT16_MAX)
+		return -1;
 	if (a->length == newlen)
 		return 0;
 	if (a->length > newlen)
@@ -219,19 +251,19 @@ int object_resize_data(void *buf, struct medusa_attribute_s *a, int newlen)
 	case MED_TYPE_STRING:
 		return 0;
 	case MED_TYPE_BITMAP:
-		memset(buf+a->length, 0, newlen-a->length);
+		memset((char *)buf+a->length, 0, newlen-a->length);
 		return 0;
 	case MED_TYPE_SIGNED:
 		s = 1;
+		/* fall through */
 	case MED_TYPE_UNSIGNED:
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		if (s && ((char *)buf)[a->length-1] & 0x80)
-			s = 0xff;
-		memset(buf+a->length, s, newlen-a->length);
+		s = s && ((unsigned char *)buf)[a->length - 1] & 0x80 ?
+		    0xff : 0;
+		memset((char *)buf+a->length, s, newlen-a->length);
 #elif __BYTE_ORDER == __BIG_ENDIAN
-		if (s && ((char *)buf)[0] & 0x80)
-			s = 0xff;
-		memmove(buf+newlen-a->length, buf, a->length);
+		s = s && ((unsigned char *)buf)[0] & 0x80 ? 0xff : 0;
+		memmove((char *)buf+newlen-a->length, buf, a->length);
 		memset(buf, s, newlen-a->length);
 #else
 #error "Unsupported endian type"
@@ -245,7 +277,7 @@ int object_resize_data(void *buf, struct medusa_attribute_s *a, int newlen)
 void byte_reorder_attrs(int flags, struct medusa_attribute_s *a)
 {
 	if (flags & OBJECT_FLAG_CHENDIAN) {
-		while (a->type != MED_COMM_TYPE_END) {
+		while (a->type != MED_TYPE_END) {
 			a->offset = bswap_16(a->offset);
 			a->length = bswap_16(a->length);
 			a++;

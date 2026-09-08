@@ -1,0 +1,2 @@
+event=getfile subject_class=file object_class=file enforcement=active
+event=getfile subject_class=file object_class=file enforcement=active

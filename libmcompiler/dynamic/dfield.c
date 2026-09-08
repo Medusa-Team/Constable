@@ -5,6 +5,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+#include <stdint.h>
 #include <mcompiler/dynamic.h>
 
 static struct dfield_dim_s *dfield_new_dim( struct dfield_dim_s *p, struct dfield_dim_s **me )
@@ -22,6 +24,8 @@ static struct dfield_dim_s *dfield_new_dim( struct dfield_dim_s *p, struct dfiel
 
 dfield_t *dfield_create( int dim, int unit_size, int(*del_func)(void*) )
 { dfield_t *df;
+    if (dim <= 0 || unit_size <= 0)
+        return(NULL);
     if( (df=malloc(sizeof(dfield_t)))==NULL )
         return(NULL);
     df->dimensions=dim;
@@ -75,8 +79,10 @@ struct dfield_dim_s *dfield_first_dim( dfield_t *df )
 
 struct dfield_dim_s *dfield_get( struct dfield_dim_s *r, int n )
 {
+    if (r==NULL)
+        return(NULL);
     if( n<0 )	n+=r->n;
-    if( r==NULL || r->n<n || n<0 || r->dim<=1 )
+    if( n<0 || n>=r->n || r->dim<=1 )
         return(NULL);
     if( r->r[n]==NULL )
         r->r[n]=dfield_new_dim(r,&(r->r[n]));
@@ -85,8 +91,10 @@ struct dfield_dim_s *dfield_get( struct dfield_dim_s *r, int n )
 
 void *dfield_get_data( struct dfield_dim_s *r, int n )
 {
+    if (r==NULL)
+        return(NULL);
     if( n<0 )	n+=r->n;
-    if( r==NULL || r->n<n || n<0 || r->dim!=1 )
+    if( n<0 || n>=r->n || r->dim!=1 )
         return(NULL);
     return( ((char*)(&(r->r[0])))+n*r->df->unit_size );
 }
@@ -98,12 +106,15 @@ int dfield_dimsize( struct dfield_dim_s *r )
 
 int dfield_add( struct dfield_dim_s *r )
 { struct dfield_dim_s *old;
+    size_t allocation;
     int i;
-    if( r==NULL || r->dim<=1 )
+    if( r==NULL || r->dim<=1 || r->n<0 || r->n==INT_MAX ||
+            (size_t)(r->n+1) >
+            (SIZE_MAX-sizeof(struct dfield_dim_s))/sizeof(void*))
         return(-1);
+    allocation=sizeof(struct dfield_dim_s)+(size_t)(r->n+1)*sizeof(void*);
     old=r;
-    if( (r=realloc(r,sizeof(struct dfield_dim_s)+
-                   (r->n+1)*sizeof(void*)))==NULL )
+    if( (r=realloc(r,allocation))==NULL )
         return(-1);
     r->r[r->n]=dfield_new_dim(r,&(r->r[r->n]));
     r->n++;
@@ -119,17 +130,23 @@ int dfield_add( struct dfield_dim_s *r )
 
 int dfield_add_data( struct dfield_dim_s *r, void *data )
 { struct dfield_dim_s *old;
-    if( r==NULL || r->dim!=1 )
+    size_t allocation;
+    if( r==NULL || r->dim!=1 || data==NULL || r->n<0 ||
+            r->n==INT_MAX ||
+            (size_t)(r->n+1) >
+            (SIZE_MAX-sizeof(struct dfield_dim_s))/
+            (size_t)r->df->unit_size )
         return(-1);
+    allocation=sizeof(struct dfield_dim_s)+
+        (size_t)(r->n+1)*(size_t)r->df->unit_size;
     old=r;
-    if( (r=realloc(r,sizeof(struct dfield_dim_s)+
-                   (r->n+1)*r->df->unit_size))==NULL )
+    if( (r=realloc(r,allocation))==NULL )
         return(-1);
-    memcpy( ((char*)(&(r->r[0])))+r->n*r->df->unit_size,
-            data,r->df->unit_size );
+    memcpy( ((char*)(&(r->r[0])))+
+            (size_t)r->n*(size_t)r->df->unit_size,
+            data,(size_t)r->df->unit_size );
     r->n++;
     if( r!=old )
         *(r->me)=r;
     return(r->n-1);
 }
-

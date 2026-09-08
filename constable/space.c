@@ -8,6 +8,8 @@
 #include "constable.h"
 #include "comm.h"
 #include "space.h"
+#include "string_utils.h"
+#include "mcompiler/checked_math.h"
 
 #include <stdio.h>
 #include <pthread.h>
@@ -149,6 +151,8 @@ struct space_s *space_create(char *name, bool primary)
 	char **errstr;
 	struct space_s *t;
 	int a;
+	size_t allocation;
+	size_t name_length;
 
 	if (name != NULL) {
 		if (space_find(name) != NULL) {
@@ -159,14 +163,21 @@ struct space_s *space_create(char *name, bool primary)
 	} else
 		name = ANON_SPACE_NAME;
 
-	t = malloc(sizeof(struct space_s)+strlen(name)+1);
+	name_length = strlen(name);
+	if (!checked_size_add(sizeof(*t), name_length, &allocation) ||
+	    !checked_size_add(allocation, 1, &allocation)) {
+		errstr = (char **)pthread_getspecific(errstr_key);
+		*errstr = Out_of_memory;
+		return NULL;
+	}
+	t = malloc(allocation);
 	if (t == NULL) {
 		errstr = (char **) pthread_getspecific(errstr_key);
 		*errstr = Out_of_memory;
 		return NULL;
 	}
 
-	strcpy(t->name, name);	/* the space will be declared */
+	memcpy(t->name, name, name_length + 1);	/* declared space */
 	for (a = 0; a < NR_ACCESS_TYPES; a++)
 		vs_clear(t->vs[a]);
 	vs_clear(t->vs_id);	/* the space is not defined yet */
@@ -689,12 +700,18 @@ static void tree_add_vs_do(struct tree_s *p, struct tree_add_vs_do_s *arg)
 static void tree_get_visited_do(struct tree_s *p, struct members_s *arg)
 {
 	if (!p->visited) {
+		struct tree_s **resized;
+		size_t allocation;
+
 		p->visited = true;
 		arg->count++;
-		arg->array = reallocarray(arg->array, arg->count,
-				 sizeof(struct tree_s *));
-		if (!arg->array)
+		if (!checked_size_multiply(arg->count, sizeof(struct tree_s *),
+					   &allocation))
+			fatal("Error: Too many space members.");
+		resized = realloc(arg->array, allocation);
+		if (!resized)
 			fatal("Error: Can't alloc memory for space members.");
+		arg->array = resized;
 		arg->array[arg->count - 1] = p;
 	}
 }
@@ -702,8 +719,9 @@ static void tree_get_visited_do(struct tree_s *p, struct members_s *arg)
 /*
  * tree_clear_visited_do() clear a @t->visited flag to %false.
  */
-static void tree_clear_visited_do(struct tree_s *t, void *)
+static void tree_clear_visited_do(struct tree_s *t, void *arg)
 {
+	(void)arg;
 	t->visited = false;
 }
 
@@ -917,8 +935,6 @@ int space_add_event(struct event_handler_s *handler, int ehh_list,
 	// Vid tree_comm_reinit(), tam bY sa to malo...
 	// Jaaaaaj ved to preto, lebo je to zavesene na type->handlers_hash a tam este
 	// nemame spravenu kontrolu, vid TODO 3 v space_init_event_mask() ;)
-	printf("YYY: %s subject=%p, object=%p, subj_node=%p, obj_node=%p\n", handler->op_name, subject, object, subj_node, obj_node);
-
 	/* @subject and @object must be both ALL_OBJ */
 	if (subj_node && obj_node) {
 		/* create anonymous and not primary space */
@@ -1233,14 +1249,14 @@ int space_vs_to_str(vs_t *vs, char *out, int size)
 				pos++;
 				size--;
 			}
-			strcpy(out+pos, space->name);
+			memcpy(out + pos, space->name, (size_t)l);
 			pos += l;
 			size -= l;
 		}
 	} // for space in global spaces
 
 	if (!vs_isclear(tvs)) {
-		if ((sizeof(tvs)*9)/8+3 >= size)
+		if (size <= 0 || (sizeof(tvs)*9)/8+3 >= (size_t)size)
 			return -1;
 		if (pos > 0) {
 			out[pos] = '|';
@@ -1253,13 +1269,15 @@ int space_vs_to_str(vs_t *vs, char *out, int size)
 				out[pos++] = ':';
 				size--;
 			}
-			sprintf(out+pos, "%02x", ((char *)tvs)[l]);
+			string_hex_byte(out + pos,
+					((unsigned char *)tvs)[l]);
 			pos += 2;
 			size -= 2;
 		}
 #else
 		for (l = sizeof(tvs)-1; l >= 0; l--) {
-			sprintf(out+pos, "%02x", ((char *)tvs)[l]);
+			string_hex_byte(out + pos,
+					((unsigned char *)tvs)[l]);
 			pos += 2;
 			size -= 2;
 			if (l > 0 && (l & 0x03) == 0) {

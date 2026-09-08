@@ -5,42 +5,46 @@
 
 #include <stdlib.h>
 #include <mcompiler/dynamic.h>
+#include <mcompiler/checked_math.h>
 
 void *ll_alloc(size_t len)
 { ll_t *l;
-    if( (l=malloc(len+sizeof(ll_t)))==NULL )
+    size_t allocation;
+    if( !checked_size_add(len,sizeof(*l),&allocation) ||
+        (l=calloc(1,allocation))==NULL )
         return(NULL);
-    l->next=NULL;
-    l->prev=NULL;
-    l->type=0;
     l->len=len;
     return((void*)l);
 }
 
 void *ll_add(void *ll, size_t len)
 { ll_t *l2;
-    if( (l2=malloc(len+sizeof(ll_t)))==NULL )
+    size_t allocation;
+    if( ll==NULL ||
+        !checked_size_add(len,sizeof(*l2),&allocation) ||
+        (l2=calloc(1,allocation))==NULL )
         return(NULL);
     l2->next=((ll_t *)ll)->next;
     l2->prev=(ll_t *)ll;
     ((ll_t *)ll)->next=l2;
     if( l2->next!=NULL )
         l2->next->prev=l2;
-    l2->type=0;
     l2->len=len;
     return((void*)l2);
 }
 
 void *ll_ins(void *ll, size_t len)
 { ll_t *l2;
-    if( (l2=malloc(len+sizeof(ll_t)))==NULL )
+    size_t allocation;
+    if( ll==NULL ||
+        !checked_size_add(len,sizeof(*l2),&allocation) ||
+        (l2=calloc(1,allocation))==NULL )
         return(NULL);
     l2->next=(ll_t *)ll;
     l2->prev=((ll_t *)ll)->prev;
     ((ll_t *)ll)->prev=l2;
     if( l2->prev!=NULL )
         l2->prev->next=l2;
-    l2->type=0;
     l2->len=len;
     return((void*)l2);
 }
@@ -80,4 +84,3 @@ int ll_free(void *ll)
     while( (l2=ll_del(l2))!=NULL );
     return(0);
 }
-
