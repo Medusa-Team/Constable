@@ -258,12 +258,11 @@ int object_resize_data(void *buf, struct medusa_attribute_s *a, int newlen)
 		/* fall through */
 	case MED_TYPE_UNSIGNED:
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		if (s && ((char *)buf)[a->length-1] & 0x80)
-			s = 0xff;
+		s = s && ((unsigned char *)buf)[a->length - 1] & 0x80 ?
+		    0xff : 0;
 		memset((char *)buf+a->length, s, newlen-a->length);
 #elif __BYTE_ORDER == __BIG_ENDIAN
-		if (s && ((char *)buf)[0] & 0x80)
-			s = 0xff;
+		s = s && ((unsigned char *)buf)[0] & 0x80 ? 0xff : 0;
 		memmove((char *)buf+newlen-a->length, buf, a->length);
 		memset(buf, s, newlen-a->length);
 #else

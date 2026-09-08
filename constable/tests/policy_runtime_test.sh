@@ -9,7 +9,7 @@ temporary=${TMPDIR:-/tmp}/constable-policy-runtime.$$
 
 cleanup()
 {
-	rm -f "$temporary.pass" "$temporary.deny" "$temporary.missing"
+	rm -f "$temporary.pass" "$temporary.deny" "$temporary.missing" "$temporary.arithmetic" "$temporary.conf"
 }
 trap cleanup EXIT HUP INT TERM
 
@@ -53,3 +53,34 @@ if ! grep -Fq 'Policy self-test requires function _debug' \
 fi
 
 echo "policy runtime: compiled calls, control flow, pass, deny, and missing entry point verified"
+
+# Errors inside nested calls must unwind and deny, rather than reach the
+# unconditional FORCE_ALLOW after the expression or crash the server.
+for expression in '7 / 0' '7 % 0' '1 << 64' '1 << (0 - 1)' '0xffffffffffffffff + 1'
+do
+	cat >"$temporary.conf" <<EOF
+function invalid_arithmetic
+{
+	return $expression;
+}
+function outer
+{
+	invalid_arithmetic();
+	return FORCE_ALLOW;
+}
+function _debug
+{
+	outer();
+	return FORCE_ALLOW;
+}
+EOF
+	if "$constable" -T -c "$temporary.conf" "$fixtures/offline.conf" \
+		>"$temporary.arithmetic" 2>&1
+	then
+		echo "policy runtime: invalid arithmetic unexpectedly allowed: $expression" >&2
+		exit 1
+	fi
+	grep -Fq 'Runtime error : Invalid integer operation' "$temporary.arithmetic"
+	grep -Fq 'Policy self-test did not return FORCE_ALLOW' "$temporary.arithmetic"
+done
+echo "policy runtime: arithmetic errors in nested calls deny and stop execution"

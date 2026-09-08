@@ -63,9 +63,10 @@ dynamic_argv_test: dynamic_argv_test.c ../../libmcompiler/libmcompiler.a
 		dynamic_argv_test.c ../../libmcompiler/libmcompiler.a
 
 alu_mixed_compare_test: alu_mixed_compare_test.c ../language/alu.c \
-	../string_utils.c
+	../language/alu2.c ../object_endian.c ../string_utils.c
 	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ \
-		alu_mixed_compare_test.c ../language/alu.c ../string_utils.c
+		alu_mixed_compare_test.c ../language/alu.c ../language/alu2.c \
+		../object_endian.c ../string_utils.c
 
 string_utils_test: string_utils_test.c ../string_utils.c ../string_utils.h
 	$(CC) $(CFLAGS) -std=c11 -I.. -o $@ \

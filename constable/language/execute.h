@@ -71,7 +71,7 @@ void r_neg(struct register_s *v);
 void r_not(struct register_s *v);
 int r_nz(struct register_s *v);
 
-void do_bin_op(int op, struct register_s *v, struct register_s *d);
+int do_bin_op(int op, struct register_s *v, struct register_s *d);
 
 int load_constant(struct register_s *r, uintptr_t typ, char *name);
 

@@ -226,3 +226,23 @@ events, Constable validates:
 Protocol-v3 does not distinguish an announced enforcing event from an
 announced but unwired event. Phase 4's validation mode must add that capability
 check before a policy is presented as enforceable.
+
+## Integer arithmetic failures
+
+Integer operations use 32 or 64 bits, extending narrower operands to the
+operation width. Comparisons always return a 32-bit unsigned Boolean (0 or 1),
+even when comparing 64-bit operands. Subsequent arithmetic extends that Boolean
+from its declared width; bytes outside that width are not part of its value.
+
+Addition, subtraction, and multiplication reject mathematical results that do
+not fit the declared result type. The historical result types are retained:
+addition and multiplication of two unsigned operands return unsigned; subtraction
+returns signed; other signed/unsigned combinations return signed. Division and
+remainder retain C's usual operand conversions, but reject zero divisors,
+signed minimum divided by minus one (including remainder), and results that do
+not fit the result type. Shifts reject negative or out-of-range counts. Left
+shifts also reject negative inputs and values that would overflow the result.
+
+An invalid binary operation reports a runtime diagnostic, unwinds the handler's
+nested calls and local variables, and completes with `DENY`. Statements after
+the error are not executed, so a later `return FORCE_ALLOW` cannot hide it.

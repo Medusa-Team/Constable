@@ -131,9 +131,6 @@ void r_resize(struct register_s *v, int size)
 	case MED_TYPE_END:
 		runtime("Object can't be resized");
 		return;
-	case MED_TYPE_UNSIGNED:
-	case MED_TYPE_SIGNED:
-		nv = LEN_ALIGN(nv);
 	}
 	if (nv >= size)
 		return;

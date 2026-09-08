@@ -593,7 +593,22 @@ static int execute_handler_do(struct execute_s *e)
 		case oXOR:
 			r_pop(r0);
 			r_pop(r1);
-			do_bin_op(cmd, r1, r0);
+			if (do_bin_op(cmd, r1, r0) < 0) {
+				/* Abort all nested calls and release their local variables.
+				 * Complete with DENY so an earlier allow cannot mask the
+				 * arithmetic failure in answer composition.
+				 */
+				do {
+					free_vars((struct object_s **)
+						  execute_stack_pointer(e, e->base));
+					e->pos = e->base;
+					e->base = pop();
+				} while (e->pos > e->start);
+				e->pos = e->start;
+				free_vars(&e->c->local_vars);
+				e->c->result = RESULT_DENY;
+				return 0;
+			}
 			r_push(r1);
 			break;
 		case oNOT:
