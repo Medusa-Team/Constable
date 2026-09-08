@@ -10,7 +10,7 @@
 
 #include <mcompiler/checked_math.h>
 
-#define COMPILER_STACK_GROWTH 100
+#define COMPILER_STACK_GROWTH 128
 
 static int patri_term( struct compile_tab_s *tab, sym_t term )
 { int i;

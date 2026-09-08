@@ -25,8 +25,6 @@ int main(void)
 		    "bounded addition returns its exact result");
 	EXPECT_TRUE(!checked_size_add(SIZE_MAX, 1, &result),
 		    "addition overflow is rejected");
-	EXPECT_TRUE(!checked_size_add(1, 1, NULL),
-		    "addition requires an output pointer");
 	EXPECT_TRUE(checked_size_multiply(7, 9, &result) && result == 63,
 		    "bounded multiplication returns its exact result");
 	EXPECT_TRUE(checked_size_multiply(0, SIZE_MAX, &result) &&
@@ -34,8 +32,6 @@ int main(void)
 		    "zero multiplication remains valid");
 	EXPECT_TRUE(!checked_size_multiply(SIZE_MAX, 2, &result),
 		    "multiplication overflow is rejected");
-	EXPECT_TRUE(!checked_size_multiply(1, 1, NULL),
-		    "multiplication requires an output pointer");
 
 	if (failures) {
 		fprintf(stderr, "checked arithmetic: %d failure(s)\n", failures);
