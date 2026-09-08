@@ -52,6 +52,12 @@ by that connection. Constable stages a complete policy generation after the
 schema is complete, resolves monitoring masks, and executes the optional policy
 `_init` handler. Only then does it send READY.
 
+Each event definition carries an explicit kind. Access events produce an
+authorization verdict and may have fallback or domain decision policy.
+Object-notification events (`get*`) instead let handlers assign context to the
+announced object through updates; their reply is only a completion
+acknowledgement, so decisional policy is rejected for them.
+
 Wire identifiers are grouped by lifecycle so packet traces remain legible and
 each family has room to grow. Message values `1`–`15` are negotiation,
 `16`–`31` schema inventory, `32`–`47` policy installation, and `48` onward
@@ -65,7 +71,9 @@ Configured fallback policies live in `fallback_policy.c`. MCP resolves their
 symbolic event names only after the kernel has announced its connection-local
 schema. It queues bounded policy frames before READY; policy compilation and
 normal decision evaluation do not own this handshake state. The configured set
-is allocated atomically and may cover the entire announced event inventory.
+is allocated atomically and may cover the announced access-event inventory.
+Object-notification events remain in the schema but cannot receive fallback
+policy.
 
 For a decision:
 
@@ -129,3 +137,13 @@ pending request is alive.
 Protocol-v4 frames remain behind the existing connection/decision boundary.
 Compatibility changes must not silently reinterpret historical protocol-v3
 native structures.
+
+The event-kind schema extension must be deployed with the matching kernel and
+both authorization clients. EVENT_DEFINITION requires the one-byte EVENT_KIND
+TLV (28): 0 for access decisions, 1 for object notifications. Updated clients
+reject missing or unknown kinds rather than guessing from event names. Older
+clients cannot consume this required TLV. Do not mix these revisions during an
+upgrade. Default POLICY_EVENT records still carry baseline_allow for schema
+completeness; for notifications this is a protocol placeholder, not a configurable
+allow/deny fallback. Their security context is assigned by the notification
+handler's object updates.

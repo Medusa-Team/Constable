@@ -172,6 +172,21 @@ static const uint8_t *v4_find_tlv(const uint8_t *frame, size_t length,
 	return found;
 }
 
+static int v4_get_u8(const uint8_t *frame, size_t length, uint16_t type,
+		     uint8_t *value)
+{
+	size_t value_length = 0;
+	const uint8_t *wire =
+		v4_find_tlv(frame, length, type, &value_length, true);
+
+	if (!wire)
+		return -ENOENT;
+	if (value_length != sizeof(*value))
+		return -EMSGSIZE;
+	*value = *wire;
+	return 0;
+}
+
 static int v4_get_u16(const uint8_t *frame, size_t length, uint16_t type,
 		      uint16_t *value)
 {
@@ -607,6 +622,7 @@ static int v4_handle_event_definition(struct comm_s *comm,
 	uint32_t subject_class;
 	uint32_t object_class;
 	uint16_t trigger;
+	uint8_t kind;
 	int error;
 
 	error = v4_get_u32(frame, length, MEDUSA_TLV_EVENT_ID, &event_id);
@@ -625,6 +641,9 @@ static int v4_handle_event_definition(struct comm_s *comm,
 		error = v4_get_u16(
 			frame, length, MEDUSA_TLV_TRIGGER, &trigger);
 	if (!error)
+		error = v4_get_u8(
+			frame, length, MEDUSA_TLV_EVENT_KIND, &kind);
+	if (!error)
 		error = v4_copy_name(
 			frame, length, MEDUSA_TLV_NAME, definition.name,
 			sizeof(definition.name), false);
@@ -638,7 +657,8 @@ static int v4_handle_event_definition(struct comm_s *comm,
 			frame, length, MEDUSA_TLV_OBJECT_NAME,
 			definition.op_name[1], sizeof(definition.op_name[1]),
 			true);
-	if (error || !event_id || !subject_class || !object_class ||
+	if (error || !mcp_validate_event_kind(kind) || !event_id ||
+	    !subject_class || !object_class ||
 	    event_size > UINT16_MAX)
 		return -EPROTO;
 	attributes = v4_parse_attributes(frame, length, event_size);
@@ -647,6 +667,7 @@ static int v4_handle_event_definition(struct comm_s *comm,
 	definition.opid = event_id;
 	definition.size = (uint16_t)event_size;
 	definition.actbit = trigger;
+	definition.kind = kind;
 	definition.op_class[0] = subject_class;
 	definition.op_class[1] = object_class;
 	if (!event_type_add(comm, &definition, attributes))
@@ -670,6 +691,12 @@ static int v4_configured_events_announced(struct comm_s *comm)
 				   comm->name, policy->event);
 			return -ENOENT;
 		}
+		if (name->events[comm->conn]->acctype.kind ==
+		    MEDUSA_EVENT_OBJECT_NOTIFICATION) {
+			comm_error("comm %s: fallback policy is not valid for object-notification event '%s'",
+				   comm->name, policy->event);
+			return -EOPNOTSUPP;
+		}
 	}
 	for (index = 0; index < domain_rule_count(); index++) {
 		const struct domain_rule_config *rule = domain_rule_at(index);
@@ -680,6 +707,12 @@ static int v4_configured_events_announced(struct comm_s *comm)
 			comm_error("comm %s: domain-rule event '%s' was not announced",
 				   comm->name, rule->event);
 			return -ENOENT;
+		}
+		if (name->events[comm->conn]->acctype.kind ==
+		    MEDUSA_EVENT_OBJECT_NOTIFICATION) {
+			comm_error("comm %s: domain decision rule is not valid for object-notification event '%s'",
+				   comm->name, rule->event);
+			return -EOPNOTSUPP;
 		}
 	}
 	if (domain_rule_count() &&
@@ -1167,6 +1200,7 @@ static int mcp_answer(struct comm_s *comm, struct comm_buffer_s *request)
 
 	request_id = ((MCPptr_t *)request->comm_buf)[1];
 	if (!request->approval_done && request->event &&
+	    request->event->acctype.kind == MEDUSA_EVENT_ACCESS &&
 	    (request->context.result == MED_ALLOW ||
 	     request->context.result == MED_DENY) &&
 	    approval_enabled_for(request->event->evname->name)) {
@@ -1188,10 +1222,16 @@ static int mcp_answer(struct comm_s *comm, struct comm_buffer_s *request)
 	}
 	if (v4_cancel_take(comm, request_id))
 		return 0;
+	if (request->event &&
+	    request->event->acctype.kind == MEDUSA_EVENT_OBJECT_NOTIFICATION &&
+	    (request->context.result == MED_ALLOW ||
+	     request->context.result == MED_DENY))
+		request->context.result = MED_ALLOW;
 	answer = request->context.result;
 	if (answer != MED_ERR && answer != MED_DENY && answer != MED_ALLOW)
 		answer = MED_ERR;
 	if (answer == MED_ALLOW && request->event &&
+	    request->event->acctype.kind == MEDUSA_EVENT_ACCESS &&
 	    (MCP_DATA(comm)->enabled_features &
 	     MEDUSA_FEATURE_REPLY_CACHE_UPDATE)) {
 		if (request->event->monitored_operand == request->event->op[0])

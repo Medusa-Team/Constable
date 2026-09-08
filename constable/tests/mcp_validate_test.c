@@ -120,6 +120,12 @@ static void test_acctype_definition(void)
 	EXPECT_EQ(mcp_validate_acctype_definition(&definition, valid_attributes,
 						  2),
 		  MCP_DEFINITION_VALID, "a bounded event definition is valid");
+	EXPECT_EQ(mcp_validate_event_kind(MEDUSA_EVENT_ACCESS), 1,
+		  "an access event kind is valid");
+	EXPECT_EQ(mcp_validate_event_kind(MEDUSA_EVENT_OBJECT_NOTIFICATION), 1,
+		  "an object-notification event kind is valid");
+	EXPECT_EQ(mcp_validate_event_kind(2), 0,
+		  "an unknown event kind is rejected");
 
 	memset(definition.name, 'e', MEDUSA_ATTRNAME_MAX);
 	definition.name[MEDUSA_ATTRNAME_MAX] = '\0';

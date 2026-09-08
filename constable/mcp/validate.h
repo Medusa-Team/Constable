@@ -36,5 +36,6 @@ const char *
 mcp_definition_validation_message(enum mcp_definition_validation result);
 
 int mcp_validate_v4_frame(const void *frame, size_t length);
+int mcp_validate_event_kind(uint8_t kind);
 
 #endif /* CONSTABLE_MCP_VALIDATE_H */

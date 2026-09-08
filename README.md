@@ -63,13 +63,14 @@ kernel connection, queues the complete policy before READY, and refuses startup
 if an event is unknown. Policy storage grows with the announced configuration;
 there is no lower userspace-only event-count ceiling.
 
-Fallback policy applies to every Medusa event type, including state-creating
-`get*` events such as `getfile` and `getprocess`. Those events establish the
-security context used by later access checks, so excluding them would silently
-restore allow/inheritance behavior precisely when the authorization server is
-unavailable. Configure them deliberately: `baseline_deny` can prevent an object
-or process from acquiring a usable Medusa context, while `online_required`
-makes that initialization depend on a live server.
+Fallback policy applies only to access events. Object-notification `get*` hooks
+such as `getfile`, `getprocess`, `getipc`, and `getsocket` do not authorize the
+kernel operation. They announce an object to Constable so matching handlers can
+assign its security context through object updates; their supported reply value
+only acknowledges that assignment processing completed. Constable rejects
+fallback policies and domain decision rules configured for notification hooks.
+When no handler is selected, the kernel's established inheritance or
+initialization behavior remains responsible for the object's context.
 
 Non-sleepable hooks can use generation-scoped domain rules:
 

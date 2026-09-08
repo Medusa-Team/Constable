@@ -81,7 +81,8 @@ static struct medusa_comm_class_s rbac_user_mclass={
                 };
 
                 static struct medusa_comm_acctype_s rbac_acc_create_role={
-                    1,0,0xffff,{0,0},"create_role",{"process","process"}
+                    1,0,0xffff,{0,0},"create_role",{"process","process"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static struct medusa_comm_attribute_s rbac_acc_attr_create_role[]={
@@ -89,7 +90,8 @@ static struct medusa_comm_class_s rbac_user_mclass={
                 };
 
                 static struct medusa_comm_acctype_s rbac_acc_delete_role={
-                    2,0,0xffff,{0,3},"delete_role",{"process","role"}
+                    2,0,0xffff,{0,3},"delete_role",{"process","role"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static struct medusa_comm_attribute_s rbac_acc_attr_none[]={
@@ -97,19 +99,23 @@ static struct medusa_comm_class_s rbac_user_mclass={
                 };
 
                 static struct medusa_comm_acctype_s rbac_acc_role_hierarchy={
-                    3,0,0xffff,{0,3},"role_hierarchy",{"process","role"}
+                    3,0,0xffff,{0,3},"role_hierarchy",{"process","role"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static struct medusa_comm_acctype_s rbac_acc_user_assign={
-                    4,0,0xffff,{0,1},"uses_assign",{"process","user"}
+                    4,0,0xffff,{0,1},"uses_assign",{"process","user"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static struct medusa_comm_acctype_s rbac_acc_role_assign={
-                    5,0,0xffff,{0,3},"role_assign",{"process","role"}
+                    5,0,0xffff,{0,3},"role_assign",{"process","role"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static struct medusa_comm_acctype_s rbac_acc_perm_assign={
-                    6,0,0xffff,{0,2},"permission_assign",{"process","permission"}
+                    6,0,0xffff,{0,2},"permission_assign",{"process","permission"},
+                    MEDUSA_EVENT_ACCESS
             };
 
                 static int rbac_set_roles( struct class_handler_s *h, struct comm_s *comm, struct object_s *o )

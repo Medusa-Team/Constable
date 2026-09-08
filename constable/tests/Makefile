@@ -1,5 +1,6 @@
 CC ?= cc
 CFLAGS ?= -Wall -Wextra -Wpedantic
+override CFLAGS += -I../../include -I../../libmcompiler
 
 TESTS = decision_test dynamic_argv_test alu_mixed_compare_test string_utils_test \
 	mcp_validate_test object_string_test version_buffer_test mlibc_format_test

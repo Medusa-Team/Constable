@@ -25,7 +25,7 @@ static int v4_tlv_known(uint16_t type)
 	return (type >= MEDUSA_TLV_MIN_VERSION &&
 		type <= MEDUSA_TLV_STATE) ||
 	       (type >= MEDUSA_TLV_CLASS_ID &&
-		type <= MEDUSA_TLV_ENFORCEMENT) ||
+		type <= MEDUSA_TLV_EVENT_KIND) ||
 	       (type >= MEDUSA_TLV_FALLBACK_POLICY &&
 		type <= MEDUSA_TLV_DOMAIN_RULE) ||
 	       (type >= MEDUSA_TLV_ERROR_CODE &&
@@ -79,6 +79,12 @@ int mcp_validate_v4_frame(const void *wire, size_t length)
 		offset += aligned;
 	}
 	return offset == length ? 0 : -1;
+}
+
+int mcp_validate_event_kind(uint8_t kind)
+{
+	return kind == MEDUSA_EVENT_ACCESS ||
+	       kind == MEDUSA_EVENT_OBJECT_NOTIFICATION;
 }
 
 static enum mcp_definition_validation

@@ -50,6 +50,7 @@ struct medusa_acctype_s {
 	MCPptr_t op_class[2];
 	char name[MEDUSA_OPNAME_MAX];
 	char op_name[2][MEDUSA_ATTRNAME_MAX];
+	uint8_t kind;
 };
 
 /* Historical internal source names; none of these are protocol structures. */
