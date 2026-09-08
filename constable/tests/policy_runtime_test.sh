@@ -56,7 +56,7 @@ echo "policy runtime: compiled calls, control flow, pass, deny, and missing entr
 
 # Errors inside nested calls must unwind and deny, rather than reach the
 # unconditional FORCE_ALLOW after the expression or crash the server.
-for expression in '7 / 0' '7 % 0' '1 << 64' '1 << (0 - 1)' '0xffffffffffffffff + 1'
+for expression in '7 / 0' '7 % 0' '1 << 64' '1 << (0 - 1)' '2147483647 + 1'
 do
 	cat >"$temporary.conf" <<EOF
 function invalid_arithmetic
